@@ -26,7 +26,25 @@
 
 #include "serial.h"
 
-int serial_open(serial_device_p dev, const char* name) {
+const char* serial_errors[] = {
+  "success",
+  "error opening serial device",
+  "error closing serial device",
+  "error draining serial device",
+  "error flushing serial device",
+  "invalid baudrate",
+  "invalid number of databits",
+  "invalid number of stopbits",
+  "invalid parity",
+  "error setting serial device attributes",
+  "serial device select timeout",
+  "error reading from serial device",
+  "error writing to serial device",
+};
+
+int serial_open(
+  serial_device_p dev,
+  const char* name) {
   dev->fd = open(name, O_RDWR | O_NDELAY);
 
   if (dev->fd > 0) {
@@ -34,37 +52,35 @@ int serial_open(serial_device_p dev, const char* name) {
     dev->num_read = 0;
     dev->num_written = 0;
   }
-  else {
-    perror("serial_open");
-    return -1;
-  }
+  else
+    return SERIAL_ERROR_OPEN;
 
-  return 0;
+  return SERIAL_ERROR_NONE;
 }
 
-int serial_close(serial_device_p dev) {
-  if (tcdrain(dev->fd) < 0) {
-    perror("serial_close: tcdrain");
-    return -1;
-  }
-  if (tcflush(dev->fd, TCIOFLUSH) < 0) {
-    perror("serial_close: tcflush");
-    return -2;
-  }
-  if (close(dev->fd) < 0) {
-    perror("serial_close");
-    return -3;
-  }
-  else {
+int serial_close(
+  serial_device_p dev) {
+  if (tcdrain(dev->fd) < 0)
+    return SERIAL_ERROR_DRAIN;
+  if (tcflush(dev->fd, TCIOFLUSH) < 0)
+    return SERIAL_ERROR_FLUSH;
+  if (!close(dev->fd)) {
     dev->name[0] = 0;
     dev->fd = -1;
   }
+  else
+    return SERIAL_ERROR_CLOSE;
 
-  return 0;
+  return SERIAL_ERROR_NONE;
 }
 
-int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
-  serial_parity_t parity, double timeout) {
+int serial_setup(
+  serial_device_p dev,
+  int baudrate,
+  int databits,
+  int stopbits,
+  serial_parity_t parity,
+  double timeout) {
   struct termios tio;
   memset(&tio, 0, sizeof(struct termios));
   
@@ -105,9 +121,7 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
                   break;
     case 230400L: tio.c_cflag |= B230400;
                   break;
-    default     : fprintf(stderr, "serial_setup: invalid baudrate %d\n",
-                    baudrate);
-                  return -2;
+    default     : return SERIAL_ERROR_INVALID_BAUDRATE;
   }
   dev->baudrate = baudrate;
   
@@ -120,8 +134,7 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
              break;
     case 8 : tio.c_cflag |= CS8;
              break;
-    default: fprintf(stderr, "serial_setup: invalid databits %d\n", databits);
-             return -3;
+    default: return SERIAL_ERROR_INVALID_DATABITS;
   }
   dev->databits = databits;
   
@@ -129,8 +142,7 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
     case 1 : break;
     case 2 : tio.c_cflag |= CSTOPB;
              break;
-    default: fprintf(stderr, "serial_setup: invalid stopbits %d\n", stopbits);
-             return -4;
+    default: return SERIAL_ERROR_INVALID_STOPBITS;
   }
   dev->stopbits = stopbits;
   
@@ -140,8 +152,7 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
                break;
     case odd : tio.c_cflag |= PARENB | PARODD;
                break;
-    default  : fprintf(stderr, "serial_setup: invalid parity %d\n", parity);
-               return -5;
+    default  : return SERIAL_ERROR_INVALID_PARITY;
   }
   dev->parity = parity;
   
@@ -150,19 +161,18 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
   tio.c_cflag |= CLOCAL;
   tio.c_iflag = IGNPAR;
   
-  if (tcflush(dev->fd, TCIOFLUSH) < 0) {
-    perror("serial_setup: tcflush");
-    return -6;
-  }
-  if (tcsetattr(dev->fd, TCSANOW, &tio) < 0) {
-    perror("serial_setup: tcsetattr");
-    return -7;
-  }
+  if (tcflush(dev->fd, TCIOFLUSH) < 0)
+    return SERIAL_ERROR_FLUSH;
+  if (tcsetattr(dev->fd, TCSANOW, &tio) < 0)
+    return SERIAL_ERROR_SETUP;
   
-  return 0;
+  return SERIAL_ERROR_NONE;
 }
 
-int serial_read(serial_device_p dev, unsigned char* buffer, ssize_t num) {
+int serial_read(
+  serial_device_p dev,
+  unsigned char* data,
+  ssize_t num) {
   ssize_t num_read = 0;
   struct timeval time;
 
@@ -177,18 +187,14 @@ int serial_read(serial_device_p dev, unsigned char* buffer, ssize_t num) {
     FD_SET(dev->fd, &set);
 
     error = select(dev->fd+1, &set, NULL, NULL, &time);
-    if (error == 0) {
-      fprintf(stderr, "serial_read: select timeout\n");
-      return -2;
-    }
+    if (error == 0)
+      return -SERIAL_ERROR_TIMEOUT;
 
     ssize_t n;
-    n = read(dev->fd, &buffer[num_read], num-num_read);
-    if ((n < 0) && (errno != EWOULDBLOCK)) {
-      perror("serial_read: read");
-      return -1;
-    }
-    else {
+    n = read(dev->fd, &data[num_read], num-num_read);
+    if ((n < 0) && (errno != EWOULDBLOCK))
+      return -SERIAL_ERROR_READ;
+    if (n > 0) {
       num_read += n;
       dev->num_read += n;
     }
@@ -197,20 +203,21 @@ int serial_read(serial_device_p dev, unsigned char* buffer, ssize_t num) {
   return num_read;
 }
 
-int serial_write(serial_device_p dev, unsigned char* buffer, ssize_t num) {
+int serial_write(
+  serial_device_p dev,
+  unsigned char* data,
+  ssize_t num) {
   ssize_t num_written = 0;
 
   while (num_written < num) {
     ssize_t n;
-    while ((n = write(dev->fd, &buffer[num_written], num-num_written)) == 0);
-    if (n < 0) {
-      perror("serial_write: write");
-      return -1;
-    }
-    else {
+    while ((n = write(dev->fd, &data[num_written], num-num_written)) == 0);
+    if (n > 0) {
       num_written += n;
       dev->num_written += n;
     }
+    else
+      return -SERIAL_ERROR_WRITE;
   }
   
   return num_written;

@@ -23,34 +23,113 @@
 
 #include <unistd.h>
 
+/** \file serial.h
+  * \brief POSIX serial communication library
+  * \author Ralf Kaestner
+  * A POSIX-compliant serial communication library providing very basic
+  * functionality.
+  */
+
+/** \brief Predefined serial error codes
+  */
+#define SERIAL_ERROR_NONE                 0
+#define SERIAL_ERROR_OPEN                 1
+#define SERIAL_ERROR_CLOSE                2
+#define SERIAL_ERROR_DRAIN                3
+#define SERIAL_ERROR_FLUSH                4
+#define SERIAL_ERROR_INVALID_BAUDRATE     5
+#define SERIAL_ERROR_INVALID_DATABITS     6
+#define SERIAL_ERROR_INVALID_STOPBITS     7
+#define SERIAL_ERROR_INVALID_PARITY       8
+#define SERIAL_ERROR_SETUP                9
+#define SERIAL_ERROR_TIMEOUT              10
+#define SERIAL_ERROR_READ                 11
+#define SERIAL_ERROR_WRITE                12
+
+/** \brief Predefined serial error descriptions
+  */
+extern const char* serial_errors[];
+
+/** \brief Parity enumeratable type
+  */
 typedef enum {
-  none,
-  even,
-  odd
+  none,   //!< No parity.
+  even,   //!< Even parity.
+  odd     //!< Odd parity.
 } serial_parity_t;
 
+/** \brief Serial device structure
+  */
 typedef struct {
-  int fd;
-  char name[256];
+  int fd;                   //!< File descriptor.
+  char name[256];           //!< Device name.
 
-  int baudrate;
-  int databits;
-  int stopbits;
-  serial_parity_t parity;
+  int baudrate;             //!< Device baudrate.
+  int databits;             //!< Number of databits.
+  int stopbits;             //!< Number of stopbits.
+  serial_parity_t parity;   //!< Device parity.
 
-  double timeout;
+  double timeout;           //!< Device select timeout in [s].
 
-  ssize_t num_read;
-  ssize_t num_written;
+  ssize_t num_read;         //!< Number of bytes read from device.
+  ssize_t num_written;      //!< Number of bytes written to device.
 } serial_device_t, *serial_device_p;
 
-int serial_open(serial_device_p dev, const char* name);
-int serial_close(serial_device_p dev);
+/** \brief Open the serial device with the specified name
+  * \param[in] dev The serial device to be opened.
+  * \param[in] name The name of the device to be opened.
+  * \return The resulting error code.
+  */
+int serial_open(
+  serial_device_p dev,
+  const char* name);
 
-int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
-  serial_parity_t parity, double timeout);
+/** \brief Close an open serial device
+  * \param[in] dev The open serial device to be closed.
+  * \return The resulting error code.
+  */
+int serial_close(
+  serial_device_p dev);
 
-int serial_read(serial_device_p dev, unsigned char* buffer, ssize_t num);
-int serial_write(serial_device_p dev, unsigned char* buffer, ssize_t num);
+/** \brief Setup an already opened serial device
+  * \param[in] dev The open serial device to be set up.
+  * \param[in] baudrate The device baudrate to be set.
+  * \param[in] databits The device's number of databits to be set.
+  * \param[in] stopbits The device's number of stopbits to be set.
+  * \param[in] parity The device parity to be set.
+  * \param[in] timeout The device select timeout in [s] to be set.
+  * \return The resulting error code.
+  */
+int serial_setup(
+  serial_device_p dev,
+  int baudrate,
+  int databits,
+  int stopbits,
+  serial_parity_t parity,
+  double timeout);
+
+/** \brief Read data from open serial device
+  * \param[in] dev The open serial device to read data from.
+  * \param[out] data An array containing the data read from the device.
+  * \param[in] num The number of data bytes to be read.
+  * \return The number of bytes read from the serial device or the
+  *   negative error code.
+  */
+int serial_read(
+  serial_device_p dev,
+  unsigned char* data,
+  ssize_t num);
+
+/** \brief Write data to open serial device
+  * \param[in] dev The open serial device to write data to.
+  * \param[out] data An array containing the data to be written to the device.
+  * \param[in] num The number of data bytes to be written.
+  * \return The number of bytes written to the serial device or the
+  *   negative error code.
+  */
+int serial_write(
+  serial_device_p dev,
+  unsigned char* data,
+  ssize_t num);
 
 #endif

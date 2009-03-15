@@ -1,5 +1,5 @@
 CFLAGS += -fPIC
-LDFLAGS += -lm
+LDFLAGS +=
 
 PREFIX = /usr/local
 
