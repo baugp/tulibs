@@ -53,14 +53,14 @@ extern const char* serial_errors[];
 /** \brief Parity enumeratable type
   */
 typedef enum {
-  none,   //!< No parity.
-  even,   //!< Even parity.
-  odd     //!< Odd parity.
+  none = 0,   //!< No parity.
+  odd = 1,    //!< Odd parity.
+  even = 2    //!< Even parity.
 } serial_parity_t;
 
 /** \brief Serial device structure
   */
-typedef struct {
+typedef struct serial_device_t {
   int fd;                   //!< File descriptor.
   char name[256];           //!< Device name.
 

@@ -40,7 +40,7 @@ extern const char* thread_errors[];
 
 /** \brief Structure defining the thread context
   */
-typedef struct {
+typedef struct thread_t {
   pthread_t thread;         //!< The thread handle.
   void* (*routine)(void*);  //!< The thread routine.
   void* arg;                //!< The thread routine argument.
