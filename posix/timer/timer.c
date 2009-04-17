@@ -30,17 +30,27 @@ const char* timer_errors[] = {
 void timer_start(
   double* timestamp) {
   struct timeval time;
-  double million = 1000000.0;
+  double million = 1e6;
 
   gettimeofday(&time, 0);
 
   *timestamp = time.tv_sec+time.tv_usec/million;
 }
 
+void timer_correct(
+  double* timestamp) {
+  struct timeval time;
+  double million = 1e6;
+
+  gettimeofday(&time, 0);
+
+  *timestamp = 0.5*(*timestamp+time.tv_sec+time.tv_usec/million);
+}
+
 double timer_stop(
   double timestamp) {
   struct timeval time;
-  double million = 1000000.0;
+  double million = 1e6;
 
   gettimeofday(&time, 0);
 
@@ -64,7 +74,7 @@ int timer_sleep(
   double seconds) {
   if (seconds < 0.0) return TIMER_ERROR_FAULT;
 
-  usleep((int)(seconds*1000000.0));
+  usleep((int)(seconds*1e6));
 
   return TIMER_ERROR_NONE;
 }

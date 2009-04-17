@@ -42,6 +42,12 @@ extern const char* timer_errors[];
 void timer_start(
   double* timestamp);
 
+/** \brief Correct the start time of a timer by averaging
+  * \param[in] timestamp The timestamp containing the timer's start time.
+  */
+void timer_correct(
+  double* timestamp);
+
 /** \brief Stop the timer and return the elapsed time
   * \param[in] timestamp The timestamp containing the timer's start time.
   * \return The ellapsed time in [s].
