@@ -48,7 +48,7 @@ typedef struct thread_t {
   double frequency;         //!< The thread cycle frequency in [Hz].
   double start_time;        //!< The thread start timestamp.
   int exit_request;         //!< Flag signaling a pending exit request.
-} thread_t;
+} thread_t, *thread_p;
 
 /** \brief Start a thread
   * \param[in] thread The thread to be started.
@@ -62,7 +62,7 @@ typedef struct thread_t {
   * \return The resulting error code.
   */
 int thread_start(
-  thread_t* thread,
+  thread_p thread,
   void* (*thread_routine)(void*),
   void* thread_arg,
   double frequency);
@@ -73,7 +73,7 @@ int thread_start(
   *   otherwise.
   */
 void thread_exit(
-  thread_t* thread,
+  thread_p thread,
   int wait);
 
 /** \brief Run the thread
@@ -89,12 +89,12 @@ void* thread_run(void* arg);
   * \return 1 if an exit request is pending, 0 otherwise.
   */
 int test_thread_exit(
-  thread_t* thread);
+  thread_p thread);
 
 /** \brief Wait for thread termination
   * \param[in] thread The thread to wait for.
   */
 void thread_wait_exit(
-  thread_t* thread);
+  thread_p thread);
 
 #endif

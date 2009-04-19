@@ -30,7 +30,7 @@ const char* thread_errors[] = {
 };
 
 int thread_start(
-  thread_t* thread,
+  thread_p thread,
   void* (*thread_routine)(void*),
   void* thread_arg,
   double frequency) {
@@ -47,7 +47,7 @@ int thread_start(
 }
 
 void thread_exit(
-  thread_t* thread,
+  thread_p thread,
   int wait) {
   pthread_mutex_lock(&thread->mutex);
   thread->exit_request = 1;
@@ -58,7 +58,7 @@ void thread_exit(
 }
 
 void* thread_run(void* arg) {
-  thread_t* thread = arg;
+  thread_p thread = arg;
   void* result;
 
   pthread_mutex_init(&thread->mutex, NULL);
@@ -77,15 +77,13 @@ void* thread_run(void* arg) {
   else
     result = thread->routine(thread->arg);
 
-  if (thread->arg)
-    free(thread->arg);
   pthread_mutex_destroy(&thread->mutex);
 
   return result;
 }
 
 int test_thread_exit(
-  thread_t* thread) {
+  thread_p thread) {
   int result = THREAD_ERROR_NONE;
 
   pthread_mutex_lock(&thread->mutex);
@@ -96,6 +94,6 @@ int test_thread_exit(
 }
 
 void thread_wait_exit(
-  thread_t* thread) {
+  thread_p thread) {
   pthread_join(thread->thread, NULL);
 }
