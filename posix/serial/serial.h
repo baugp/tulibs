@@ -21,14 +21,14 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-#include <unistd.h>
-
 /** \file serial.h
   * \brief POSIX serial communication library
   * \author Ralf Kaestner
   * A POSIX-compliant serial communication library providing very basic
   * functionality.
   */
+
+#include <unistd.h>
 
 /** \brief Predefined serial error codes
   */
@@ -97,7 +97,7 @@ int serial_close(
   * \param[in] databits The device's number of databits to be set.
   * \param[in] stopbits The device's number of stopbits to be set.
   * \param[in] parity The device parity to be set.
-  * \param[in] timeout The device select timeout in [s] to be set.
+  * \param[in] timeout The device select timeout to be set in [s].
   * \return The resulting error code.
   */
 int serial_setup(
