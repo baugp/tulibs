@@ -35,11 +35,46 @@ void config_init_default(config_p config, config_p default_config) {
     config->num_params*sizeof(param_t));
 }
 
+void config_init_arg(config_p config, int argc, char **argv, const char*
+  key_prefix) {
+  int i;
+
+  config_init(config);
+
+  for (i = 1; i < argc; ++i) {
+    if (!strncmp(argv[i], key_prefix, strlen(key_prefix))) {
+      char* key_pos = &argv[i][strlen(key_prefix)];
+      char* value_pos = strchr(key_pos, '=');
+
+      char key[PARAM_KEY_LENGTH];
+      char value[PARAM_VALUE_LENGTH];
+      strncpy(key, key_pos, value_pos-key_pos);
+      key[value_pos-key_pos] = 0;
+
+      if (value)
+        strcpy(value, &value_pos[1]);
+      else
+        value[0] = 0;
+
+      param_t param;
+      param_init_string(&param, key, value);
+      config_set_param(config, &param);
+    }
+  }
+}
+
 void config_print(FILE* stream, config_p config) {
   int i;
 
   for (i = 0; i < config->num_params; ++i)
     param_print(stream, &config->params[i]);
+}
+
+void config_set(config_p dst_config, config_p src_config) {
+  int i;
+
+  for (i = 0; i < src_config->num_params; ++i)
+    config_set_param(dst_config, &src_config->params[i]);
 }
 
 void config_destroy(config_p config) {
@@ -95,42 +130,11 @@ int config_get_int(config_p config, const char* key) {
 }
 
 double config_get_float(config_p config, const char* key) {
-  double value = 0;
+  double value = 0.0;
   param_p param = config_get_param(config, key);
 
   if (param)
     value = param_get_float_value(param);
 
   return value;
-}
-
-ssize_t config_set_arg_params(config_p config, int argc, char **argv,
-  const char* key_prefix) {
-  ssize_t num_params = 0;
-  int i;
-
-  for (i = 1; i < argc; ++i) {
-    if (!strncmp(argv[i], key_prefix, strlen(key_prefix))) {
-      char* key_pos = &argv[i][strlen(key_prefix)];
-      char* value_pos = strchr(key_pos, '=');
-
-      char key[PARAM_KEY_LENGTH];
-      char value[PARAM_VALUE_LENGTH];
-      strncpy(key, key_pos, value_pos-key_pos);
-      key[value_pos-key_pos] = 0;
-
-      if (value)
-        strcpy(value, &value_pos[1]);
-      else
-        value[0] = 0;
-
-      param_t param;
-      param_init_string(&param, key, value);
-      config_set_param(config, &param);
-
-      ++num_params;
-    }
-  }
-
-  return num_params;
 }

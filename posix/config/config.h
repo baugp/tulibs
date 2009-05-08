@@ -53,6 +53,19 @@ void config_init_default(
   config_p config,
   config_p default_config);
 
+/** \brief Initialize a configuration from command line arguments
+  * \param[in] config The configuration to be initialized.
+  * \param[in] argc The number of supplied command line arguments.
+  * \param[in] argv The list of supplied command line arguments.
+  * \param[in] key_prefix An optional key prefix that will be stripped
+  *    from the parameter keys.
+  */
+void config_init_arg(
+  config_p config,
+  int argc,
+  char **argv,
+  const char* key_prefix);
+
 /** \brief Destroy a configuration
   * \param[in] config The configuration to be destroyed.
   */
@@ -67,6 +80,15 @@ void config_destroy(
 void config_print(
   FILE* stream,
   config_p config);
+
+/** \brief Set configuration parameters from a source configuration.
+  * \param[in] dst_config The configuration to set the parameters for.
+  * \param[in] src_config The configuration containing the source parameters
+  *    to be set.
+  */
+void config_set(
+  config_p dst_config,
+  config_p src_config);
 
 /** \brief Set a configuration parameter
   * \note If a parameter with the same key already exists in the configuration,
@@ -116,19 +138,5 @@ int config_get_int(
 double config_get_float(
   config_p config,
   const char* key);
-
-/** \brief Set configuration parameters from command line arguments
-  * \param[in] config The configuration to set the parameters for.
-  * \param[in] argc The number of supplied command line arguments.
-  * \param[in] argv The list of supplied command line arguments.
-  * \param[in] key_prefix An optional key prefix that will be stripped
-  *    from the parameter keys.
-  * \return The number of matched parameters.
-  */
-ssize_t config_set_arg_params(
-  config_p config,
-  int argc,
-  char **argv,
-  const char* key_prefix);
 
 #endif
