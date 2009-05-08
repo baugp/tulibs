@@ -27,11 +27,12 @@ void config_init(config_p config) {
   config->num_params = 0;
 }
 
-void config_init_default(config_p config, param_p params, ssize_t num_params) {
-  config->params = malloc(num_params*sizeof(param_t));
-  config->num_params = num_params;
+void config_init_default(config_p config, config_p default_config) {
+  config->params = malloc(default_config->num_params*sizeof(param_t));
+  config->num_params = default_config->num_params;
 
-  memcpy(config->params, params, num_params*sizeof(param_t));
+  memcpy(config->params, default_config->params,
+    config->num_params*sizeof(param_t));
 }
 
 void config_print(FILE* stream, config_p config) {
@@ -71,6 +72,36 @@ param_p config_get_param(config_p config, const char* key) {
     return &config->params[i];
 
   return 0;
+}
+
+const char* config_get_string(config_p config, const char* key) {
+  const char* value = 0;
+  param_p param = config_get_param(config, key);
+
+  if (param)
+    value = param_get_string_value(param);
+
+  return value;
+}
+
+int config_get_int(config_p config, const char* key) {
+  int value = 0;
+  param_p param = config_get_param(config, key);
+
+  if (param)
+    value = param_get_int_value(param);
+
+  return value;
+}
+
+double config_get_float(config_p config, const char* key) {
+  double value = 0;
+  param_p param = config_get_param(config, key);
+
+  if (param)
+    value = param_get_float_value(param);
+
+  return value;
 }
 
 ssize_t config_set_arg_params(config_p config, int argc, char **argv,

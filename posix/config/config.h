@@ -46,14 +46,12 @@ void config_init(
 
 /** \brief Initialize a configuration from default parameters
   * \param[in] config The configuration to be initialized.
-  * \param[in] params The default configuration parameters used to initialize
-  *   the configuration.
-  * \param[in] num_params The number of default configuration parameters.
+  * \param[in] default_config The default configuration parameters used to
+  *   initialize the configuration.
   */
 void config_init_default(
   config_p config,
-  param_p params,
-  ssize_t num_params);
+  config_p default_config);
 
 /** \brief Destroy a configuration
   * \param[in] config The configuration to be destroyed.
@@ -88,6 +86,34 @@ void config_set_param(
   *   if no such parameter exists.
   */
 param_p config_get_param(
+  config_p config,
+  const char* key);
+
+/** \brief Retrieve a configuration parameter's string value
+  * \param[in] config The configuration to retrieve the string value from.
+  * \param[in] key The key of the string value to be retrieved.
+  * \return The parameter's string value.
+  */
+const char* config_get_string(
+  config_p config,
+  const char* key);
+
+/** \brief Retrieve a configuration parameter's integer value
+  * \param[in] config The configuration to retrieve the integer value from.
+  * \param[in] key The key of the integer value to be retrieved.
+  * \return The parameter's integer value.
+  */
+int config_get_int(
+  config_p config,
+  const char* key);
+
+/** \brief Retrieve a configuration parameter's floating point value
+  * \param[in] config The configuration to retrieve the floating point
+  *   value from.
+  * \param[in] key The key of the floating point value to be retrieved.
+  * \return The parameter's floating point value.
+  */
+double config_get_float(
   config_p config,
   const char* key);
 
