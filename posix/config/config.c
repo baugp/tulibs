@@ -109,6 +109,13 @@ param_p config_get_param(config_p config, const char* key) {
   return 0;
 }
 
+void config_set_string(config_p config, const char* key, const char* value) {
+  param_t param;
+
+  param_init_string(&param, key, value);
+  config_set_param(config, &param);
+}
+
 const char* config_get_string(config_p config, const char* key) {
   const char* value = 0;
   param_p param = config_get_param(config, key);
@@ -119,6 +126,13 @@ const char* config_get_string(config_p config, const char* key) {
   return value;
 }
 
+void config_set_int(config_p config, const char* key, int value) {
+  param_t param;
+
+  param_init_int(&param, key, value);
+  config_set_param(config, &param);
+}
+
 int config_get_int(config_p config, const char* key) {
   int value = 0;
   param_p param = config_get_param(config, key);
@@ -127,6 +141,13 @@ int config_get_int(config_p config, const char* key) {
     value = param_get_int_value(param);
 
   return value;
+}
+
+void config_set_float(config_p config, const char* key, double value) {
+  param_t param;
+
+  param_init_float(&param, key, value);
+  config_set_param(config, &param);
 }
 
 double config_get_float(config_p config, const char* key) {
