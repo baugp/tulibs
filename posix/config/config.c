@@ -27,12 +27,11 @@ void config_init(config_p config) {
   config->num_params = 0;
 }
 
-void config_init_default(config_p config, config_p default_config) {
-  config->params = malloc(default_config->num_params*sizeof(param_t));
-  config->num_params = default_config->num_params;
+void config_init_default(config_p config, param_p params, ssize_t num_params) {
+  config->params = malloc(num_params*sizeof(param_t));
+  config->num_params = num_params;
 
-  memcpy(config->params, default_config->params, config->num_params*
-    sizeof(param_t));
+  memcpy(config->params, params, num_params*sizeof(param_t));
 }
 
 void config_print(FILE* stream, config_p config) {

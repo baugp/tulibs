@@ -46,12 +46,14 @@ void config_init(
 
 /** \brief Initialize a configuration from default parameters
   * \param[in] config The configuration to be initialized.
-  * \param[in] default_config The default configuration used to initialize
+  * \param[in] params The default configuration parameters used to initialize
   *   the configuration.
+  * \param[in] num_params The number of default configuration parameters.
   */
 void config_init_default(
   config_p config,
-  config_p default_config);
+  param_p params,
+  ssize_t num_params);
 
 /** \brief Destroy a configuration
   * \param[in] config The configuration to be destroyed.
