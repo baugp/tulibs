@@ -57,14 +57,14 @@ void config_init_default(
   * \param[in] config The configuration to be initialized.
   * \param[in] argc The number of supplied command line arguments.
   * \param[in] argv The list of supplied command line arguments.
-  * \param[in] key_prefix An optional key prefix that will be stripped
-  *    from the parameter keys.
+  * \param[in] prefix An optional argument prefix that will be stripped from 
+  *   the parameter keys.
   */
 void config_init_arg(
   config_p config,
   int argc,
   char **argv,
-  const char* key_prefix);
+  const char* prefix);
 
 /** \brief Destroy a configuration
   * \param[in] config The configuration to be destroyed.

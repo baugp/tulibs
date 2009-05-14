@@ -28,22 +28,26 @@ void config_init(config_p config) {
 }
 
 void config_init_default(config_p config, config_p default_config) {
-  config->params = malloc(default_config->num_params*sizeof(param_t));
-  config->num_params = default_config->num_params;
+  if (default_config->num_params) {
+    config->params = malloc(default_config->num_params*sizeof(param_t));
+    memcpy(config->params, default_config->params,
+      default_config->num_params*sizeof(param_t));
+  }
+  else
+    config->params = 0;
 
-  memcpy(config->params, default_config->params,
-    config->num_params*sizeof(param_t));
+  config->num_params = default_config->num_params;
 }
 
-void config_init_arg(config_p config, int argc, char **argv, const char*
-  key_prefix) {
+void config_init_arg(config_p config, int argc, char **argv, const char* 
+  prefix) {
   int i;
 
   config_init(config);
 
   for (i = 1; i < argc; ++i) {
-    if (!strncmp(argv[i], key_prefix, strlen(key_prefix))) {
-      char* key_pos = &argv[i][strlen(key_prefix)];
+    if (!strncmp(argv[i], prefix, strlen(prefix))) {
+      char* key_pos = &argv[i][strlen(prefix)];
       char* value_pos = strchr(key_pos, '=');
 
       char key[PARAM_KEY_LENGTH];
@@ -63,6 +67,14 @@ void config_init_arg(config_p config, int argc, char **argv, const char*
   }
 }
 
+void config_destroy(config_p config) {
+  if (config->params)
+    free(config->params);
+
+  config->params = 0;
+  config->num_params = 0;
+}
+
 void config_print(FILE* stream, config_p config) {
   int i;
 
@@ -75,14 +87,6 @@ void config_set(config_p dst_config, config_p src_config) {
 
   for (i = 0; i < src_config->num_params; ++i)
     config_set_param(dst_config, &src_config->params[i]);
-}
-
-void config_destroy(config_p config) {
-  if (config->params)
-    free(config->params);
-
-  config->params = 0;
-  config->num_params = 0;
 }
 
 void config_set_param(config_p config, param_p param) {
