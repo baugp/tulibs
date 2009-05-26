@@ -23,10 +23,10 @@
 
 #include <pthread.h>
 
-/** \file
+/** \file thread.h
   * \brief POSIX-compliant thread handling
   * \author Ralf Kaestner
-  * A basic POSIX-compliant thread handling library.
+  * A basic POSIX-compliant thread handling implementation.
   */
 
 /** \brief Predefined thread handling error codes
