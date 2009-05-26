@@ -49,9 +49,10 @@ int thread_start(
 void thread_exit(
   thread_p thread,
   int wait) {
-  pthread_mutex_lock(&thread->mutex);
+  thread_mutex_lock(&thread->mutex);
   thread->exit_request = 1;
-  pthread_mutex_unlock(&thread->mutex);
+  thread_mutex_unlock(&thread->mutex);
+  pthread_cancel(thread->thread);
 
   if (wait)
     thread_wait_exit(thread);
@@ -61,11 +62,14 @@ void* thread_run(void* arg) {
   thread_p thread = arg;
   void* result;
 
-  pthread_mutex_init(&thread->mutex, NULL);
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, 0);
+
+  thread_mutex_init(&thread->mutex);
   timer_start(&thread->start_time);
 
   if (thread->frequency > 0.0) {
-    while (!test_thread_exit(thread)) {
+    while (!thread_test_exit(thread)) {
       double timestamp;
       timer_start(&timestamp);
 
@@ -77,20 +81,24 @@ void* thread_run(void* arg) {
   else
     result = thread->routine(thread->arg);
 
-  pthread_mutex_destroy(&thread->mutex);
+  thread_mutex_destroy(&thread->mutex);
 
   return result;
 }
 
-int test_thread_exit(
+int thread_test_exit(
   thread_p thread) {
   int result = THREAD_ERROR_NONE;
 
-  pthread_mutex_lock(&thread->mutex);
+  thread_mutex_lock(&thread->mutex);
   result = thread->exit_request;
-  pthread_mutex_unlock(&thread->mutex);
+  thread_mutex_unlock(&thread->mutex);
 
   return result;
+}
+
+void thread_test_cancel() {
+  pthread_testcancel();
 }
 
 void thread_wait_exit(

@@ -39,6 +39,14 @@
 #define SPLINE_ERROR_FILE_WRITE            4
 #define SPLINE_ERROR_UNDEFINED             5
 
+/** \brief Spline evaluation type
+  */
+typedef enum {
+  spline_base_function = 0,
+  spline_first_derivative = 1,
+  spline_second_derivative = 2,
+} spline_eval_type_t;
+
 /** \brief Predefined spline error descriptions
   */
 extern const char* spline_errors[];
@@ -134,12 +142,14 @@ void spline_add_segment(
 
 /** \brief Evaluate a spline segment for a given argument
   * \param[in] spline The bicubic spline containing the segment to be evaluated.
+  * \param[in] type The evaluation type to be used.
   * \param[in] seg_index The index of the segment to be evaluated.
   * \param[in] argument The argument for which to evaluate the spline segment.
   * \return The value of the spline segment for the given argument.
   */
 double spline_evaluate_segment(
   spline_p spline,
+  spline_eval_type_t type,
   int seg_index,
   double argument);
 
@@ -147,6 +157,7 @@ double spline_evaluate_segment(
   * \note This method uses linear search on the spline to identify the 
   *   segment to be evaluated.
   * \param[in] spline The bicubic spline to be evaluated.
+  * \param[in] type The evaluation type to be used.
   * \param[in] argument The argument for which to evaluate the bicubic spline.
   * \param[in] seg_index The index of the segment to start with the 
   *   linear search.
@@ -156,6 +167,7 @@ double spline_evaluate_segment(
   */
 int spline_evaluate_linear_search(
   spline_p spline,
+  spline_eval_type_t type,
   double argument,
   int seg_index,
   double* value);

@@ -23,6 +23,8 @@
 
 #include <pthread.h>
 
+#include "mutex.h"
+
 /** \file thread.h
   * \brief POSIX-compliant thread handling
   * \author Ralf Kaestner
@@ -44,7 +46,7 @@ typedef struct thread_t {
   pthread_t thread;         //!< The thread handle.
   void* (*routine)(void*);  //!< The thread routine.
   void* arg;                //!< The thread routine argument.
-  pthread_mutex_t mutex;    //!< The thread mutex.
+  thread_mutex_t mutex;     //!< The thread mutex.
   double frequency;         //!< The thread cycle frequency in [Hz].
   double start_time;        //!< The thread start timestamp.
   int exit_request;         //!< Flag signaling a pending exit request.
@@ -88,8 +90,12 @@ void* thread_run(void* arg);
   * \param[in] thread The thread to be tested for a pending exit request.
   * \return 1 if an exit request is pending, 0 otherwise.
   */
-int test_thread_exit(
+int thread_test_exit(
   thread_p thread);
+
+/** \brief Test the calling thread for a pending cancellation request
+  */
+void thread_test_cancel();
 
 /** \brief Wait for thread termination
   * \param[in] thread The thread to wait for.

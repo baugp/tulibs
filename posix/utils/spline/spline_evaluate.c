@@ -24,21 +24,24 @@
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    fprintf(stderr, "usage: %s FILE STEPSIZE\n", argv[0]);
+    fprintf(stderr, "usage: %s FILE STEPSIZE [TYPE]\n", argv[0]);
     return -1;
   }
   const char* file = argv[1];
   double step_size = atof(argv[2]);
+  spline_eval_type_t type = spline_base_function;
+  if (argc == 4)
+    type = atoi(argv[3]);
 
   spline_t spline;
 
   int result;
   if ((result = spline_read(file, &spline)) < 0)
-    fprintf(stderr, "%s\n", spline_errors[result]);
+    fprintf(stderr, "%s\n", spline_errors[-result]);
   double x = 0.0, f_x;
   int i = 0;
-  while ((i = spline_evaluate_linear_search(&spline, x, i, &f_x)) >= 0) {
-    fprintf(stdout, "%lf  %lf\n", x, f_x);
+  while ((i = spline_evaluate_linear_search(&spline, type, x, i, &f_x)) >= 0) {
+    fprintf(stdout, "%lf %lf\n", x, f_x);
     x += step_size;
   }
 

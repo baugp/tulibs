@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
   int result;
   if ((result = spline_read(file, &spline)) < 0)
-    fprintf(stderr, "%s\n", spline_errors[result]);
+    fprintf(stderr, "%s\n", spline_errors[-result]);
   spline_print(stdout, &spline);
 
   spline_destroy(&spline);

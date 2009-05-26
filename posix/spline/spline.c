@@ -94,8 +94,6 @@ int spline_read(const char* filename, spline_p spline) {
   char buffer[1024];
 
   spline_segment_t segment;
-  double arg_start;
-
   spline_init(spline);
 
   file = fopen(filename, "r");
@@ -131,7 +129,6 @@ int spline_write(const char* filename, spline_p spline) {
   char buffer[1024];
 
   file = fopen(filename, "w");
-
   if (file == NULL)
     return -SPLINE_ERROR_FILE_CREATE;
 
@@ -168,22 +165,27 @@ void spline_add_segment(spline_p spline, spline_segment_p segment) {
   ++spline->num_segments;
 }
 
-double spline_evaluate_segment(spline_p spline, int seg_index, double 
-  argument) {
+double spline_evaluate_segment(spline_p spline, spline_eval_type_t type, 
+  int seg_index, double argument) {
   spline_segment_p segment = &spline->segments[seg_index];
   double x = argument-spline->arg_start[seg_index];
 
-  return segment->a*cub(x)+segment->b*sqr(x)+segment->c*x+segment->d;
+  if (type == spline_first_derivative)
+    return 3.0*segment->a*sqr(x)+2.0*segment->b*x+segment->c;
+  else if (type == spline_second_derivative)
+    return 6.0*segment->a*x+2.0*segment->b;
+  else
+    return segment->a*cub(x)+segment->b*sqr(x)+segment->c*x+segment->d;
 }
 
-int spline_evaluate_linear_search(spline_p spline, double argument, int 
-  seg_index, double* value) {
+int spline_evaluate_linear_search(spline_p spline, spline_eval_type_t type,
+  double argument, int seg_index, double* value) {
   int i = seg_index;
 
   while ((i >= 0) && (i < spline->num_segments)) {
     if (argument >= spline->arg_start[i]) {
       if (argument <= spline->arg_start[i]+spline->segments[i].arg_width) {
-        *value = spline_evaluate_segment(spline, i, argument);
+        *value = spline_evaluate_segment(spline, type, i, argument);
         return i;
       }
       else
