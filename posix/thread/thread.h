@@ -45,10 +45,14 @@ extern const char* thread_errors[];
 typedef struct thread_t {
   pthread_t thread;         //!< The thread handle.
   void* (*routine)(void*);  //!< The thread routine.
+  void (*cleanup)(void*);   //!< The thread cleanup handler.
   void* arg;                //!< The thread routine argument.
+
   thread_mutex_t mutex;     //!< The thread mutex.
+
   double frequency;         //!< The thread cycle frequency in [Hz].
   double start_time;        //!< The thread start timestamp.
+
   int exit_request;         //!< Flag signaling a pending exit request.
 } thread_t, *thread_p;
 
@@ -56,6 +60,8 @@ typedef struct thread_t {
   * \param[in] thread The thread to be started.
   * \param[in] thread_routine The thread routine that will be executed
   *   within the thread.
+  * \param[in] thread_cleanup The optional thread cleanup handler that will 
+  *   be executed upon thread termination.
   * \param[in] thread_arg The argument to be passed on to the thread
   *   routine. The memory should be allocated by the caller and will be
   *   freed after thread termination.
@@ -66,17 +72,22 @@ typedef struct thread_t {
 int thread_start(
   thread_p thread,
   void* (*thread_routine)(void*),
+  void (*thread_cleanup)(void*),
   void* thread_arg,
   double frequency);
 
 /** \brief Exit a thread
-  * \param[in] thread The thread to be terminated.
+  * \param[in] thread The thread to be cancelled.
   * \param[in] wait If 0, return instantly, wait for thread termination
   *   otherwise.
   */
 void thread_exit(
   thread_p thread,
   int wait);
+
+/** \brief Exit the calling thread
+  */
+void thread_self_exit();
 
 /** \brief Run the thread
   * This function is run within the thread and should never be called
@@ -95,7 +106,7 @@ int thread_test_exit(
 
 /** \brief Test the calling thread for a pending cancellation request
   */
-void thread_test_cancel();
+void thread_self_test_exit();
 
 /** \brief Wait for thread termination
   * \param[in] thread The thread to wait for.

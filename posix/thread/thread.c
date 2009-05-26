@@ -29,15 +29,17 @@ const char* thread_errors[] = {
   "error creating thread",
 };
 
-int thread_start(
-  thread_p thread,
-  void* (*thread_routine)(void*),
-  void* thread_arg,
-  double frequency) {
+void thread_empty_cleanup(void* arg);
+
+int thread_start(thread_p thread, void* (*thread_routine)(void*), 
+  void (*thread_cleanup)(void*), void* thread_arg, double frequency) {
   thread->routine = thread_routine;
+  thread->cleanup = (thread_cleanup) ? thread_cleanup : thread_empty_cleanup;
   thread->arg = thread_arg;
+
   thread->frequency = frequency;
   thread->start_time = 0.0;
+
   thread->exit_request = 0;
 
   if (pthread_create(&thread->thread, NULL, thread_run, thread))
@@ -46,9 +48,7 @@ int thread_start(
     return THREAD_ERROR_NONE;
 }
 
-void thread_exit(
-  thread_p thread,
-  int wait) {
+void thread_exit(thread_p thread, int wait) {
   thread_mutex_lock(&thread->mutex);
   thread->exit_request = 1;
   thread_mutex_unlock(&thread->mutex);
@@ -58,9 +58,15 @@ void thread_exit(
     thread_wait_exit(thread);
 }
 
+void thread_self_exit() {
+  pthread_exit(0);
+}
+
 void* thread_run(void* arg) {
   thread_p thread = arg;
   void* result;
+
+  pthread_cleanup_push(thread->cleanup, thread->arg);
 
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, 0);
@@ -83,11 +89,12 @@ void* thread_run(void* arg) {
 
   thread_mutex_destroy(&thread->mutex);
 
+  pthread_cleanup_pop(1);
+
   return result;
 }
 
-int thread_test_exit(
-  thread_p thread) {
+int thread_test_exit(thread_p thread) {
   int result = THREAD_ERROR_NONE;
 
   thread_mutex_lock(&thread->mutex);
@@ -97,11 +104,13 @@ int thread_test_exit(
   return result;
 }
 
-void thread_test_cancel() {
+void thread_self_test_exit() {
   pthread_testcancel();
 }
 
-void thread_wait_exit(
-  thread_p thread) {
+void thread_wait_exit(thread_p thread) {
   pthread_join(thread->thread, NULL);
+}
+
+void thread_empty_cleanup(void* arg) {
 }
