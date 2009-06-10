@@ -65,8 +65,8 @@ typedef struct thread_t {
   * \param[in] thread_arg The argument to be passed on to the thread
   *   routine. The memory should be allocated by the caller and will be
   *   freed after thread termination.
-  * \param[in] frequency The thread cycle frequency. If the frequency is 0,
-  *   the thread routine will be executed once.
+  * \param[in] frequency The thread cycle frequency in [Hz]. If the frequency 
+  *   is 0, the thread routine will be executed once.
   * \return The resulting error code.
   */
 int thread_start(
