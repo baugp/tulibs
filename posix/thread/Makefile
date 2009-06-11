@@ -1,5 +1,11 @@
+HAVE_LIBGCC_S = 1
+
 CFLAGS += -I../timer -fPIC
 LDFLAGS += -L../timer -lpthread -ltimer
+
+ifeq ($(HAVE_LIBGCC_S),1)
+	CFLAGS += -DHAVE_LIBGCC_S
+endif
 
 PREFIX = /usr/local
 OBJECTS = thread.o mutex.o

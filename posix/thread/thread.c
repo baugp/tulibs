@@ -52,7 +52,10 @@ void thread_exit(thread_p thread, int wait) {
   thread_mutex_lock(&thread->mutex);
   thread->exit_request = 1;
   thread_mutex_unlock(&thread->mutex);
+
+#ifdef HAVE_LIBGCC_S
   pthread_cancel(thread->thread);
+#endif
 
   if (wait)
     thread_wait_exit(thread);
@@ -68,8 +71,12 @@ void* thread_run(void* arg) {
 
   pthread_cleanup_push(thread->cleanup, thread->arg);
 
+#ifdef HAVE_LIBGCC_S
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, 0);
+#else
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+#endif 
 
   thread_mutex_init(&thread->mutex);
   timer_start(&thread->start_time);
