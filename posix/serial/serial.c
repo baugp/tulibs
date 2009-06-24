@@ -197,12 +197,12 @@ int serial_write(serial_device_p dev, unsigned char* data, ssize_t num) {
   while (num_written < num) {
     ssize_t n;
     while ((n = write(dev->fd, &data[num_written], num-num_written)) == 0);
+    if ((n < 0) && (errno != EWOULDBLOCK))
+      return -SERIAL_ERROR_WRITE;
     if (n > 0) {
       num_written += n;
       dev->num_written += n;
     }
-    else
-      return -SERIAL_ERROR_WRITE;
   }
   
   return num_written;
