@@ -4,13 +4,13 @@ include(ReMake)
 
 remake_project(
   Tulibs
-  0.1
-  alpha
-  "A collection of C-based Tool and Utility LIBrarieS."
-  "Ralf Kaestner"
-  "ralf.kaestner@gmail.com"
-  "http://aslforge.ethz.ch/projects/robotks"
-  "GNU Lesser General Public License (LGPL)"
+  VERSION 0.1
+  RELEASE alpha
+  SUMMARY "A collection of C-based Tool and Utility LIBrarieS."
+  AUTHOR "Ralf Kaestner"
+  CONTACT "ralf.kaestner@gmail.com"
+  HOME "http://aslforge.ethz.ch/projects/robotks"
+  LICENSE "GNU Lesser General Public License (LGPL)"
   INSTALL /usr
 )
 
