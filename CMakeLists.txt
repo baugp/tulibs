@@ -21,4 +21,4 @@ remake_doc(
 
 remake_pack_deb()
 remake_pack_deb(COMPONENT dev)
-remake_pack_deb(COMPONENT doc)
+remake_pack_deb(ARCH all COMPONENT doc)
