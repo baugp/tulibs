@@ -30,7 +30,7 @@
 
 #include <unistd.h>
 
-/** \brief Predefined serial error codes
+/** Predefined serial error codes
   */
 #define SERIAL_ERROR_NONE                 0
 #define SERIAL_ERROR_OPEN                 1

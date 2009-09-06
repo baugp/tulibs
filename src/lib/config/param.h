@@ -29,7 +29,7 @@
 
 #include <stdio.h>
 
-/** \brief Predefined parameter constants
+/** Predefined parameter constants
   */
 #define PARAM_KEY_LENGTH         256
 #define PARAM_VALUE_LENGTH       256

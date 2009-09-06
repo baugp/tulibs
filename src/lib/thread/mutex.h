@@ -29,7 +29,7 @@
 
 #include <pthread.h>
 
-/** \brief Predefined thread handling error codes
+/** Predefined thread handling error codes
   */
 #define THREAD_MUTEX_ERROR_NONE        0
 #define THREAD_MUTEX_ERROR_LOCK        1

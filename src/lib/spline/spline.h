@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/** \brief Predefined spline error codes
+/** Predefined spline error codes
   */
 #define SPLINE_ERROR_NONE                  0
 #define SPLINE_ERROR_FILE_OPEN             1

@@ -31,7 +31,7 @@
   * A basic POSIX-compliant thread handling implementation.
   */
 
-/** \brief Predefined thread handling error codes
+/** Predefined thread handling error codes
   */
 #define THREAD_ERROR_NONE              0
 #define THREAD_ERROR_CREATE            1
