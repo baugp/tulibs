@@ -39,15 +39,22 @@ void config_init_default(config_p config, config_p default_config) {
   config->num_params = default_config->num_params;
 }
 
-void config_init_arg(config_p config, int argc, char **argv, const char* 
-  prefix) {
+int config_init_arg(config_p config, int argc, char **argv, const char*
+    prefix) {
+  int result = 0;
   int i;
+  char prefix_arg[prefix ? strlen(prefix)+4 : 1];
 
+  if (prefix)
+    sprintf(prefix_arg, "--%s-", prefix);
+  else
+    prefix_arg[0] = 0;
+  
   config_init(config);
 
   for (i = 1; i < argc; ++i) {
-    if (!strncmp(argv[i], prefix, strlen(prefix))) {
-      char* key_pos = &argv[i][strlen(prefix)];
+    if (!strncmp(argv[i], prefix_arg, strlen(prefix_arg))) {
+      char* key_pos = &argv[i][strlen(prefix_arg)];
       char* value_pos = strchr(key_pos, '=');
 
       char key[PARAM_KEY_LENGTH];
@@ -64,7 +71,11 @@ void config_init_arg(config_p config, int argc, char **argv, const char*
       param_init_string(&param, key, value);
       config_set_param(config, &param);
     }
+    else if (!strncmp(argv[i], CONFIG_ARG_HELP, strlen(CONFIG_ARG_HELP)))
+      result = 1;
   }
+
+  return result;
 }
 
 void config_destroy(config_p config) {
@@ -80,6 +91,13 @@ void config_print(FILE* stream, config_p config) {
 
   for (i = 0; i < config->num_params; ++i)
     param_print(stream, &config->params[i]);
+}
+
+void config_print_help(FILE* stream, config_p config, const char* prefix) {
+  int i;
+
+  for (i = 0; i < config->num_params; ++i)
+    param_print_help(stream, &config->params[i], prefix);
 }
 
 void config_set(config_p dst_config, config_p src_config) {

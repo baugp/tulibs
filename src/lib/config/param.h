@@ -81,6 +81,18 @@ void param_print(
   FILE* stream,
   param_p param);
 
+/** \brief Print help for a parameter
+  * \param[in] stream The output stream that will be used for printing the
+  *   parameter help.
+  * \param[in] param The parameter for which help will be printed.
+  * \param[in] prefix An optional argument prefix that will be appended to
+  *   the parameter key.
+  */
+void param_print_help(
+  FILE* stream,
+  param_p param,
+  const char* prefix);
+
 /** \brief Set a parameter's string value
   * \param[in] param The parameter to set the string value for.
   * \param[in] value The string value to be set.

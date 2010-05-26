@@ -44,6 +44,18 @@ void param_print(FILE* stream, param_p param) {
   fprintf(stream, "%s = %s\n", param->key, param->value);
 }
 
+void param_print_help(FILE* stream, param_p param, const char* prefix) {
+  char arg[prefix ? strlen(prefix)+strlen(param->key)+4 :
+    strlen(param->key)+3];
+
+  if (prefix)
+    sprintf(arg, "--%s-%s", prefix, param->key);
+  else
+    sprintf(arg, "--%s", param->key);
+
+  fprintf(stream, "  %-25s  [%s]\n", arg, param->value);
+}
+
 void param_set_string_value(param_p param, const char* value) {
   strcpy(param->value, value);
 }

@@ -21,15 +21,19 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdlib.h>
+
+#include "param.h"
+
 /** \file config.h
   * \brief Simple configuration implementation
   * \author Ralf Kaestner
   * A POSIX-compliant configuration implementation.
   */
 
-#include <stdlib.h>
-
-#include "param.h"
+/** Predefined configuration constants
+  */
+#define CONFIG_ARG_HELP                 "--help"
 
 /** \brief Configuration structure
   */
@@ -59,8 +63,9 @@ void config_init_default(
   * \param[in] argv The list of supplied command line arguments.
   * \param[in] prefix An optional argument prefix that will be stripped from 
   *   the parameter keys.
+  * \return 1 if the help argument was given, 0 otherwise.
   */
-void config_init_arg(
+int config_init_arg(
   config_p config,
   int argc,
   char **argv,
@@ -81,7 +86,22 @@ void config_print(
   FILE* stream,
   config_p config);
 
+/** \brief Print help for a configuration
+  * \param[in] stream The output stream that will be used for printing the
+  *   configuration help.
+  * \param[in] config The configuration for which help will be printed.
+  * \param[in] prefix An optional argument prefix that will be prepended to
+  *   the parameter keys.
+  */
+void config_print_help(
+  FILE* stream,
+  config_p config,
+  const char* prefix);
+
 /** \brief Set configuration parameters from a source configuration.
+  * \note If the source parameters contain the help argument, a help
+  *   will be printed for the destination configuration and the program
+  *   exits with return value 0.
   * \param[in] dst_config The configuration to set the parameters for.
   * \param[in] src_config The configuration containing the source parameters
   *    to be set.
