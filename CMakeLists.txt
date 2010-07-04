@@ -15,7 +15,6 @@ remake_project(
 )
 
 remake_doc(
-  man INSTALL share
   html
 )
 
