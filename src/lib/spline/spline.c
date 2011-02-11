@@ -78,7 +78,7 @@ void spline_print(FILE* stream, spline_p spline) {
   int i;
   for (i = 0; i < spline->num_segments; i++) {
     fprintf(stream,
-      "%10g  %10lg  %10lg  %10lg  %10lg  %10lg\n",
+      "%10lg  %10lg  %10lg  %10lg  %10lg  %10lg\n",
       spline->segments[i].a,
       spline->segments[i].b,
       spline->segments[i].c,

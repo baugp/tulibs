@@ -35,6 +35,7 @@
   */
 #define THREAD_ERROR_NONE              0
 #define THREAD_ERROR_CREATE            1
+#define THREAD_ERROR_WAIT_TIMEOUT      2
 
 /** \brief Predefined thread handling error descriptions
   */
@@ -108,10 +109,19 @@ int thread_test_exit(
   */
 void thread_self_test_exit();
 
-/** \brief Wait for thread termination
-  * \param[in] thread The thread to wait for.
+/** \brief Exit the thread and wait for its termination
+  * \param[in] thread The running thread to exit and wait for.
   */
 void thread_wait_exit(
   thread_p thread);
+
+/** \brief Wait for thread termination
+  * \param[in] thread The running thread to wait for.
+  * \param[in] timeout The timeout of the wait operation in [s].
+  * \return The resulting error code.
+  */
+int thread_wait(
+  thread_p thread,
+  double timeout);
 
 #endif

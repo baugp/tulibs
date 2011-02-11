@@ -33,7 +33,18 @@
 
 /** Predefined configuration constants
   */
-#define CONFIG_ARG_HELP                 "--help"
+#define CONFIG_ARG_HELP                         "--help"
+
+/** Predefined configuration error codes
+  */
+#define CONFIG_ERROR_NONE                       0
+#define CONFIG_ERROR_ARGUMENT_HELP              1
+#define CONFIG_ERROR_ARGUMENT_FORMAT            2
+#define CONFIG_ERROR_ARGUMENT_MISSING           3
+
+/** \brief Predefined configuration error descriptions
+  */
+extern const char* config_errors[];
 
 /** \brief Configuration structure
   */
@@ -63,13 +74,17 @@ void config_init_default(
   * \param[in] argv The list of supplied command line arguments.
   * \param[in] prefix An optional argument prefix that will be stripped from 
   *   the parameter keys.
-  * \return 1 if the help argument was given, 0 otherwise.
+  * \param[in] args An optional string naming the expected arguments
+  *   separated by a space character. Each argument found in the supplied
+  *   command line will be shifted towards the front of the list.
+  * \return The resulting error code.
   */
 int config_init_arg(
   config_p config,
   int argc,
-  char **argv,
-  const char* prefix);
+  char** argv,
+  const char* prefix,
+  const char* args);
 
 /** \brief Destroy a configuration
   * \param[in] config The configuration to be destroyed.
@@ -85,6 +100,22 @@ void config_destroy(
 void config_print(
   FILE* stream,
   config_p config);
+
+/** \brief Print configuration usage
+  * \param[in] stream The output stream that will be used for printing the
+  *   configuration usage.
+  * \param[in] argv_0 The first command line argument, i.e. the name of
+  *   the executable.
+  * \param[in] args An optional string naming the expected arguments
+  *   separated by a space character.
+  * \param[in] error The error code as returned during the initialization
+  *   of the configuration.
+  */
+void config_print_usage(
+  FILE* stream,
+  const char* argv_0,
+  const char* args,
+  int error);
 
 /** \brief Print help for a configuration
   * \param[in] stream The output stream that will be used for printing the

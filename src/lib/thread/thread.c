@@ -27,6 +27,7 @@
 const char* thread_errors[] = {
   "success",
   "error creating thread",
+  "wait operation timed out",
 };
 
 void thread_empty_cleanup(void* arg);

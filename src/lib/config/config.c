@@ -22,6 +22,13 @@
 
 #include "config.h"
 
+const char* config_errors[] = {
+  "success",
+  "argument help requested",
+  "argument format error",
+  "missing argument",
+};
+
 void config_init(config_p config) {
   config->params = 0;
   config->num_params = 0;
@@ -39,9 +46,10 @@ void config_init_default(config_p config, config_p default_config) {
   config->num_params = default_config->num_params;
 }
 
-int config_init_arg(config_p config, int argc, char **argv, const char*
-    prefix) {
-  int result = 0;
+int config_init_arg(config_p config, int argc, char** argv, const char*
+    prefix, const char* args) {
+  int result = CONFIG_ERROR_NONE;
+  size_t num_args = 0;
   int i;
   char prefix_arg[prefix ? strlen(prefix)+4 : 1];
 
@@ -49,33 +57,56 @@ int config_init_arg(config_p config, int argc, char **argv, const char*
     sprintf(prefix_arg, "--%s-", prefix);
   else
     prefix_arg[0] = 0;
+
+  size_t expected_args = 0;
+  const char* arg_space = args;
+  while (arg_space) {
+    arg_space = strchr(args, ' ');
+    if (arg_space != args) {
+      args = arg_space+1;
+      ++expected_args;
+    }
+  }
   
   config_init(config);
-
   for (i = 1; i < argc; ++i) {
     if (!strncmp(argv[i], prefix_arg, strlen(prefix_arg))) {
       char* key_pos = &argv[i][strlen(prefix_arg)];
       char* value_pos = strchr(key_pos, '=');
 
-      char key[PARAM_KEY_LENGTH];
-      char value[PARAM_VALUE_LENGTH];
-      strncpy(key, key_pos, value_pos-key_pos);
-      key[value_pos-key_pos] = 0;
+      if (value_pos) {
+        char key[PARAM_KEY_LENGTH];
+        char value[PARAM_VALUE_LENGTH];
+        strncpy(key, key_pos, value_pos-key_pos);
+        key[value_pos-key_pos] = 0;
 
-      if (value)
-        strcpy(value, &value_pos[1]);
+        if (value)
+          strcpy(value, &value_pos[1]);
+        else
+          value[0] = 0;
+
+        param_t param;
+        param_init_string(&param, key, value);
+        config_set_param(config, &param);
+      }
       else
-        value[0] = 0;
+        result = CONFIG_ERROR_ARGUMENT_FORMAT;
+    }
+    else if (strncmp(argv[i], "--", 2)) {
+      ++num_args;
 
-      param_t param;
-      param_init_string(&param, key, value);
-      config_set_param(config, &param);
+      char* swap_arg = argv[i];
+      argv[i] = argv[num_args];
+      argv[num_args] = swap_arg;
     }
     else if (!strncmp(argv[i], CONFIG_ARG_HELP, strlen(CONFIG_ARG_HELP)))
-      result = 1;
+      result = CONFIG_ERROR_ARGUMENT_HELP;
   }
 
-  return result;
+  if (!result && (num_args < expected_args))
+    return CONFIG_ERROR_ARGUMENT_MISSING;
+  else
+    return result;
 }
 
 void config_destroy(config_p config) {
@@ -91,6 +122,25 @@ void config_print(FILE* stream, config_p config) {
 
   for (i = 0; i < config->num_params; ++i)
     param_print(stream, &config->params[i]);
+}
+
+void config_print_usage(FILE* stream, const char* argv_0, const char* args,
+    int error) {
+  const char* arg_name = strrchr(argv_0, '/');
+  if (arg_name)
+    arg_name += 1;
+  else
+    arg_name = argv_0;
+
+  if (error && (error != CONFIG_ERROR_ARGUMENT_HELP))
+    fprintf(stream, "error: %s\n", config_errors[error]);
+
+  fprintf(stream, "usage: %s [OPT1 [OPT2 [...]]]", arg_name);
+  if (args)
+    fprintf(stream, " %s\n", args);
+  else
+    fprintf(stream, "\n");
+  fprintf(stream, "OPTi is expected to be of format KEYi=VALUEi\n");
 }
 
 void config_print_help(FILE* stream, config_p config, const char* prefix) {
