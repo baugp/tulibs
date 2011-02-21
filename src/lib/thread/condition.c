@@ -21,6 +21,7 @@
 #include <math.h>
 #include <errno.h>
 
+#include <time.h>
 #include <sys/time.h>
 
 #include "condition.h"
@@ -61,12 +62,15 @@ int thread_condition_wait(thread_condition_p condition, double timeout) {
       result = THREAD_CONDITION_ERROR_MUTEX;
   }
   else {
-    struct timespec time;
-    
-    clock_gettime(CLOCK_REALTIME, &time);
-    time.tv_sec += timeout;
-    time.tv_nsec += (timeout-floor(timeout))*1e9;
+    struct timeval now;
+    gettimeofday(&now, 0);
 
+    double seconds = now.tv_sec+now.tv_usec/1e6+timeout;
+
+    struct timespec time;
+    time.tv_sec = (time_t)seconds;
+    time.tv_nsec = (seconds-(time_t)seconds)*1e9;
+    
     int error = pthread_cond_timedwait(&condition->handle,
       &condition->mutex.handle, &time);
     if (error == ETIMEDOUT)
