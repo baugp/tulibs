@@ -24,6 +24,7 @@
 #include <pthread.h>
 
 #include "mutex.h"
+#include "condition.h"
 
 /** \file thread.h
   * \brief POSIX-compliant thread handling
@@ -36,25 +37,34 @@
 #define THREAD_ERROR_NONE              0
 #define THREAD_ERROR_CREATE            1
 #define THREAD_ERROR_WAIT_TIMEOUT      2
+#define THREAD_ERROR_STATE             3
 
 /** \brief Predefined thread handling error descriptions
   */
 extern const char* thread_errors[];
 
+/** \brief Thread state enumeratable type
+  */
+typedef enum {
+  stopped = 0,    //!< Thread is stopped.
+  running = 1,    //!< Thread is running.
+} thread_state_t;
+
 /** \brief Structure defining the thread context
   */
 typedef struct thread_t {
-  pthread_t thread;         //!< The thread handle.
-  void* (*routine)(void*);  //!< The thread routine.
-  void (*cleanup)(void*);   //!< The thread cleanup handler.
-  void* arg;                //!< The thread routine argument.
+  pthread_t thread;               //!< The thread handle.
+  void* (*routine)(void*);        //!< The thread routine.
+  void (*cleanup)(void*);         //!< The thread cleanup handler.
+  void* arg;                      //!< The thread routine argument.
 
-  thread_mutex_t mutex;     //!< The thread mutex.
+  thread_condition_t condition;   //!< The thread condition and mutex.
 
-  double frequency;         //!< The thread cycle frequency in [Hz].
-  double start_time;        //!< The thread start timestamp.
+  double frequency;               //!< The thread cycle frequency in [Hz].
+  double start_time;              //!< The thread start timestamp.
+  thread_state_t state;           //!< The state of the thread.
 
-  int exit_request;         //!< Flag signaling a pending exit request.
+  int exit_request;               //!< Flag signaling a pending exit request.
 } thread_t, *thread_p;
 
 /** \brief Start a thread
@@ -81,8 +91,9 @@ int thread_start(
   * \param[in] thread The thread to be cancelled.
   * \param[in] wait If 0, return instantly, wait for thread termination
   *   otherwise.
+  * \return The resulting error code.
   */
-void thread_exit(
+int thread_exit(
   thread_p thread,
   int wait);
 

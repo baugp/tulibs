@@ -77,6 +77,11 @@ void transform_init_rotation(transform_t transform, double yaw, double pitch,
   transform[2][2] = cos(pitch)*cos(roll);
 }
 
+void transform_init_pose(transform_t transform, transform_pose_p pose) {
+  transform_init_rotation(transform, pose->yaw, pose->pitch, pose->roll);
+  transform_translate(transform, pose->x, pose->y, pose->z);
+}
+
 void transform_copy(transform_t dst, transform_t src) {
   int i, j;
 
@@ -159,24 +164,28 @@ void transform_rotate(transform_t transform, double yaw, double pitch,
   transform_multiply_left(transform, rotation);
 }
 
-void transform_point(transform_t transform, transform_point_t point) {
-  transform_point_t result;
+void transform_point(transform_t transform, transform_point_p point) {
   int i, j;
+
+  double point_a[3] = {point->x, point->y, point->z};
+  double result[3];
 
   for (i = 0; i < 3; ++i) {
     result[i] = 0.0;
     for (j = 0; j < 3; ++j)
-      result[i] += transform[i][j]*point[j];
+      result[i] += transform[i][j]*point_a[j];
     result[i] += transform[i][3];
   }
 
-  transform_point_copy(point, result);
+  point->x = result[0];
+  point->y = result[1];
+  point->z = result[2];
 }
 
-void transform_points(transform_t transform, transform_point_t* points,
+void transform_points(transform_t transform, transform_point_p points,
     size_t num_points) {
   int i;
 
   for (i = 0; i < num_points; +i)
-    transform_point(transform, points[i]);
+    transform_point(transform, &points[i]);
 }

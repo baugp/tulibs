@@ -18,32 +18,62 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "mutex.h"
+#include <math.h>
+#include <errno.h>
 
-const char* thread_mutex_errors[] = {
+#include <sys/time.h>
+
+#include "condition.h"
+
+const char* thread_condition_errors[] = {
   "success",
-  "failed to acquire mutex lock",
+  "mutex operation error",
+  "wait operation timed out",
 };
 
-void thread_mutex_init(thread_mutex_p mutex) {
-  pthread_mutex_init(&mutex->handle, 0);
+void thread_condition_init(thread_condition_p condition) {
+  pthread_cond_init(&condition->handle, 0);
+  thread_mutex_init(&condition->mutex);
 }
 
-void thread_mutex_destroy(thread_mutex_p mutex) {
-  pthread_mutex_destroy(&mutex->handle);
+void thread_condition_destroy(thread_condition_p condition) {
+  pthread_cond_destroy(&condition->handle);
+  thread_mutex_destroy(&condition->mutex);
 }
 
-void thread_mutex_lock(thread_mutex_p mutex) {
-  pthread_mutex_lock(&mutex->handle);
+void thread_condition_signal(thread_condition_p condition) {
+  pthread_cond_signal(&condition->handle);
 }
 
-void thread_mutex_unlock(thread_mutex_p mutex) {
-  pthread_mutex_unlock(&mutex->handle);
+void thread_condition_lock(thread_condition_p condition) {
+  thread_mutex_lock(&condition->mutex);
 }
 
-int thread_mutex_try_lock(thread_mutex_p mutex) {
-  if (!pthread_mutex_trylock(&mutex->handle))
-    return THREAD_MUTEX_ERROR_NONE;
-  else
-    return THREAD_MUTEX_ERROR_LOCK;
+void thread_condition_unlock(thread_condition_p condition) {
+  thread_mutex_unlock(&condition->mutex);
+}
+
+int thread_condition_wait(thread_condition_p condition, double timeout) {
+  int result = THREAD_CONDITION_ERROR_NONE;
+
+  if (timeout < 0.0) {
+    if (pthread_cond_wait(&condition->handle, &condition->mutex.handle))
+      result = THREAD_CONDITION_ERROR_MUTEX;
+  }
+  else {
+    struct timespec time;
+    
+    clock_gettime(CLOCK_REALTIME, &time);
+    time.tv_sec += timeout;
+    time.tv_nsec += (timeout-floor(timeout))*1e9;
+
+    int error = pthread_cond_timedwait(&condition->handle,
+      &condition->mutex.handle, &time);
+    if (error == ETIMEDOUT)
+      result = THREAD_CONDITION_ERROR_WAIT_TIMEOUT;
+    else if (error)
+      result = THREAD_CONDITION_ERROR_MUTEX;
+  }
+
+  return result;
 }

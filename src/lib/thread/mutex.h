@@ -41,7 +41,7 @@ extern const char* thread_mutex_errors[];
 /** \brief Structure defining the thread mutex
   */
 typedef struct thread_mutex_t {
-  pthread_mutex_t mutex;    //!< The mutex handle.
+  pthread_mutex_t handle;       //!< The mutex handle.
 } thread_mutex_t, *thread_mutex_p;
 
 /** \brief Initialize a thread mutex

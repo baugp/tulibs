@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include "point.h"
+#include "pose.h"
 
 /** Predefined transform error codes
   */
@@ -86,6 +87,14 @@ void transform_init_rotation(
   double yaw,
   double pitch,
   double roll);
+
+/** \brief Initialize a pose transform
+  * \param[in] transform The transform to be initialized from a pose.
+  * \param[in] pose The pose to initialize the transform from.
+  */
+void transform_init_pose(
+  transform_t transform,
+  transform_pose_p pose);
 
 /** \brief Copy a transform
   * \param[in] dst The destination transform to copy to.
@@ -162,7 +171,7 @@ void transform_rotate(
   */
 void transform_point(
   transform_t transform,
-  transform_point_t point);
+  transform_point_p point);
 
 /** \brief Transform an array of points
   * \param[in] transform The transform to apply to the point.
@@ -171,7 +180,7 @@ void transform_point(
   */
 void transform_points(
   transform_t transform,
-  transform_point_t* points,
+  transform_point_p points,
   size_t num_points);
 
 #endif

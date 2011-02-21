@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Ralf Kaestner                                   *
- *   ralf.kaestner@gmail.com                                               *
+ *   Copyright (C) 2008 by Fritz Stoeckli, Ralf Kaestner                   *
+ *   stfritz@ethz.ch, ralf.kaestner@gmail.com                              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,32 +18,35 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "mutex.h"
+#include "pose.h"
 
-const char* thread_mutex_errors[] = {
-  "success",
-  "failed to acquire mutex lock",
-};
+void transform_pose_init(transform_pose_p pose, double x, double y,
+    double z, double yaw, double pitch, double roll) {
+  pose->x = x;
+  pose->y = y;
+  pose->z = z;
 
-void thread_mutex_init(thread_mutex_p mutex) {
-  pthread_mutex_init(&mutex->handle, 0);
+  pose->yaw = yaw;
+  pose->pitch = pitch;
+  pose->roll = roll;
 }
 
-void thread_mutex_destroy(thread_mutex_p mutex) {
-  pthread_mutex_destroy(&mutex->handle);
+void transform_pose_copy(transform_pose_p dst, transform_pose_p src) {
+  dst->x = src->x;
+  dst->y = src->y;
+  dst->z = src->z;
+
+  dst->yaw = src->yaw;
+  dst->pitch = src->pitch;
+  dst->roll = src->roll;
 }
 
-void thread_mutex_lock(thread_mutex_p mutex) {
-  pthread_mutex_lock(&mutex->handle);
-}
-
-void thread_mutex_unlock(thread_mutex_p mutex) {
-  pthread_mutex_unlock(&mutex->handle);
-}
-
-int thread_mutex_try_lock(thread_mutex_p mutex) {
-  if (!pthread_mutex_trylock(&mutex->handle))
-    return THREAD_MUTEX_ERROR_NONE;
-  else
-    return THREAD_MUTEX_ERROR_LOCK;
+void transform_pose_print(FILE* stream, transform_pose_p pose) {
+  fprintf(stream, "%10lg  %10lg  %10lg %10lg  %10lg  %10lg\n",
+    pose->x,
+    pose->y,
+    pose->z,
+    pose->yaw,
+    pose->pitch,
+    pose->roll);
 }

@@ -28,31 +28,48 @@ const char* thread_errors[] = {
   "success",
   "error creating thread",
   "wait operation timed out",
+  "state error",
 };
 
-void thread_empty_cleanup(void* arg);
-
-int thread_start(thread_p thread, void* (*thread_routine)(void*), 
+int thread_start(thread_p thread, void* (*thread_routine)(void*),
   void (*thread_cleanup)(void*), void* thread_arg, double frequency) {
+  int result = THREAD_ERROR_NONE;
+  
   thread->routine = thread_routine;
-  thread->cleanup = (thread_cleanup) ? thread_cleanup : thread_empty_cleanup;
+  thread->cleanup = thread_cleanup;
   thread->arg = thread_arg;
+
+  thread_condition_init(&thread->condition);
 
   thread->frequency = frequency;
   thread->start_time = 0.0;
+  thread->state = stopped;
 
   thread->exit_request = 0;
 
-  if (pthread_create(&thread->thread, NULL, thread_run, thread))
-    return THREAD_ERROR_CREATE;
+  thread_condition_lock(&thread->condition);
+  if (thread->state == stopped) {
+    if (!pthread_create(&thread->thread, NULL, thread_run, thread))
+      thread_condition_wait(&thread->condition, THREAD_CONDITION_WAIT_FOREVER);
+    else
+      result = THREAD_ERROR_CREATE;
+  }
   else
-    return THREAD_ERROR_NONE;
+    result = THREAD_ERROR_STATE;
+  thread_condition_unlock(&thread->condition);
+  
+  return result;
 }
 
-void thread_exit(thread_p thread, int wait) {
-  thread_mutex_lock(&thread->mutex);
-  thread->exit_request = 1;
-  thread_mutex_unlock(&thread->mutex);
+int thread_exit(thread_p thread, int wait) {
+  int result = THREAD_ERROR_NONE;
+  
+  thread_condition_lock(&thread->condition);
+  if (thread->state == running)
+    thread->exit_request = 1;
+  else
+    result = THREAD_ERROR_STATE;
+  thread_condition_unlock(&thread->condition);
 
 #ifdef HAVE_LIBGCC_S
   pthread_cancel(thread->thread);
@@ -60,17 +77,33 @@ void thread_exit(thread_p thread, int wait) {
 
   if (wait)
     thread_wait_exit(thread);
+
+  return result;
 }
 
 void thread_self_exit() {
   pthread_exit(0);
 }
 
+void thread_cleanup(void* arg) {
+  thread_p thread = arg;
+
+  if (thread->cleanup)
+    thread->cleanup(thread->arg);
+
+  thread_condition_lock(&thread->condition);
+  thread->state = stopped;
+  thread_condition_signal(&thread->condition);
+  thread_condition_unlock(&thread->condition);
+
+  thread_condition_destroy(&thread->condition);
+}
+
 void* thread_run(void* arg) {
   thread_p thread = arg;
   void* result;
 
-  pthread_cleanup_push(thread->cleanup, thread->arg);
+  pthread_cleanup_push(thread_cleanup, thread);
 
 #ifdef HAVE_LIBGCC_S
   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
@@ -79,7 +112,11 @@ void* thread_run(void* arg) {
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
 #endif 
 
-  thread_mutex_init(&thread->mutex);
+  thread_condition_lock(&thread->condition);
+  thread->state = running;
+  thread_condition_signal(&thread->condition);
+  thread_condition_unlock(&thread->condition);
+  
   timer_start(&thread->start_time);
 
   if (thread->frequency > 0.0) {
@@ -95,19 +132,17 @@ void* thread_run(void* arg) {
   else
     result = thread->routine(thread->arg);
 
-  thread_mutex_destroy(&thread->mutex);
-
   pthread_cleanup_pop(1);
 
   return result;
 }
 
 int thread_test_exit(thread_p thread) {
-  int result = THREAD_ERROR_NONE;
+  int result;
 
-  thread_mutex_lock(&thread->mutex);
+  thread_condition_lock(&thread->condition);
   result = thread->exit_request;
-  thread_mutex_unlock(&thread->mutex);
+  thread_condition_unlock(&thread->condition);
 
   return result;
 }
@@ -120,5 +155,17 @@ void thread_wait_exit(thread_p thread) {
   pthread_join(thread->thread, NULL);
 }
 
-void thread_empty_cleanup(void* arg) {
+int thread_wait(thread_p thread, double timeout) {
+  int result = THREAD_ERROR_NONE;
+  
+  thread_condition_lock(&thread->condition);
+  if (thread->state == running) {
+    if (thread_condition_wait(&thread->condition, timeout))
+      result = THREAD_ERROR_WAIT_TIMEOUT;
+  }
+  else
+    result = THREAD_ERROR_STATE;
+  thread_condition_unlock(&thread->condition);
+
+  return result;
 }
