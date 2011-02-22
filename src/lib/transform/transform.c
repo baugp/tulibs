@@ -186,6 +186,6 @@ void transform_points(transform_t transform, transform_point_p points,
     size_t num_points) {
   int i;
 
-  for (i = 0; i < num_points; +i)
+  for (i = 0; i < num_points; ++i)
     transform_point(transform, &points[i]);
 }
