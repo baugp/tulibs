@@ -34,6 +34,6 @@ remake_distribute_deb(
   DISTRIBUTION lucid
   SECTION libs
   UPLOAD ppa:kralf/asl
-  DEPENDS "remake (<< 1.0)" doxygen
+  DEPENDS "remake [all]" doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_SUBVERSION_REVISION
 )
