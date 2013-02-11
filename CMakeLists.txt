@@ -32,7 +32,7 @@ remake_pack_deb(
 
 remake_distribute_deb(
   DISTRIBUTION lucid
-  SECTION devel
+  SECTION libs
   UPLOAD ppa:kralf/asl
   DEPENDS remake
   PASS CMAKE_BUILD_TYPE REMAKE_SUBVERSION_REVISION
