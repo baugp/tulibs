@@ -29,3 +29,11 @@ remake_pack_deb(
   COMPONENT doc
   DESCRIPTION "documentation"
 )
+
+remake_distribute_deb(
+  DISTRIBUTION lucid
+  SECTION devel
+  UPLOAD ppa:kralf/asl
+  DEPENDS remake
+  PASS CMAKE_BUILD_TYPE REMAKE_SUBVERSION_REVISION
+)
