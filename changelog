@@ -1,3 +1,9 @@
+tulibs (0.1-43) lucid; urgency=low
+
+  * Reverting remake build dependency fix, now preferred due to epoch
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Mon, 11 Feb 2013 20:56:00 +0100
+
 tulibs (0.1-42) lucid; urgency=low
 
   * Trying to fix remake build dependency by architecture tag
