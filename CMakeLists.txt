@@ -9,7 +9,7 @@ remake_project(
   SUMMARY "A collection of C-based Tool and Utility LIBrarieS."
   AUTHOR "Ralf Kaestner"
   CONTACT "ralf.kaestner@gmail.com"
-  HOME "http://aslforge.ethz.ch/projects/robotks"
+  HOME "http://aslforge.ethz.ch/projects/tulibs"
   LICENSE "GNU Lesser General Public License (LGPL)"
   INSTALL /usr
 )
@@ -18,7 +18,9 @@ remake_doc(
   html
 )
 
-remake_pack_deb()
+remake_pack_deb(
+  libgsl0ldbl
+)
 remake_pack_deb(
   COMPONENT dev
   DESCRIPTION "development headers"
