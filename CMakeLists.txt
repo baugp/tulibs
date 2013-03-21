@@ -39,3 +39,10 @@ remake_distribute_deb(
   DEPENDS remake libgsl0-dev doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_SUBVERSION_REVISION
 )
+remake_distribute_deb(
+  DISTRIBUTION precise
+  SECTION libs
+  UPLOAD ppa:kralf/asl
+  DEPENDS remake libgsl0-dev doxygen
+  PASS CMAKE_BUILD_TYPE TULIBS_SUBVERSION_REVISION
+)
