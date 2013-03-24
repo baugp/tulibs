@@ -19,12 +19,12 @@ remake_doc(
 )
 
 remake_pack_deb(
-  libgsl0ldbl
+  DEPENDS libgsl0ldbl
 )
 remake_pack_deb(
   COMPONENT dev
   DESCRIPTION "development headers"
-  tulibs
+  DEPENDS tulibs
 )
 remake_pack_deb(
   ARCH all
