@@ -1,3 +1,9 @@
+tulibs (0.1-48) lucid; urgency=low
+
+  * Rebased project to github
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Sat, 20 Apr 2013 11:19:00 +0100
+
 tulibs (0.1-47) lucid; urgency=low
 
   * Top-level CMakeLists file adapted to latest ReMake release

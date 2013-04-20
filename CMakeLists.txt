@@ -9,7 +9,7 @@ remake_project(
   SUMMARY "A collection of C-based Tool and Utility LIBrarieS."
   AUTHOR "Ralf Kaestner"
   CONTACT "ralf.kaestner@gmail.com"
-  HOME "http://aslforge.ethz.ch/projects/tulibs"
+  HOME "http://github.com/kralf/tulibs"
   LICENSE "GNU Lesser General Public License (LGPL)"
   INSTALL /usr
 )
@@ -37,12 +37,12 @@ remake_distribute_deb(
   SECTION libs
   UPLOAD ppa:kralf/asl
   DEPENDS remake libgsl0-dev doxygen
-  PASS CMAKE_BUILD_TYPE TULIBS_SUBVERSION_REVISION
+  PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
 remake_distribute_deb(
   DISTRIBUTION precise
   SECTION libs
   UPLOAD ppa:kralf/asl
   DEPENDS remake libgsl0-dev doxygen
-  PASS CMAKE_BUILD_TYPE TULIBS_SUBVERSION_REVISION
+  PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
