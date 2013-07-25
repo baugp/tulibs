@@ -1,3 +1,9 @@
+tulibs (0.1-51) lucid; urgency=low
+
+  * Added missing pkg-config build dependency
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 25 Jul 2013 14:53:00 +0100
+
 tulibs (0.1-50) lucid; urgency=low
 
   * Now using pkg-config to discover gsl libraries

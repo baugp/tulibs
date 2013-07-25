@@ -36,13 +36,13 @@ remake_distribute_deb(
   DISTRIBUTION lucid
   SECTION libs
   UPLOAD ppa:kralf/asl
-  DEPENDS libgsl0-dev remake doxygen
+  DEPENDS libgsl0-dev remake pkg-config doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
 remake_distribute_deb(
   DISTRIBUTION precise
   SECTION libs
   UPLOAD ppa:kralf/asl
-  DEPENDS libgsl0-dev remake doxygen
+  DEPENDS libgsl0-dev remake pkg-config doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
