@@ -139,12 +139,12 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
   dev->stopbits = stopbits;
   
   switch (parity) {
-    case none: break;
-    case even: tio.c_cflag |= PARENB;
+    case serial_parity_none: break;
+    case serial_parity_even: tio.c_cflag |= PARENB;
                break;
-    case odd : tio.c_cflag |= PARENB | PARODD;
+    case serial_parity_odd : tio.c_cflag |= PARENB | PARODD;
                break;
-    default  : return SERIAL_ERROR_INVALID_PARITY;
+    default                : return SERIAL_ERROR_INVALID_PARITY;
   }
   dev->parity = parity;
   

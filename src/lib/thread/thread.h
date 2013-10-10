@@ -32,7 +32,7 @@
   * A basic POSIX-compliant thread handling implementation.
   */
 
-/** Predefined thread handling error codes
+/** \brief Predefined thread handling error codes
   */
 #define THREAD_ERROR_NONE              0
 #define THREAD_ERROR_CREATE            1
@@ -46,8 +46,8 @@ extern const char* thread_errors[];
 /** \brief Thread state enumeratable type
   */
 typedef enum {
-  stopped = 0,    //!< Thread is stopped.
-  running = 1,    //!< Thread is running.
+  thread_state_stopped = 0,       //!< Thread is stopped.
+  thread_state_running = 1,       //!< Thread is running.
 } thread_state_t;
 
 /** \brief Structure defining the thread context

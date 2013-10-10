@@ -30,7 +30,7 @@
 
 #include <unistd.h>
 
-/** Predefined serial error codes
+/** \brief Predefined serial error codes
   */
 #define SERIAL_ERROR_NONE                 0
 #define SERIAL_ERROR_OPEN                 1
@@ -53,9 +53,9 @@ extern const char* serial_errors[];
 /** \brief Parity enumeratable type
   */
 typedef enum {
-  none = 0,   //!< No parity.
-  odd = 1,    //!< Odd parity.
-  even = 2    //!< Even parity.
+  serial_parity_none = 0,   //!< No parity.
+  serial_parity_odd = 1,    //!< Odd parity.
+  serial_parity_even = 2    //!< Even parity.
 } serial_parity_t;
 
 /** \brief Serial device structure
@@ -110,7 +110,7 @@ int serial_setup(
 
 /** \brief Read data from open serial device
   * \param[in] dev The open serial device to read data from.
-  * \param[out] data An array containing the data read from the device.
+  * \param[in,out] data An array containing the data read from the device.
   * \param[in] num The number of data bytes to be read.
   * \return The number of bytes read from the serial device or the
   *   negative error code.
@@ -122,7 +122,7 @@ int serial_read(
 
 /** \brief Write data to open serial device
   * \param[in] dev The open serial device to write data to.
-  * \param[out] data An array containing the data to be written to the device.
+  * \param[in] data An array containing the data to be written to the device.
   * \param[in] num The number of data bytes to be written.
   * \return The number of bytes written to the serial device or the
   *   negative error code.

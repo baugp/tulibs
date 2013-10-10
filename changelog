@@ -1,3 +1,9 @@
+tulibs (0.1-52) lucid; urgency=low
+
+  * Added USB support library
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 10 Oct 2013 15:16:00 +0100
+
 tulibs (0.1-51) lucid; urgency=low
 
   * Added missing pkg-config build dependency

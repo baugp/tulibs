@@ -33,7 +33,7 @@
 #include "point.h"
 #include "pose.h"
 
-/** Predefined transform error codes
+/** \brief Predefined transform error codes
   */
 #define TRANSFORM_ERROR_NONE                  0
 

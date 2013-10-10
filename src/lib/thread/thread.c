@@ -43,12 +43,12 @@ int thread_start(thread_p thread, void* (*thread_routine)(void*),
 
   thread->frequency = frequency;
   thread->start_time = 0.0;
-  thread->state = stopped;
+  thread->state = thread_state_stopped;
 
   thread->exit_request = 0;
 
   thread_condition_lock(&thread->condition);
-  if (thread->state == stopped) {
+  if (thread->state == thread_state_stopped) {
     if (!pthread_create(&thread->thread, NULL, thread_run, thread))
       thread_condition_wait(&thread->condition, THREAD_CONDITION_WAIT_FOREVER);
     else
@@ -65,7 +65,7 @@ int thread_exit(thread_p thread, int wait) {
   int result = THREAD_ERROR_NONE;
   
   thread_condition_lock(&thread->condition);
-  if (thread->state == running)
+  if (thread->state == thread_state_running)
     thread->exit_request = 1;
   else
     result = THREAD_ERROR_STATE;
@@ -92,7 +92,7 @@ void thread_cleanup(void* arg) {
     thread->cleanup(thread->arg);
 
   thread_condition_lock(&thread->condition);
-  thread->state = stopped;
+  thread->state = thread_state_stopped;
   thread_condition_signal(&thread->condition);
   thread_condition_unlock(&thread->condition);
 
@@ -113,7 +113,7 @@ void* thread_run(void* arg) {
 #endif 
 
   thread_condition_lock(&thread->condition);
-  thread->state = running;
+  thread->state = thread_state_running;
   thread_condition_signal(&thread->condition);
   thread_condition_unlock(&thread->condition);
   
@@ -159,7 +159,7 @@ int thread_wait(thread_p thread, double timeout) {
   int result = THREAD_ERROR_NONE;
   
   thread_condition_lock(&thread->condition);
-  if (thread->state == running) {
+  if (thread->state == thread_state_running) {
     if (thread_condition_wait(&thread->condition, timeout))
       result = THREAD_ERROR_WAIT_TIMEOUT;
   }

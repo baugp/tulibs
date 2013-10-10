@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/** Predefined spline error codes
+/** \brief Predefined spline error codes
   */
 #define SPLINE_ERROR_NONE                  0
 #define SPLINE_ERROR_FILE_OPEN             1
@@ -42,9 +42,9 @@
 /** \brief Spline evaluation type
   */
 typedef enum {
-  spline_base_function = 0,
-  spline_first_derivative = 1,
-  spline_second_derivative = 2,
+  spline_eval_type_base_function = 0,
+  spline_eval_type_first_derivative = 1,
+  spline_eval_type_second_derivative = 2,
 } spline_eval_type_t;
 
 /** \brief Predefined spline error descriptions

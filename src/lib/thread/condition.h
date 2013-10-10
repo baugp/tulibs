@@ -31,11 +31,11 @@
 
 #include "mutex.h"
 
-/** Predefined condition constants
+/** \brief Predefined condition constants
   */
 #define THREAD_CONDITION_WAIT_FOREVER             -1.0
 
-/** Predefined condition handling error codes
+/** \brief Predefined condition handling error codes
   */
 #define THREAD_CONDITION_ERROR_NONE               0
 #define THREAD_CONDITION_ERROR_MUTEX              1

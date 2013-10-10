@@ -31,11 +31,11 @@
   * A POSIX-compliant configuration implementation.
   */
 
-/** Predefined configuration constants
+/** \brief Predefined configuration constants
   */
 #define CONFIG_ARG_HELP                         "--help"
 
-/** Predefined configuration error codes
+/** \brief Predefined configuration error codes
   */
 #define CONFIG_ERROR_NONE                       0
 #define CONFIG_ERROR_ARGUMENT_HELP              1

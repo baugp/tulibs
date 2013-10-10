@@ -170,9 +170,9 @@ double spline_evaluate_segment(spline_p spline, spline_eval_type_t type,
   spline_segment_p segment = &spline->segments[seg_index];
   double x = argument-spline->arg_start[seg_index];
 
-  if (type == spline_first_derivative)
+  if (type == spline_eval_type_first_derivative)
     return 3.0*segment->a*sqr(x)+2.0*segment->b*x+segment->c;
-  else if (type == spline_second_derivative)
+  else if (type == spline_eval_type_second_derivative)
     return 6.0*segment->a*x+2.0*segment->b;
   else
     return segment->a*cub(x)+segment->b*sqr(x)+segment->c*x+segment->d;
