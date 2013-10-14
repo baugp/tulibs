@@ -31,14 +31,14 @@
 
 #include "mutex.h"
 
-/** \name Condition Constants
+/** \name Constants
   * \brief Predefined wait condition constants
   */
 //@{
 #define THREAD_CONDITION_WAIT_FOREVER             -1.0
 //@}
 
-/** \name Condition Error Codes
+/** \name Error Codes
   * \brief Predefined condition handling error codes
   */
 //@{

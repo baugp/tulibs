@@ -29,7 +29,7 @@
 
 #include <unistd.h>
 
-/** \name USB Error Codes
+/** \name Error Codes
   * \brief Predefined USB error codes
   */
 //@{

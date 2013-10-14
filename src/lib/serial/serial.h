@@ -30,7 +30,7 @@
 
 #include <unistd.h>
 
-/** \name Serial Error Codes
+/** \name Error Codes
   * \brief Predefined serial error codes
   */
 //@{

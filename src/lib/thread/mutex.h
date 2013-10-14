@@ -29,7 +29,7 @@
 
 #include <pthread.h>
 
-/** \name Mutex Error Codes
+/** \name Error Codes
   * \brief Predefined mutex handling error codes
   */
 //@{

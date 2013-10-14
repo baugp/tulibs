@@ -29,7 +29,7 @@
 
 #include <stdio.h>
 
-/** \name Parameter Constants 
+/** \name Constants 
   * \brief Predefined configuration parameter constants
   */
 //@{

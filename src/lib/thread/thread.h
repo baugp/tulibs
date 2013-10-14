@@ -32,7 +32,7 @@
   * A basic POSIX-compliant thread handling implementation.
   */
 
-/** \name Thread Error Codes
+/** \name Error Codes
   * \brief Predefined thread handling error codes
   */
 //@{
