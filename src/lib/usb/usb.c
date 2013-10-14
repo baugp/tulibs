@@ -30,6 +30,15 @@
 
 #define usb_error(e) (e < 0 ? (e > -13 ? -e : 13) : e)
 
+usb_context_t _usb_default_context = {
+  0,
+  usb_debug_level_minimal,
+  0,
+  0
+};
+
+usb_context_p usb_default_context = &_usb_default_context;
+
 const char* usb_errors[] = {
   "success",
   "input/output error",
@@ -55,36 +64,45 @@ int usb_context_init(usb_context_p context) {
   context->num_devices = 0;
   context->devices = 0;
   
-  error = libusb_init((libusb_context**)&context->libusb_context);
-  
-  if (error) {
-    context->libusb_context = 0;
-    return usb_error(error);
+  if (context != usb_default_context) {
+    error = libusb_init((libusb_context**)&context->libusb_context);
+    if (error)
+      context->libusb_context = 0;
   }
+  else
+    error = libusb_init(0);
+  
+  if (error)
+    return usb_error(error);
   else
     return usb_context_refresh(context);
 }
 
 int usb_context_destroy(usb_context_p context) {
-  if (context->libusb_context) {
-    libusb_exit(context->libusb_context);
-    
-    context->libusb_context = 0;
-    
-    if (context->num_devices)
-      free(context->devices);
-    
-    context->num_devices = 0;
-    context->devices = 0;
+  if (context != usb_default_context) {
+    if (context->libusb_context) {
+      libusb_exit(context->libusb_context);
+      
+      context->libusb_context = 0;
+      
+      if (context->num_devices)
+        free(context->devices);
+      
+      context->num_devices = 0;
+      context->devices = 0;
+    }
+    else
+      return USB_ERROR_INVALID_PARAMETER;
   }
   else
-    return USB_ERROR_INVALID_PARAMETER;
+    libusb_exit(0);
+    
   
   return USB_ERROR_NONE;
 }
 
 int usb_context_setup(usb_context_p context, usb_debug_level_t debug_level) {
-  if (context->libusb_context) {
+  if (context->libusb_context || (context == usb_default_context)) {
     libusb_set_debug(context->libusb_context, debug_level);
     context->debug_level = debug_level;
   }
@@ -100,7 +118,7 @@ int usb_context_refresh(usb_context_p context) {
   libusb_device_handle* handle;
   int i;
     
-  if (context->libusb_context) {
+  if (context->libusb_context || (context == usb_default_context)) {
     if (context->num_devices)
       free(context->devices);
 

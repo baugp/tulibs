@@ -23,17 +23,16 @@
 #include <usb.h>
 
 int main(int argc, char **argv) {
-  usb_context_t context;
   int i;
 
-  usb_context_init(&context);
-  if (context.num_devices) {
-    for (i = 0; i < context.num_devices; ++i)
-      usb_print(stdout, &context.devices[i]);
+  usb_context_init(usb_default_context);
+  if (usb_default_context->num_devices) {
+    for (i = 0; i < usb_default_context->num_devices; ++i)
+      usb_print(stdout, &usb_default_context->devices[i]);
   }
   else
     fprintf(stdout, "No devices found.\n");
 
-  usb_context_destroy(&context);
+  usb_context_destroy(usb_default_context);
   return 0;
 }

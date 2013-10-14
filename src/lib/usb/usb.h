@@ -140,6 +140,12 @@ typedef struct usb_context_t {
   usb_device_t* devices;          //!< List of devices in the context.
 } usb_context_t, *usb_context_p;
 
+/** \brief USB default context
+  * \note The USB default context is a special context which will be
+  *   shared amongst its users.
+  */
+extern usb_context_p usb_default_context;
+
 /** \brief USB control transfer structure
   */
 typedef struct usb_control_transfer_t {
