@@ -31,16 +31,22 @@
   * A POSIX-compliant configuration implementation.
   */
 
-/** \brief Predefined configuration constants
+/** \name Arguments
+  * \brief Predefined configuration argument constants
   */
+//@{
 #define CONFIG_ARG_HELP                         "--help"
+//@}
 
-/** \brief Predefined configuration error codes
+/** \name Error Codes
+  * \brief Predefined configuration error codes
   */
+//@{
 #define CONFIG_ERROR_NONE                       0
 #define CONFIG_ERROR_ARGUMENT_HELP              1
 #define CONFIG_ERROR_ARGUMENT_FORMAT            2
 #define CONFIG_ERROR_ARGUMENT_MISSING           3
+//@}
 
 /** \brief Predefined configuration error descriptions
   */

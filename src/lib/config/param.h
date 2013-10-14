@@ -29,10 +29,13 @@
 
 #include <stdio.h>
 
-/** \brief Predefined parameter constants
+/** \name Parameter Constants 
+  * \brief Predefined configuration parameter constants
   */
+//@{
 #define PARAM_KEY_LENGTH         256
 #define PARAM_VALUE_LENGTH       256
+//@}
 
 /** \brief Parameter structure
   */

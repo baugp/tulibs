@@ -30,8 +30,10 @@
 
 #include <unistd.h>
 
-/** \brief Predefined serial error codes
+/** \name Serial Error Codes
+  * \brief Predefined serial error codes
   */
+//@{
 #define SERIAL_ERROR_NONE                 0
 #define SERIAL_ERROR_OPEN                 1
 #define SERIAL_ERROR_CLOSE                2
@@ -45,6 +47,7 @@
 #define SERIAL_ERROR_TIMEOUT              10
 #define SERIAL_ERROR_READ                 11
 #define SERIAL_ERROR_WRITE                12
+//@}
 
 /** \brief Predefined serial error descriptions
   */

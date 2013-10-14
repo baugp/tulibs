@@ -31,15 +31,21 @@
 
 #include "mutex.h"
 
-/** \brief Predefined condition constants
+/** \name Condition Constants
+  * \brief Predefined wait condition constants
   */
+//@{
 #define THREAD_CONDITION_WAIT_FOREVER             -1.0
+//@}
 
-/** \brief Predefined condition handling error codes
+/** \name Condition Error Codes
+  * \brief Predefined condition handling error codes
   */
+//@{
 #define THREAD_CONDITION_ERROR_NONE               0
 #define THREAD_CONDITION_ERROR_MUTEX              1
 #define THREAD_CONDITION_ERROR_WAIT_TIMEOUT       2
+//@}
 
 /** \brief Predefined condition handling error descriptions
   */

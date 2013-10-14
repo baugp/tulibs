@@ -27,10 +27,13 @@
   * A basic POSIX-compliant time measurement library.
   */
 
-/** \brief Predefined timer error codes
+/** \name Timer Error Codes
+  * \brief Predefined timer error codes
   */
+//@{
 #define TIMER_ERROR_NONE              0
 #define TIMER_ERROR_FAULT             1
+//@}
 
 /** \brief Predefined timer error descriptions
   */

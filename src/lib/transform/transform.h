@@ -33,10 +33,6 @@
 #include "point.h"
 #include "pose.h"
 
-/** \brief Predefined transform error codes
-  */
-#define TRANSFORM_ERROR_NONE                  0
-
 /** \brief Predefined transform error descriptions
   */
 extern const char* transform_errors[];

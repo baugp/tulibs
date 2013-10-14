@@ -32,12 +32,15 @@
   * A basic POSIX-compliant thread handling implementation.
   */
 
-/** \brief Predefined thread handling error codes
+/** \name Thread Error Codes
+  * \brief Predefined thread handling error codes
   */
+//@{
 #define THREAD_ERROR_NONE              0
 #define THREAD_ERROR_CREATE            1
 #define THREAD_ERROR_WAIT_TIMEOUT      2
 #define THREAD_ERROR_STATE             3
+//@}
 
 /** \brief Predefined thread handling error descriptions
   */

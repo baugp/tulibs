@@ -29,8 +29,10 @@
 
 #include <unistd.h>
 
-/** \brief Predefined USB error codes
+/** \name USB Error Codes
+  * \brief Predefined USB error codes
   */
+//@{
 #define USB_ERROR_NONE                    0
 #define USB_ERROR_IO                      1
 #define USB_ERROR_INVALID_PARAMETER       2
@@ -45,6 +47,7 @@
 #define USB_ERROR_NO_MEMORY               11
 #define USB_ERROR_NOT_SUPPORTED           12
 #define USB_ERROR_OTHER                   13
+//@}
 
 /** \brief Predefined USB error descriptions
   */

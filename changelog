@@ -1,3 +1,9 @@
+tulibs (0.1-53) lucid; urgency=low
+
+  * Fixed documentation of preprocessor defines
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Mon, 14 Oct 2013 07:59:00 +0100
+
 tulibs (0.1-52) lucid; urgency=low
 
   * Added USB support library

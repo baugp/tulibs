@@ -29,10 +29,13 @@
 
 #include <pthread.h>
 
-/** \brief Predefined thread handling error codes
+/** \name Mutex Error Codes
+  * \brief Predefined mutex handling error codes
   */
+//@{
 #define THREAD_MUTEX_ERROR_NONE        0
 #define THREAD_MUTEX_ERROR_LOCK        1
+//@}
 
 /** \brief Predefined thread handling error descriptions
   */
