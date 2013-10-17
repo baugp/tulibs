@@ -261,7 +261,8 @@ int ftdi_close(ftdi_device_p dev) {
 
 int ftdi_setup(ftdi_device_p dev, int baudrate, int databits, int stopbits,
     ftdi_parity_t parity, ftdi_flow_ctrl_t flow_ctrl, ftdi_break_t break_type,
-    unsigned char latency) {
+    double timeout, double latency) {
+  struct ftdi_context* libftdi_context = dev->libftdi_context;
   enum ftdi_bits_type libftdi_databits;
   enum ftdi_stopbits_type libftdi_stopbits;
   enum ftdi_parity_type libftdi_parity;
@@ -326,20 +327,23 @@ int ftdi_setup(ftdi_device_p dev, int baudrate, int databits, int stopbits,
   }
   dev->break_type = break_type;
 
-  if (ftdi_set_line_property2(dev->libftdi_context, libftdi_databits,
+  if (ftdi_set_line_property2(libftdi_context, libftdi_databits,
       libftdi_stopbits, libftdi_parity, libftdi_break))
     return FTDI_ERROR_SETUP;
-  if (ftdi_setflowctrl(dev->libftdi_context, libftdi_flow_ctrl))
+  if (ftdi_setflowctrl(libftdi_context, libftdi_flow_ctrl))
     return FTDI_ERROR_SETUP;
   
-  error = ftdi_set_baudrate(dev->libftdi_context, baudrate);
+  error = ftdi_set_baudrate(libftdi_context, baudrate);
   if (error == -1)
     return FTDI_ERROR_INVALID_BAUDRATE;
   dev->baudrate = baudrate;
   if (error)
     return FTDI_ERROR_SETUP;
-    
-  error = ftdi_set_latency_timer(dev->libftdi_context, latency);
+
+  libftdi_context->usb_read_timeout = timeout*1e6;
+  libftdi_context->usb_write_timeout = timeout*1e6;
+  
+  error = ftdi_set_latency_timer(libftdi_context, latency*1e3);
   if (error == -1)
     return FTDI_ERROR_INVALID_LATENCY;
   dev->latency = latency;

@@ -136,7 +136,8 @@ typedef struct ftdi_device_t {
   ftdi_flow_ctrl_t flow_ctrl;     //!< Device flow control.
   ftdi_break_t break_type;        //!< Device break enabled.
 
-  unsigned char latency;          //!< Device latency in [ticks].
+  double timeout;                 //!< Device timeout in [s].
+  double latency;                 //!< Device latency in [s].
 
   size_t num_read;                //!< Number of bytes read from device.
   size_t num_written;             //!< Number of bytes written to device.
@@ -231,7 +232,8 @@ int ftdi_close(
   * \param[in] parity The device parity to be set.
   * \param[in] flow_ctrl The device flow control to be set.
   * \param[in] break_type The device break type to be set.
-  * \param[in] latency The device latency timeout to be set in [ticks].
+  * \param[in] timeout The device timeout to be set in [s].
+  * \param[in] latency The device latency to be set in [s].
   * \return The resulting error code.
   */
 int ftdi_setup(
@@ -242,7 +244,8 @@ int ftdi_setup(
   ftdi_parity_t parity,
   ftdi_flow_ctrl_t flow_ctrl,
   ftdi_break_t break_type,
-  unsigned char latency);
+  double timeout,
+  double latency);
 
 /** \brief Read data from open FTDI device
   * \param[in] dev The open FTDI device to read data from.
