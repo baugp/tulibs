@@ -107,8 +107,8 @@ typedef enum {
 /** \brief USB direction enumeratable type
   */
 typedef enum {
-  usb_direction_in = 0,             //!< Device-to-host direction.
-  usb_direction_out = 1             //!< Host-to-device direction.
+  usb_direction_out = 0,            //!< Host-to-device direction.
+  usb_direction_in = 1              //!< Device-to-host direction.
 } usb_direction_t;
 
 /** \brief USB device structure
@@ -126,8 +126,8 @@ typedef struct usb_device_t {
 
   double timeout;                 //!< Device request timeout in [s].
   
-  ssize_t num_read;               //!< Number of bytes read from device.
-  ssize_t num_written;            //!< Number of bytes written to device.
+  size_t num_read;                //!< Number of bytes read from device.
+  size_t num_written;             //!< Number of bytes written to device.
 } usb_device_t, *usb_device_p;
 
 /** \brief USB context structure
@@ -136,7 +136,7 @@ typedef struct usb_context_t {
   void* libusb_context;           //!< The libusb context.
   usb_debug_level_t debug_level;  //!< Context debug level.
   
-  ssize_t num_devices;            //!< Number of devices in the context.
+  size_t num_devices;             //!< Number of devices in the context.
   usb_device_t* devices;          //!< List of devices in the context.
 } usb_context_t, *usb_context_p;
 
@@ -157,7 +157,7 @@ typedef struct usb_control_transfer_t {
   unsigned char value;              //!< Control transfer value field.
   unsigned char index;              //!< Control transfer index field.
   
-  ssize_t num;                      //!< Number of control transfer data bytes. 
+  size_t num;                       //!< Number of control transfer data bytes. 
   unsigned char* data;              //!< Control transfer data field.
 } usb_control_transfer_t, *usb_control_transfer_p;
 
@@ -167,22 +167,22 @@ typedef struct usb_bulk_transfer_t {
   unsigned char endpoint_number;    //!< Bulk transfer endpoint number.
   usb_direction_t direction;        //!< Bulk transfer direction.
   
-  ssize_t num;                      //!< Number of bulk transfer data bytes. 
+  size_t num;                       //!< Number of bulk transfer data bytes. 
   unsigned char* data;              //!< Bulk transfer data field.
 } usb_bulk_transfer_t, *usb_bulk_transfer_p;
 
-/** \brief Initialize the USB context
+/** \brief Initialize a USB context
   * \param[in] context The USB context to be initialized.
   * \return The resulting error code.
   */
 int usb_context_init(
   usb_context_p context);
 
-/** \brief Destroy the USB context
-  * \param[in] context The initialized USB context to be destroyed.
+/** \brief Release a USB context
+  * \param[in] context The initialized USB context to be release.
   * \return The resulting error code.
   */
-int usb_context_destroy(
+int usb_context_release(
   usb_context_p context);
 
 /** \brief Setup an already initialized USB context
@@ -265,7 +265,7 @@ int usb_control_read(
   unsigned char value,
   unsigned char index,
   unsigned char* data,
-  ssize_t num);
+  size_t num);
 
 /** \brief Write control data to open USB device
   * \param[in] dev The open USB device to write control data to.
@@ -288,7 +288,7 @@ int usb_control_write(
   unsigned char value,
   unsigned char index,
   unsigned char* data,
-  ssize_t num);
+  size_t num);
 
 /** \brief Read bulk data from open USB device
   * \param[in] dev The open USB device to read bulk data from.
@@ -303,7 +303,7 @@ int usb_bulk_read(
   usb_device_p dev,
   unsigned char endpoint_number,
   unsigned char* data,
-  ssize_t num);
+  size_t num);
 
 /** \brief Write bulk data to open USB device
   * \param[in] dev The open USB device to write bulk data to.
@@ -319,7 +319,7 @@ int usb_bulk_write(
   usb_device_p dev,
   unsigned char endpoint_number,
   unsigned char* data,
-  ssize_t num);
+  size_t num);
 
 /** \brief Perform synchronous USB control transfer
   * \param[in] dev The open USB device to communicate with.

@@ -36,6 +36,7 @@ const char* serial_errors[] = {
   "invalid number of databits",
   "invalid number of stopbits",
   "invalid parity",
+  "invalid flow control",
   "error setting serial device parameters",
   "serial device select timeout",
   "error reading from serial device",
@@ -72,7 +73,7 @@ int serial_close(serial_device_p dev) {
 }
 
 int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
-  serial_parity_t parity, double timeout) {
+    serial_parity_t parity, serial_flow_ctrl_t flow_ctrl, double timeout) {
   struct termios tio;
   memset(&tio, 0, sizeof(struct termios));
   
@@ -148,6 +149,16 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
   }
   dev->parity = parity;
   
+  switch (flow_ctrl) {
+    case serial_flow_ctrl_off:      break;
+    case serial_flow_ctrl_xon_xoff: tio.c_cflag |= IXON | IXOFF;
+                                    break;
+    case serial_flow_ctrl_rts_cts : tio.c_cflag |= CRTSCTS;
+                                    break;
+    default                       : return SERIAL_ERROR_INVALID_FLOW_CTRL;
+  }
+  dev->flow_ctrl = flow_ctrl;
+  
   dev->timeout = timeout;
 
   tio.c_cflag |= CLOCAL;
@@ -161,8 +172,8 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
   return SERIAL_ERROR_NONE;
 }
 
-int serial_read(serial_device_p dev, unsigned char* data, ssize_t num) {
-  ssize_t num_read = 0;
+int serial_read(serial_device_p dev, unsigned char* data, size_t num) {
+  size_t num_read = 0;
   struct timeval time;
   fd_set set;
   int error;
@@ -191,8 +202,8 @@ int serial_read(serial_device_p dev, unsigned char* data, ssize_t num) {
   return num_read;
 }
 
-int serial_write(serial_device_p dev, unsigned char* data, ssize_t num) {
-  ssize_t num_written = 0;
+int serial_write(serial_device_p dev, unsigned char* data, size_t num) {
+  size_t num_written = 0;
 
   while (num_written < num) {
     ssize_t n;

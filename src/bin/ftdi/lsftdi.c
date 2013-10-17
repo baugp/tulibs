@@ -20,19 +20,19 @@
 
 #include <stdio.h>
 
-#include <usb.h>
+#include <ftdi.h>
 
 int main(int argc, char **argv) {
   int i;
 
-  usb_context_init(usb_default_context);
-  if (usb_default_context->num_devices) {
-    for (i = 0; i < usb_default_context->num_devices; ++i)
-      usb_print(stdout, &usb_default_context->devices[i]);
+  ftdi_context_init(ftdi_default_context);
+  if (ftdi_default_context->num_devices) {
+    for (i = 0; i < ftdi_default_context->num_devices; ++i)
+      ftdi_print(stdout, &ftdi_default_context->devices[i]);
   }
   else
     fprintf(stdout, "No devices found.\n");
 
-  usb_context_release(usb_default_context);
+  ftdi_context_release(ftdi_default_context);
   return 0;
 }

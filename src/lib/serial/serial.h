@@ -43,10 +43,11 @@
 #define SERIAL_ERROR_INVALID_DATABITS     6
 #define SERIAL_ERROR_INVALID_STOPBITS     7
 #define SERIAL_ERROR_INVALID_PARITY       8
-#define SERIAL_ERROR_SETUP                9
-#define SERIAL_ERROR_TIMEOUT              10
-#define SERIAL_ERROR_READ                 11
-#define SERIAL_ERROR_WRITE                12
+#define SERIAL_ERROR_INVALID_FLOW_CTRL    9
+#define SERIAL_ERROR_SETUP                10
+#define SERIAL_ERROR_TIMEOUT              11
+#define SERIAL_ERROR_READ                 12
+#define SERIAL_ERROR_WRITE                13
 //@}
 
 /** \brief Predefined serial error descriptions
@@ -56,26 +57,35 @@ extern const char* serial_errors[];
 /** \brief Parity enumeratable type
   */
 typedef enum {
-  serial_parity_none = 0,   //!< No parity.
-  serial_parity_odd = 1,    //!< Odd parity.
-  serial_parity_even = 2    //!< Even parity.
+  serial_parity_none = 0,         //!< No parity.
+  serial_parity_odd = 1,          //!< Odd parity.
+  serial_parity_even = 2          //!< Even parity.
 } serial_parity_t;
+
+/** \brief Flow control enumeratable type
+  */
+typedef enum {
+  serial_flow_ctrl_off = 0,       //!< Disable flow control.
+  serial_flow_ctrl_xon_xoff = 1,  //!< XON/XOFF flow control.
+  serial_flow_ctrl_rts_cts = 2    //!< RTS/CTS (hardware) flow control.
+} serial_flow_ctrl_t;
 
 /** \brief Serial device structure
   */
 typedef struct serial_device_t {
-  int fd;                   //!< File descriptor.
-  char name[256];           //!< Device name.
+  int fd;                         //!< File descriptor.
+  char name[256];                 //!< Device name.
 
-  int baudrate;             //!< Device baudrate.
-  int databits;             //!< Number of databits.
-  int stopbits;             //!< Number of stopbits.
-  serial_parity_t parity;   //!< Device parity.
+  int baudrate;                   //!< Device baudrate.
+  int databits;                   //!< Number of databits.
+  int stopbits;                   //!< Number of stopbits.
+  serial_parity_t parity;         //!< Device parity.
+  serial_flow_ctrl_t flow_ctrl;   //!< Device flow control.
 
-  double timeout;           //!< Device select timeout in [s].
+  double timeout;                 //!< Device select timeout in [s].
 
-  ssize_t num_read;         //!< Number of bytes read from device.
-  ssize_t num_written;      //!< Number of bytes written to device.
+  size_t num_read;                //!< Number of bytes read from device.
+  size_t num_written;             //!< Number of bytes written to device.
 } serial_device_t, *serial_device_p;
 
 /** \brief Open the serial device with the specified name
@@ -100,6 +110,7 @@ int serial_close(
   * \param[in] databits The device's number of databits to be set.
   * \param[in] stopbits The device's number of stopbits to be set.
   * \param[in] parity The device parity to be set.
+  * \param[in] flow_ctrl The device flow control to be set.
   * \param[in] timeout The device select timeout to be set in [s].
   * \return The resulting error code.
   */
@@ -109,6 +120,7 @@ int serial_setup(
   int databits,
   int stopbits,
   serial_parity_t parity,
+  serial_flow_ctrl_t flow_ctrl,
   double timeout);
 
 /** \brief Read data from open serial device
@@ -121,7 +133,7 @@ int serial_setup(
 int serial_read(
   serial_device_p dev,
   unsigned char* data,
-  ssize_t num);
+  size_t num);
 
 /** \brief Write data to open serial device
   * \param[in] dev The open serial device to write data to.
@@ -133,6 +145,6 @@ int serial_read(
 int serial_write(
   serial_device_p dev,
   unsigned char* data,
-  ssize_t num);
+  size_t num);
 
 #endif

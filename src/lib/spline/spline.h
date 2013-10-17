@@ -70,7 +70,7 @@ typedef struct spline_segment_t {
   * \note The first spline segment is assumed to start at zero.
   */
 typedef struct spline_t {
-  ssize_t num_segments;        //!< The number of spline segments.
+  size_t num_segments;         //!< The number of spline segments.
 
   spline_segment_p segments;   //!< The segments of the spline.
   double* arg_start;           //!< The start of the spline segments.

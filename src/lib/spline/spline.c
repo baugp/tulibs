@@ -89,7 +89,7 @@ void spline_print(FILE* stream, spline_p spline) {
 }
 
 int spline_read(const char* filename, spline_p spline) {
-  int i, result;
+  int result;
   FILE* file;
   char buffer[1024];
 

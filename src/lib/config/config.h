@@ -32,7 +32,7 @@
   */
 
 /** \name Arguments
-  * \brief Predefined configuration argument constants
+  * \brief Predefined configuration arguments
   */
 //@{
 #define CONFIG_ARG_HELP                         "--help"
@@ -56,7 +56,7 @@ extern const char* config_errors[];
   */
 typedef struct config_t {
   param_p params;         //!< The configuration parameters.
-  ssize_t num_params;     //!< The number of configuration parameters.
+  size_t num_params;      //!< The number of configuration parameters.
 } config_t, *config_p;
 
 /** \brief Initialize an empty configuration

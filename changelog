@@ -1,3 +1,11 @@
+tulibs (0.1-56) lucid; urgency=low
+
+  * First implementation of FTDI library
+  * Added hardware flow setup to serial library
+  * Some code cleanups
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 17 Oct 2013 08:52:00 +0100
+
 tulibs (0.1-55) lucid; urgency=low
 
   * Added default context support to USB library

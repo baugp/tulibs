@@ -79,11 +79,7 @@ int config_init_arg(config_p config, int argc, char** argv, const char*
         char value[PARAM_VALUE_LENGTH];
         strncpy(key, key_pos, value_pos-key_pos);
         key[value_pos-key_pos] = 0;
-
-        if (value)
-          strcpy(value, &value_pos[1]);
-        else
-          value[0] = 0;
+        strcpy(value, &value_pos[1]);
 
         param_t param;
         param_init_string(&param, key, value);

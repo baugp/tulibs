@@ -78,7 +78,7 @@ int usb_context_init(usb_context_p context) {
     return usb_context_refresh(context);
 }
 
-int usb_context_destroy(usb_context_p context) {
+int usb_context_release(usb_context_p context) {
   if (context != usb_default_context) {
     if (context->libusb_context) {
       libusb_exit(context->libusb_context);
@@ -96,8 +96,7 @@ int usb_context_destroy(usb_context_p context) {
   }
   else
     libusb_exit(0);
-    
-  
+      
   return USB_ERROR_NONE;
 }
 
@@ -113,9 +112,8 @@ int usb_context_setup(usb_context_p context, usb_debug_level_t debug_level) {
 }
 
 int usb_context_refresh(usb_context_p context) {
-  libusb_device** libusb_devices;
+  libusb_device** libusb_devices = 0;
   struct libusb_device_descriptor descriptor;
-  libusb_device_handle* handle;
   int i;
     
   if (context->libusb_context || (context == usb_default_context)) {
@@ -125,8 +123,12 @@ int usb_context_refresh(usb_context_p context) {
     context->num_devices = 0;
     context->devices = 0;
     
-    context->num_devices = libusb_get_device_list(
-      context->libusb_context, &libusb_devices);
+    ssize_t n = libusb_get_device_list(context->libusb_context,
+      &libusb_devices);
+    if (n < 0)
+      return usb_error(n);
+    else
+      context->num_devices = n;
     
     if (context->num_devices) {
       context->devices = malloc(context->num_devices*sizeof(usb_device_t));
@@ -143,21 +145,24 @@ int usb_context_refresh(usb_context_p context) {
           context->devices[i].vendor_id = descriptor.idVendor;
           context->devices[i].product_id = descriptor.idProduct;
           context->devices[i].class = descriptor.bDeviceClass;
+          
           context->devices[i].timeout = 1e-2;
         }
         else {
           context->devices[i].vendor_id = 0;
           context->devices[i].product_id = 0;
           context->devices[i].class = usb_class_unknown;
+          
           context->devices[i].timeout = 0.0;
         }
         
         context->devices[i].num_read = 0;
         context->devices[i].num_written = 0;
       }
-
-      libusb_free_device_list(libusb_devices, 1);
     }
+
+    if (libusb_devices)
+      libusb_free_device_list(libusb_devices, 1);
   }
   else
     return USB_ERROR_INVALID_PARAMETER;
@@ -178,8 +183,8 @@ usb_device_p usb_match_name(usb_context_p context, const char* name) {
     dev = udev_device_new_from_devnum(udev, 'c', stat_buffer.st_rdev);
 
     if (dev) {
-      sscanf("%d", udev_device_get_sysattr_value(dev, "busnum"), &bus);
-      sscanf("%d", udev_device_get_sysattr_value(dev, "devnum"), &address);
+      sscanf(udev_device_get_sysattr_value(dev, "busnum"), "%d", &bus);
+      sscanf(udev_device_get_sysattr_value(dev, "devnum"), "%d", &address);
     }
 
     udev_unref(udev);
@@ -243,7 +248,7 @@ int usb_setup(usb_device_p dev, double timeout) {
 
 int usb_control_read(usb_device_p dev, usb_request_type_t request_type,
     usb_recipient_t recipient, unsigned char request, unsigned char value,
-    unsigned char index, unsigned char* data, ssize_t num) {
+    unsigned char index, unsigned char* data, size_t num) {
   usb_control_transfer_t transfer;
   
   transfer.request_type = request_type;
@@ -262,7 +267,7 @@ int usb_control_read(usb_device_p dev, usb_request_type_t request_type,
 
 int usb_control_write(usb_device_p dev, usb_request_type_t request_type,
     usb_recipient_t recipient, unsigned char request, unsigned char value,
-    unsigned char index, unsigned char* data, ssize_t num) {
+    unsigned char index, unsigned char* data, size_t num) {
   usb_control_transfer_t transfer;
   
   transfer.request_type = request_type;
@@ -280,7 +285,7 @@ int usb_control_write(usb_device_p dev, usb_request_type_t request_type,
 }
 
 int usb_bulk_read(usb_device_p dev, unsigned char endpoint_number,
-    unsigned char* data, ssize_t num) {
+    unsigned char* data, size_t num) {
   usb_bulk_transfer_t transfer;
 
   transfer.endpoint_number = endpoint_number;
@@ -293,11 +298,11 @@ int usb_bulk_read(usb_device_p dev, unsigned char endpoint_number,
 }
 
 int usb_bulk_write(usb_device_p dev, unsigned char endpoint_number,
-    unsigned char* data, ssize_t num) {
+    unsigned char* data, size_t num) {
   usb_bulk_transfer_t transfer;
 
   transfer.endpoint_number = endpoint_number;
-  transfer.direction = usb_direction_in;
+  transfer.direction = usb_direction_out;
   
   transfer.num = num;
   transfer.data = data;
@@ -306,36 +311,36 @@ int usb_bulk_write(usb_device_p dev, unsigned char endpoint_number,
 }
 
 int usb_control_transfer(usb_device_p dev, usb_control_transfer_p transfer) {
-  int error;
+  ssize_t result;
   unsigned char request_type = transfer->recipient |
     (transfer->request_type << 5) | (transfer->direction << 7);
   
-  error = libusb_control_transfer(dev->libusb_handle, request_type,
+  result = libusb_control_transfer(dev->libusb_handle, request_type,
     transfer->request, transfer->value, transfer->index, transfer->data,
     transfer->num, dev->timeout*1e3);
   
-  if (error > 0) {
+  if (result > 0) {
     if (transfer->direction == usb_direction_out)
-      dev->num_written += error;
+      dev->num_written += result;
     else
-      dev->num_read += error;
+      dev->num_read += result;
     
-    return error;
+    return result;
   }
   else
-    return -usb_error(error);
+    return -usb_error(result);
 }
 
 int usb_bulk_transfer(usb_device_p dev, usb_bulk_transfer_p transfer) {
-  int error;
+  ssize_t result;
   int transferred = 0;
   unsigned char endpoint_address = transfer->endpoint_number |
     (transfer->direction << 7);
   
-  error = libusb_bulk_transfer(dev->libusb_handle, endpoint_address,
+  result = libusb_bulk_transfer(dev->libusb_handle, endpoint_address,
     transfer->data, transfer->num, &transferred, dev->timeout*1e3);
   
-  if (!error) {
+  if (!result) {
     if (transfer->direction == usb_direction_out)
       dev->num_written += transferred;
     else
@@ -344,7 +349,7 @@ int usb_bulk_transfer(usb_device_p dev, usb_bulk_transfer_p transfer) {
     return transferred;
   }
   else
-    return -usb_error(error);
+    return -usb_error(result);
 }
 
 void usb_print(FILE* stream, usb_device_p dev) {

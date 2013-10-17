@@ -19,7 +19,7 @@ remake_doc(
 )
 
 remake_pack_deb(
-  DEPENDS libudev0[:a-z]* libusb-1.0-0[:a-z]* libgsl0ldbl
+  DEPENDS libudev0[:a-z]* libusb-1.0-0[:a-z]* libftdi1 libgsl0ldbl
 )
 remake_pack_deb(
   COMPONENT dev
@@ -36,13 +36,15 @@ remake_distribute_deb(
   DISTRIBUTION lucid
   SECTION libs
   UPLOAD ppa:kralf/asl
-  DEPENDS libudev-dev libusb-1.0-0-dev libgsl0-dev remake pkg-config doxygen
+  DEPENDS libudev-dev libusb-1.0-0-dev libftdi-dev libgsl0-dev
+    remake pkg-config doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
 remake_distribute_deb(
   DISTRIBUTION precise
   SECTION libs
   UPLOAD ppa:kralf/asl
-  DEPENDS libudev-dev libusb-1.0-0-dev libgsl0-dev remake pkg-config doxygen
+  DEPENDS libudev-dev libusb-1.0-0-dev libftdi-dev libgsl0-dev
+    remake pkg-config doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
