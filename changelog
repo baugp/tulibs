@@ -1,3 +1,9 @@
+tulibs (0.1-58) lucid; urgency=low
+
+  * Fixed bug in ftdi_setup()
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 17 Oct 2013 09:35:00 +0100
+
 tulibs (0.1-57) lucid; urgency=low
 
   * Added FTDI device timeout

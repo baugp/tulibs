@@ -342,6 +342,7 @@ int ftdi_setup(ftdi_device_p dev, int baudrate, int databits, int stopbits,
 
   libftdi_context->usb_read_timeout = timeout*1e6;
   libftdi_context->usb_write_timeout = timeout*1e6;
+  dev->timeout = timeout;
   
   error = ftdi_set_latency_timer(libftdi_context, latency*1e3);
   if (error == -1)
