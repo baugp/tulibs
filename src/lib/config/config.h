@@ -153,10 +153,27 @@ void config_set(
   *   will be appended to the configuration.
   * \param[in] config The configuration to set the parameter for.
   * \param[in] param The parameter to be set.
+  * \return The existing and modified configuration parameter with the
+  *   specified key or the appended parameter.
   */
-void config_set_param(
+param_p config_set_param(
   config_p config,
   param_p param);
+
+/** \brief Set a configuration parameter's value
+  * \note If a parameter with the same key already exists in the configuration,
+  *   its value will be modified accordingly. Otherwise, a new parameter
+  *   will be appended to the configuration.
+  * \param[in] config The configuration to set the parameter for.
+  * \param[in] key The key of the parameter to set the value for.
+  * \param[in] value The new string value of the parameter.
+  * \return The existing and modified configuration parameter with the
+  *   specified key or the appended parameter.
+  */
+param_p config_set_param_value(
+  config_p config,
+  const char* key,
+  const char* value);
 
 /** \brief Retrieve a configuration parameter
   * \param[in] config The configuration to retrieve the parameter from.

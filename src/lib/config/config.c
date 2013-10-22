@@ -153,18 +153,30 @@ void config_set(config_p dst_config, config_p src_config) {
     config_set_param(dst_config, &src_config->params[i]);
 }
 
-void config_set_param(config_p config, param_p param) {
+param_p config_set_param(config_p config, param_p param) {
   param_p config_param = config_get_param(config, param->key);
+  
   if (!config_param) {
     config->params = realloc(config->params, (config->num_params+1)*
       sizeof(param_t));
     param_init_string(&config->params[config->num_params], param->key,
       param->value);
-
+    
     ++config->num_params;
+    return &config->params[config->num_params-1];
   }
-  else
+  else {
     param_set_string_value(config_param, param->value);
+    return config_param;
+  }
+}
+
+param_p config_set_param_value(config_p config, const char* key,
+    const char* value) {
+  param_t config_param;
+  
+  param_init_string(&config_param, key, value);
+  return config_set_param(config, &config_param);
 }
 
 param_p config_get_param(config_p config, const char* key) {
