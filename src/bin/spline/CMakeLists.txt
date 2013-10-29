@@ -1,2 +1,5 @@
-remake_include(../../lib/spline)
-remake_add_executables(LINK spline)
+remake_include(
+  ../../lib/spline
+  ../../lib/config
+)
+remake_add_executables(LINK spline config)

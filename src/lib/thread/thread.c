@@ -101,7 +101,7 @@ void thread_cleanup(void* arg) {
 
 void* thread_run(void* arg) {
   thread_p thread = arg;
-  void* result;
+  void* result = 0;
 
   pthread_cleanup_push(thread_cleanup, thread);
 

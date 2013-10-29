@@ -1,3 +1,12 @@
+tulibs (0.1-60) lucid; urgency=low
+
+  * Major rewriting of the configuration library
+    * Revised configuration parameters
+    * Implemented configuration parser
+    * Implemented help and manual page output
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 29 Oct 2013 15:03:00 +0100
+
 tulibs (0.1-59) lucid; urgency=low
 
   * Changed return type of config_set_param()

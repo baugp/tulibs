@@ -21,10 +21,17 @@
 #include <stdio.h>
 
 #include <usb.h>
+#include <parser.h>
 
 int main(int argc, char **argv) {
+  config_parser_t parser;
   int i;
 
+  config_parser_init_default(&parser, "List USB devices",
+    "The command displays lsusb-like information about USB buses in "
+    "the system and the devices connected to them.");
+  config_parser_parse(&parser, argc, argv, config_parser_exit_both);
+  
   usb_context_init(usb_default_context);
   if (usb_default_context->num_devices) {
     for (i = 0; i < usb_default_context->num_devices; ++i)

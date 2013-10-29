@@ -43,9 +43,8 @@
   */
 //@{
 #define CONFIG_ERROR_NONE                       0
-#define CONFIG_ERROR_ARGUMENT_HELP              1
-#define CONFIG_ERROR_ARGUMENT_FORMAT            2
-#define CONFIG_ERROR_ARGUMENT_MISSING           3
+#define CONFIG_ERROR_PARAM_KEY                  1
+#define CONFIG_ERROR_PARAM_VALUE                2
 //@}
 
 /** \brief Predefined configuration error descriptions
@@ -55,8 +54,8 @@ extern const char* config_errors[];
 /** \brief Configuration structure
   */
 typedef struct config_t {
-  param_p params;         //!< The configuration parameters.
-  size_t num_params;      //!< The number of configuration parameters.
+  config_param_p params;    //!< The configuration parameters.
+  size_t num_params;        //!< The number of configuration parameters.
 } config_t, *config_p;
 
 /** \brief Initialize an empty configuration
@@ -65,38 +64,28 @@ typedef struct config_t {
 void config_init(
   config_p config);
 
-/** \brief Initialize a configuration from default parameters
+/** \brief Initialize a configuration by copying
   * \param[in] config The configuration to be initialized.
-  * \param[in] default_config The default configuration parameters used to
-  *   initialize the configuration.
+  * \param[in] src_config The source configuration used to initialize the
+  *   configuration.
   */
-void config_init_default(
+void config_init_copy(
   config_p config,
-  config_p default_config);
-
-/** \brief Initialize a configuration from command line arguments
-  * \param[in] config The configuration to be initialized.
-  * \param[in] argc The number of supplied command line arguments.
-  * \param[in] argv The list of supplied command line arguments.
-  * \param[in] prefix An optional argument prefix that will be stripped from 
-  *   the parameter keys.
-  * \param[in] args An optional string naming the expected arguments
-  *   separated by a space character. Each argument found in the supplied
-  *   command line will be shifted towards the front of the list.
-  * \return The resulting error code.
-  */
-int config_init_arg(
-  config_p config,
-  int argc,
-  char** argv,
-  const char* prefix,
-  const char* args);
+  config_p src_config);
 
 /** \brief Destroy a configuration
   * \param[in] config The configuration to be destroyed.
   */
 void config_destroy(
   config_p config);
+
+/** \brief Copy a configuration
+  * \param[in] dst_config The destination configuration.
+  * \param[in] src_config The source configuration.
+  */
+void config_copy(
+  config_p dst_config,
+  config_p src_config);
 
 /** \brief Print a configuration
   * \param[in] stream The output stream that will be used for printing the
@@ -107,81 +96,35 @@ void config_print(
   FILE* stream,
   config_p config);
 
-/** \brief Print configuration usage
-  * \param[in] stream The output stream that will be used for printing the
-  *   configuration usage.
-  * \param[in] argv_0 The first command line argument, i.e. the name of
-  *   the executable.
-  * \param[in] args An optional string naming the expected arguments
-  *   separated by a space character.
-  * \param[in] error The error code as returned during the initialization
-  *   of the configuration.
+/** \brief Set configuration parameter values from a source configuration
+  * \param[in] dst_config The configuration to set the parameter values for.
+  * \param[in] src_config The configuration containing the source parameter
+  *    values to be set.
+  * \return The resulting error code.
   */
-void config_print_usage(
-  FILE* stream,
-  const char* argv_0,
-  const char* args,
-  int error);
-
-/** \brief Print help for a configuration
-  * \param[in] stream The output stream that will be used for printing the
-  *   configuration help.
-  * \param[in] config The configuration for which help will be printed.
-  * \param[in] prefix An optional argument prefix that will be prepended to
-  *   the parameter keys.
-  */
-void config_print_help(
-  FILE* stream,
-  config_p config,
-  const char* prefix);
-
-/** \brief Set configuration parameters from a source configuration.
-  * \note If the source parameters contain the help argument, a help
-  *   will be printed for the destination configuration and the program
-  *   exits with return value 0.
-  * \param[in] dst_config The configuration to set the parameters for.
-  * \param[in] src_config The configuration containing the source parameters
-  *    to be set.
-  */
-void config_set(
+int config_set(
   config_p dst_config,
   config_p src_config);
 
 /** \brief Set a configuration parameter
   * \note If a parameter with the same key already exists in the configuration,
-  *   its value will be modified accordingly. Otherwise, a new parameter
-  *   will be appended to the configuration.
+  *   it will be replaced. Otherwise, the parameter will be inserted into the
+  *   configuration.
   * \param[in] config The configuration to set the parameter for.
   * \param[in] param The parameter to be set.
-  * \return The existing and modified configuration parameter with the
-  *   specified key or the appended parameter.
+  * \return The modified or inserted configuration parameter.
   */
-param_p config_set_param(
+config_param_p config_set_param(
   config_p config,
-  param_p param);
-
-/** \brief Set a configuration parameter's value
-  * \note If a parameter with the same key already exists in the configuration,
-  *   its value will be modified accordingly. Otherwise, a new parameter
-  *   will be appended to the configuration.
-  * \param[in] config The configuration to set the parameter for.
-  * \param[in] key The key of the parameter to set the value for.
-  * \param[in] value The new string value of the parameter.
-  * \return The existing and modified configuration parameter with the
-  *   specified key or the appended parameter.
-  */
-param_p config_set_param_value(
-  config_p config,
-  const char* key,
-  const char* value);
+  config_param_p param);
 
 /** \brief Retrieve a configuration parameter
   * \param[in] config The configuration to retrieve the parameter from.
   * \param[in] key The key of the parameter to be retrieved.
-  * \return The configuration parameter with the specified key or null,
-  *   if no such parameter exists.
+  * \return The configuration parameter with the specified key or null
+  *   if no such parameter exists in the configuration.
   */
-param_p config_get_param(
+config_param_p config_get_param(
   config_p config,
   const char* key);
 
@@ -189,8 +132,9 @@ param_p config_get_param(
   * \param[in] config The configuration to set the string value for.
   * \param[in] key The key of the string value to be set.
   * \param[in] value The string value to be set.
+  * \return The resulting error code.
   */
-void config_set_string(
+int config_set_string(
   config_p config,
   const char* key,
   const char* value);
@@ -198,7 +142,8 @@ void config_set_string(
 /** \brief Retrieve a configuration parameter's string value
   * \param[in] config The configuration to retrieve the string value from.
   * \param[in] key The key of the string value to be retrieved.
-  * \return The parameter's string value.
+  * \return The parameter's string value or null if no such parameter
+  *   exists in the configuration.
   */
 const char* config_get_string(
   config_p config,
@@ -208,8 +153,9 @@ const char* config_get_string(
   * \param[in] config The configuration to set the integer value for.
   * \param[in] key The key of the integer value to be set.
   * \param[in] value The integer value to be set.
+  * \return The resulting error code.
   */
-void config_set_int(
+int config_set_int(
   config_p config,
   const char* key,
   int value);
@@ -217,7 +163,8 @@ void config_set_int(
 /** \brief Retrieve a configuration parameter's integer value
   * \param[in] config The configuration to retrieve the integer value from.
   * \param[in] key The key of the integer value to be retrieved.
-  * \return The parameter's integer value.
+  * \return The parameter's integer value or zero if no such parameter
+  *   exists in the configuration.
   */
 int config_get_int(
   config_p config,
@@ -227,8 +174,9 @@ int config_get_int(
   * \param[in] config The configuration to set the floating point value for.
   * \param[in] key The key of the floating point value to be set.
   * \param[in] value The floating point value to be set.
+  * \return The resulting error code.
   */
-void config_set_float(
+int config_set_float(
   config_p config,
   const char* key,
   double value);
@@ -237,9 +185,54 @@ void config_set_float(
   * \param[in] config The configuration to retrieve the floating point
   *   value from.
   * \param[in] key The key of the floating point value to be retrieved.
-  * \return The parameter's floating point value.
+  * \return The parameter's floating point value or NaN if no such parameter
+  *   exists in the configuration.
   */
 double config_get_float(
+  config_p config,
+  const char* key);
+
+/** \brief Set a configuration parameter's enumerable value
+  * \param[in] config The configuration to set the enumerable value for.
+  * \param[in] key The key of the enumerable value to be set.
+  * \param[in] value The enumerable value to be set.
+  * \return The resulting error code.
+  */
+int config_set_enum(
+  config_p config,
+  const char* key,
+  int value);
+
+/** \brief Retrieve a configuration parameter's enumerable value
+  * \param[in] config The configuration to retrieve the enumerable
+  *   value from.
+  * \param[in] key The key of the enumerable value to be retrieved.
+  * \return The parameter's enumerable value or -1 if no such parameter
+  *   exists in the configuration.
+  */
+int config_get_enum(
+  config_p config,
+  const char* key);
+
+/** \brief Set a configuration parameter's boolean value
+  * \param[in] config The configuration to set the boolean value for.
+  * \param[in] key The key of the boolean value to be set.
+  * \param[in] value The boolean value to be set.
+  * \return The resulting error code.
+  */
+int config_set_bool(
+  config_p config,
+  const char* key,
+  config_param_bool_t value);
+
+/** \brief Retrieve a configuration parameter's boolean value
+  * \param[in] config The configuration to retrieve the boolean
+  *   value from.
+  * \param[in] key The key of the boolean value to be retrieved.
+  * \return The parameter's boolean value or false if no such parameter
+  *   exists in the configuration.
+  */
+config_param_bool_t config_get_bool(
   config_p config,
   const char* key);
 

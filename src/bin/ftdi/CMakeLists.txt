@@ -1,2 +1,5 @@
-remake_include(../../lib/ftdi)
-remake_add_executables(LINK tulibs-ftdi)
+remake_include(
+  ../../lib/ftdi
+  ../../lib/config
+)
+remake_add_executables(LINK tulibs-ftdi config)
