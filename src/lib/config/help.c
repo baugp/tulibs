@@ -24,8 +24,8 @@
 #include "help.h"
 
 const char* config_help_errors[] = {
-  "success",
-  "maximum output width exceeded",
+  "Success",
+  "Maximum output width exceeded",
 };
 
 int config_help_print_arguments(FILE* stream, const char* section_title,

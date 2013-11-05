@@ -24,9 +24,9 @@
 #include "config.h"
 
 const char* config_errors[] = {
-  "success",
-  "parameter key error",
-  "parameter value error"
+  "Success",
+  "Parameter key error",
+  "Parameter value error"
 };
 
 void config_init(config_p config) {
@@ -58,6 +58,13 @@ void config_copy(config_p dst_config, config_p src_config) {
     free(dst_config->params);
   
   dst_config->num_params = src_config->num_params;
+}
+
+void config_merge(config_p dst_config, config_p src_config) {
+  int i;
+  
+  for (i = 0; i < src_config->num_params; ++i)
+    config_set_param(dst_config, &src_config->params[i]);
 }
 
 void config_print(FILE* stream, config_p config) {

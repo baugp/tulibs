@@ -56,59 +56,63 @@ extern const char* usb_errors[];
 /** \brief USB debug level enumeratable type
   */
 typedef enum {
-  usb_debug_level_minimal = 0,      //!< No debugging output.
-  usb_debug_level_error = 1,        //!< Error debugging output.
-  usb_debug_level_warning = 2,      //!< Warning debugging output.
-  usb_debug_level_verbose = 3       //!< Verbose debugging output.
+  usb_debug_level_minimal,          //!< No debugging output.
+  usb_debug_level_error,            //!< Error debugging output.
+  usb_debug_level_warning,          //!< Warning debugging output.
+  usb_debug_level_verbose           //!< Verbose debugging output.
 } usb_debug_level_t;
 
 /** \brief USB device class enumeratable type
   */
 typedef enum {
-  usb_class_per_interface = 0,      //!< Class specified per interface.
-  usb_class_audio = 1,              //!< Audio device class.
-  usb_class_comm = 2,               //!< Communication device class.
-  usb_class_hid = 3,                //!< Human interface device class.
-  usb_class_physical = 5,           //!< Physical device class.
-  usb_class_image = 6,              //!< Image device class.
-  usb_class_printer = 7,            //!< Printer device class.
-  usb_class_mass_storage = 8,       //!< Mass storage device class.
-  usb_class_hub = 9,                //!< Hub device class.
-  usb_class_data = 10,              //!< Data device class.
-  usb_class_smart_card = 11,        //!< Smart card device class.
-  usb_class_content_security = 13,  //!< Content security device class.
-  usb_class_video = 14,             //!< Video device class.
-  usb_class_healthcare = 15,        //!< Healthcare device class.
-  usb_class_diagnostic = 220,       //!< Diagnostic device class.
-  usb_class_wireless = 224,         //!< Wireless device class.
-  usb_class_application = 254,      //!< Application device class.
-  usb_class_vendor = 255,           //!< Vendor-specific device class.
-  usb_class_unknown = 256           //!< Unknown device class.
+  usb_class_per_interface,          //!< Class specified per interface.
+  usb_class_audio,                  //!< Audio device class.
+  usb_class_comm,                   //!< Communication device class.
+  usb_class_hid,                    //!< Human interface device class.
+  usb_class_physical,               //!< Physical device class.
+  usb_class_image,                  //!< Image device class.
+  usb_class_printer,                //!< Printer device class.
+  usb_class_mass_storage,           //!< Mass storage device class.
+  usb_class_hub,                    //!< Hub device class.
+  usb_class_data,                   //!< Data device class.
+  usb_class_smart_card,             //!< Smart card device class.
+  usb_class_content_security,       //!< Content security device class.
+  usb_class_video,                  //!< Video device class.
+  usb_class_healthcare,             //!< Healthcare device class.
+  usb_class_diagnostic,             //!< Diagnostic device class.
+  usb_class_wireless,               //!< Wireless device class.
+  usb_class_application,            //!< Application device class.
+  usb_class_vendor,                 //!< Vendor-specific device class.
+  usb_class_unknown                 //!< Unknown device class.
 } usb_class_t;
+
+/** \brief Predefined USB device class strings
+  */
+extern const char* usb_classes[];
 
 /** \brief USB request type enumeratable type
   */
 typedef enum {
-  usb_request_type_standard = 0,    //!< Standard request type.
-  usb_request_type_class = 1,       //!< Class request type.
-  usb_request_type_vendor = 2,      //!< Vendor-specific request type.
-  usb_request_type_reserved = 3     //!< Reserved.
+  usb_request_type_standard,        //!< Standard request type.
+  usb_request_type_class,           //!< Class request type.
+  usb_request_type_vendor,          //!< Vendor-specific request type.
+  usb_request_type_reserved         //!< Reserved.
 } usb_request_type_t;
 
 /** \brief USB recipient enumeratable type
   */
 typedef enum {
-  usb_recipient_device = 0,         //!< Device recipient.
-  usb_recipient_interface = 1,      //!< Interface recipient.
-  usb_recipient_endpoint = 2,       //!< Endpoint recipient.
-  usb_recipient_other = 3           //!< Other recipient.
+  usb_recipient_device,             //!< Device recipient.
+  usb_recipient_interface,          //!< Interface recipient.
+  usb_recipient_endpoint,           //!< Endpoint recipient.
+  usb_recipient_other               //!< Other recipient.
 } usb_recipient_t;
 
 /** \brief USB direction enumeratable type
   */
 typedef enum {
-  usb_direction_out = 0,            //!< Host-to-device direction.
-  usb_direction_in = 1              //!< Device-to-host direction.
+  usb_direction_out,                //!< Host-to-device direction.
+  usb_direction_in                  //!< Device-to-host direction.
 } usb_direction_t;
 
 /** \brief USB device structure

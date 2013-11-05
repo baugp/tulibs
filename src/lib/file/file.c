@@ -31,14 +31,14 @@
 #include "file/path.h"
 
 const char* file_errors[] = {
-  "success",
-  "no such file",
-  "failed to attain file position",
-  "failed to retrieve file position",
-  "failed to open file",
-  "failed to read from file",
-  "failed to write to file",
-  "illegal file operation",
+  "Success",
+  "No such file",
+  "Failed to attain file position",
+  "Failed to retrieve file position",
+  "Failed to open file",
+  "Failed to read from file",
+  "Failed to write to file",
+  "Illegal file operation",
 };
 
 const char* file_modes[] = {

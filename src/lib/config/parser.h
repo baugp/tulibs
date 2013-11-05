@@ -72,10 +72,10 @@ extern config_t config_parser_default_options;
 /** \brief Configuration parser
   */
 typedef enum {
-  config_parser_exit_never = 0, //!< Parser never terminates its process.
-  config_parser_exit_error = 1, //!< Parser terminates in case of error.
-  config_parser_exit_help = 2,  //!< Parser terminates in case of help.
-  config_parser_exit_both = 3   //!< Parser terminates in case of error or help.
+  config_parser_exit_never,     //!< Parser never terminates its process.
+  config_parser_exit_error,     //!< Parser terminates in case of error.
+  config_parser_exit_help,      //!< Parser terminates in case of help.
+  config_parser_exit_both       //!< Parser terminates in case of error or help.
 } config_parser_exit_t;
 
 /** \brief Configuration parser option group structure

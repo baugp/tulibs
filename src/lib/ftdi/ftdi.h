@@ -46,9 +46,9 @@
 #define FTDI_ERROR_CLOSE                    5
 #define FTDI_ERROR_PURGE                    6
 #define FTDI_ERROR_INVALID_INTERFACE        7
-#define FTDI_ERROR_INVALID_BAUDRATE         8
-#define FTDI_ERROR_INVALID_DATABITS         9
-#define FTDI_ERROR_INVALID_STOPBITS         10
+#define FTDI_ERROR_INVALID_BAUD_RATE        8
+#define FTDI_ERROR_INVALID_DATA_BITS        9
+#define FTDI_ERROR_INVALID_STOP_BITS        10
 #define FTDI_ERROR_INVALID_PARITY           11
 #define FTDI_ERROR_INVALID_FLOW_CTRL        12
 #define FTDI_ERROR_INVALID_BREAK            13
@@ -83,37 +83,37 @@ extern const char* ftdi_chips[];
 /** \brief Interface enumeratable type
   */
 typedef enum {
-  ftdi_interface_any = 0,       //!< Any interface.
-  ftdi_interface_a = 1,         //!< Interface A.
-  ftdi_interface_b = 2,         //!< Interface B.
-  ftdi_interface_c = 3,         //!< Interface C.
-  ftdi_interface_d = 4          //!< Interface D.
+  ftdi_interface_any,           //!< Any interface.
+  ftdi_interface_a,             //!< Interface A.
+  ftdi_interface_b,             //!< Interface B.
+  ftdi_interface_c,             //!< Interface C.
+  ftdi_interface_d              //!< Interface D.
 } ftdi_interface_t;
 
 /** \brief Parity enumeratable type
   */
 typedef enum {
-  ftdi_parity_none = 0,         //!< No parity.
-  ftdi_parity_odd = 1,          //!< Odd parity.
-  ftdi_parity_even = 2,         //!< Even parity.
-  ftdi_parity_mark = 3,         //!< Mark parity.
-  ftdi_parity_space = 4         //!< Space parity.
+  ftdi_parity_none,             //!< No parity.
+  ftdi_parity_odd,              //!< Odd parity.
+  ftdi_parity_even,             //!< Even parity.
+  ftdi_parity_mark,             //!< Mark parity.
+  ftdi_parity_space             //!< Space parity.
 } ftdi_parity_t;
 
 /** \brief Flow control enumeratable type
   */
 typedef enum {
-  ftdi_flow_ctrl_off = 0,       //!< Disable flow control.
-  ftdi_flow_ctrl_xon_xoff = 1,  //!< XON/XOFF flow control.
-  ftdi_flow_ctrl_rts_cts = 2,   //!< RTS/CTS (hardware) flow control.
-  ftdi_flow_ctrl_dtr_dsr = 3    //!< DTR/DSR (hardware) flow control.
+  ftdi_flow_ctrl_off,           //!< Disable flow control.
+  ftdi_flow_ctrl_xon_xoff,      //!< XON/XOFF flow control.
+  ftdi_flow_ctrl_rts_cts,       //!< RTS/CTS (hardware) flow control.
+  ftdi_flow_ctrl_dtr_dsr        //!< DTR/DSR (hardware) flow control.
 } ftdi_flow_ctrl_t;
 
 /** \brief Break enumeratable type
   */
 typedef enum {
-  ftdi_break_off = 0,           //!< Break off.
-  ftdi_break_on = 1             //!< Break on.
+  ftdi_break_off,               //!< Break off.
+  ftdi_break_on                 //!< Break on.
 } ftdi_break_t;
 
 /** \brief FTDI device structure
@@ -129,9 +129,9 @@ typedef struct ftdi_device_t {
   ftdi_chip_t chip;               //!< Device chip type.
   ftdi_interface_t interface;     //!< Device interface number.
     
-  int baudrate;                   //!< Device baudrate.
-  int databits;                   //!< Number of databits.
-  int stopbits;                   //!< Number of stopbits.
+  int baud_rate;                  //!< Device baud rate.
+  int data_bits;                  //!< Number of data bits.
+  int stop_bits;                  //!< Number of stop bits.
   ftdi_parity_t parity;           //!< Device parity.
   ftdi_flow_ctrl_t flow_ctrl;     //!< Device flow control.
   ftdi_break_t break_type;        //!< Device break enabled.
@@ -226,9 +226,9 @@ int ftdi_close(
 
 /** \brief Setup an already opened FTDI device
   * \param[in] dev The open FTDI device to be set up.
-  * \param[in] baudrate The device baudrate to be set.
-  * \param[in] databits The device's number of databits to be set.
-  * \param[in] stopbits The device's number of stopbits to be set.
+  * \param[in] baud_rate The device baud rate to be set.
+  * \param[in] data_bits The device's number of data bits to be set.
+  * \param[in] stop_bits The device's number of stop bits to be set.
   * \param[in] parity The device parity to be set.
   * \param[in] flow_ctrl The device flow control to be set.
   * \param[in] break_type The device break type to be set.
@@ -238,9 +238,9 @@ int ftdi_close(
   */
 int ftdi_setup(
   ftdi_device_p dev,
-  int baudrate,
-  int databits,
-  int stopbits,
+  int baud_rate,
+  int data_bits,
+  int stop_bits,
   ftdi_parity_t parity,
   ftdi_flow_ctrl_t flow_ctrl,
   ftdi_break_t break_type,

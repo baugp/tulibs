@@ -40,20 +40,42 @@ usb_context_t _usb_default_context = {
 usb_context_p usb_default_context = &_usb_default_context;
 
 const char* usb_errors[] = {
-  "success",
-  "input/output error",
-  "invalid parameter",
-  "access denied",
-  "no such device",
-  "entity not found",
-  "resource busy",
-  "operation timed out",
-  "overflow",
-  "pipe error",
-  "system call interrupted",
-  "insufficient memory",
-  "operation not supported"
-  "other error"
+  "Success",
+  "Input/output error",
+  "Invalid parameter",
+  "Access denied",
+  "No such device",
+  "Entity not found",
+  "Resource busy",
+  "Operation timed out",
+  "Overflow",
+  "Pipe error",
+  "System call interrupted",
+  "Insufficient memory",
+  "Operation not supported"
+  "Other error"
+};
+
+const char* usb_classes[] = {
+  "Per-interface",
+  "Audio",
+  "Communication",
+  "HID",
+  "Physical",
+  "Image",
+  "Printer",
+  "Mass storage",
+  "Hub",
+  "Data",
+  "Smart card",
+  "Content security",
+  "Video",
+  "Healthcare",
+  "Diagnostic",
+  "Wireless",
+  "Application",
+  "Vendor-specific",
+  "Unknown",
 };
 
 int usb_context_init(usb_context_p context) {
@@ -144,7 +166,65 @@ int usb_context_refresh(usb_context_p context) {
         if (!libusb_get_device_descriptor(libusb_devices[i], &descriptor)) {
           context->devices[i].vendor_id = descriptor.idVendor;
           context->devices[i].product_id = descriptor.idProduct;
-          context->devices[i].class = descriptor.bDeviceClass;
+          
+          switch (descriptor.bDeviceClass) {
+            case LIBUSB_CLASS_PER_INTERFACE:
+              context->devices[i].class = usb_class_per_interface;
+              break;
+            case LIBUSB_CLASS_AUDIO:
+              context->devices[i].class = usb_class_audio;
+              break;
+            case LIBUSB_CLASS_COMM:
+              context->devices[i].class = usb_class_comm;
+              break;
+            case LIBUSB_CLASS_HID:
+              context->devices[i].class = usb_class_hid;
+              break;
+            case LIBUSB_CLASS_PHYSICAL:
+              context->devices[i].class = usb_class_physical;
+              break;
+            case LIBUSB_CLASS_IMAGE:
+              context->devices[i].class = usb_class_image;
+              break;
+            case LIBUSB_CLASS_PRINTER:
+              context->devices[i].class = usb_class_printer;
+              break;
+            case LIBUSB_CLASS_MASS_STORAGE:
+              context->devices[i].class = usb_class_mass_storage;
+              break;
+            case LIBUSB_CLASS_HUB:
+              context->devices[i].class = usb_class_hub;
+              break;
+            case LIBUSB_CLASS_DATA:
+              context->devices[i].class = usb_class_data;
+              break;
+            case LIBUSB_CLASS_SMART_CARD:
+              context->devices[i].class = usb_class_smart_card;
+              break;
+            case LIBUSB_CLASS_CONTENT_SECURITY:
+              context->devices[i].class = usb_class_content_security;
+              break;
+            case LIBUSB_CLASS_VIDEO:
+              context->devices[i].class = usb_class_video;
+              break;
+            case LIBUSB_CLASS_PERSONAL_HEALTHCARE:
+              context->devices[i].class = usb_class_healthcare;
+              break;
+            case LIBUSB_CLASS_DIAGNOSTIC_DEVICE:
+              context->devices[i].class = usb_class_diagnostic;
+              break;
+            case LIBUSB_CLASS_WIRELESS:
+              context->devices[i].class = usb_class_wireless;
+              break;
+            case LIBUSB_CLASS_APPLICATION:
+              context->devices[i].class = usb_class_application;
+              break;
+            case LIBUSB_CLASS_VENDOR_SPEC:
+              context->devices[i].class = usb_class_vendor;
+              break;
+            default:
+              context->devices[i].class = usb_class_unknown;
+          }
           
           context->devices[i].timeout = 1e-2;
         }
@@ -353,6 +433,7 @@ int usb_bulk_transfer(usb_device_p dev, usb_bulk_transfer_p transfer) {
 }
 
 void usb_print(FILE* stream, usb_device_p dev) {
-  fprintf(stream, "Bus %03d Device %03d: ID %04x:%04x Class %03d\n",
-    dev->bus, dev->address, dev->vendor_id, dev->product_id, dev->class);
+  fprintf(stream, "Bus %03d Device %03d: ID %04x:%04x Class %s\n",
+    dev->bus, dev->address, dev->vendor_id, dev->product_id,
+    usb_classes[dev->class]);
 }

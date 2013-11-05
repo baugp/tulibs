@@ -24,8 +24,8 @@
 #include "timer.h"
 
 const char* timer_errors[] = {
-  "success",
-  "timer fault"
+  "Success",
+  "Timer fault"
 };
 
 void timer_start(

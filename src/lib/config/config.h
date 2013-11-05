@@ -80,10 +80,25 @@ void config_destroy(
   config_p config);
 
 /** \brief Copy a configuration
+  * \note When copying a source configuration to a destination
+  *   configuration, all paramters in the destination configuration will
+  *   be destroyed.
   * \param[in] dst_config The destination configuration.
   * \param[in] src_config The source configuration.
   */
 void config_copy(
+  config_p dst_config,
+  config_p src_config);
+
+/** \brief Merge configurations
+  * \note When merging a source configuration into a destination
+  *   configuration, all non-conflicting parameters in the destination
+  *   configuration will be maintained. Any destination parameter with a
+  *   key conflict will be replaced by its corresponding source parameter.
+  * \param[in] dst_config The destination configuration.
+  * \param[in] src_config The source configuration.
+  */
+void config_merge(
   config_p dst_config,
   config_p src_config);
 

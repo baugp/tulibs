@@ -35,25 +35,25 @@ ftdi_context_t _ftdi_default_context = {
 ftdi_context_p ftdi_default_context = &_ftdi_default_context;
 
 const char* ftdi_errors[] = {
-  "success",
-  "error initializing FTDI context",
-  "error releasing FTDI context",
-  "invalid FTDI context",
-  "error opening FTDI device",
-  "error closing FTDI device",
-  "error purging FTDI device",
-  "invalid interface",
-  "invalid baudrate",
-  "invalid number of databits",
-  "invalid number of stopbits",
-  "invalid parity",
-  "invalid flow control",
-  "invalid break",
-  "invalid latency",
-  "error setting FTDI device parameters",
+  "Success",
+  "Error initializing FTDI context",
+  "Error releasing FTDI context",
+  "Invalid FTDI context",
+  "Error opening FTDI device",
+  "Error closing FTDI device",
+  "Error purging FTDI device",
+  "Invalid interface",
+  "Invalid baud rate",
+  "Invalid number of data bits",
+  "Invalid number of stop bits",
+  "Invalid parity",
+  "Invalid flow control",
+  "Invalid break",
+  "Invalid latency",
+  "Error setting FTDI device parameters",
   "FTDI device select timeout",
-  "error reading from FTDI device",
-  "error writing to FTDI device",
+  "Error reading from FTDI device",
+  "Error writing to FTDI device",
 };
 
 const char* ftdi_chips[] = {
@@ -259,36 +259,36 @@ int ftdi_close(ftdi_device_p dev) {
   return FTDI_ERROR_NONE;
 }
 
-int ftdi_setup(ftdi_device_p dev, int baudrate, int databits, int stopbits,
+int ftdi_setup(ftdi_device_p dev, int baud_rate, int data_bits, int stop_bits,
     ftdi_parity_t parity, ftdi_flow_ctrl_t flow_ctrl, ftdi_break_t break_type,
     double timeout, double latency) {
   struct ftdi_context* libftdi_context = dev->libftdi_context;
-  enum ftdi_bits_type libftdi_databits;
-  enum ftdi_stopbits_type libftdi_stopbits;
+  enum ftdi_bits_type libftdi_data_bits;
+  enum ftdi_stopbits_type libftdi_stop_bits;
   enum ftdi_parity_type libftdi_parity;
   int libftdi_flow_ctrl;
   enum ftdi_break_type libftdi_break;
   int error;
   
-  switch (databits) {
-    case 7 : libftdi_databits = BITS_7;
+  switch (data_bits) {
+    case 7 : libftdi_data_bits = BITS_7;
              break;
-    case 8 : libftdi_databits = BITS_8;
+    case 8 : libftdi_data_bits = BITS_8;
              break;
-    default: return FTDI_ERROR_INVALID_DATABITS;
+    default: return FTDI_ERROR_INVALID_DATA_BITS;
   }
-  dev->databits = databits;
+  dev->data_bits = data_bits;
 
-  switch (stopbits) {
-    case 1 : libftdi_stopbits = STOP_BIT_1;
+  switch (stop_bits) {
+    case 1 : libftdi_stop_bits = STOP_BIT_1;
              break;
-    case 2 : libftdi_stopbits = STOP_BIT_2;
+    case 2 : libftdi_stop_bits = STOP_BIT_2;
              break;
-    case 15: libftdi_stopbits = STOP_BIT_15;
+    case 15: libftdi_stop_bits = STOP_BIT_15;
              break;
-    default: return FTDI_ERROR_INVALID_STOPBITS;
+    default: return FTDI_ERROR_INVALID_STOP_BITS;
   }
-  dev->stopbits = stopbits;
+  dev->stop_bits = stop_bits;
 
   switch (parity) {
     case ftdi_parity_none : libftdi_parity = NONE;
@@ -327,16 +327,16 @@ int ftdi_setup(ftdi_device_p dev, int baudrate, int databits, int stopbits,
   }
   dev->break_type = break_type;
 
-  if (ftdi_set_line_property2(libftdi_context, libftdi_databits,
-      libftdi_stopbits, libftdi_parity, libftdi_break))
+  if (ftdi_set_line_property2(libftdi_context, libftdi_data_bits,
+      libftdi_stop_bits, libftdi_parity, libftdi_break))
     return FTDI_ERROR_SETUP;
   if (ftdi_setflowctrl(libftdi_context, libftdi_flow_ctrl))
     return FTDI_ERROR_SETUP;
   
-  error = ftdi_set_baudrate(libftdi_context, baudrate);
+  error = ftdi_set_baudrate(libftdi_context, baud_rate);
   if (error == -1)
-    return FTDI_ERROR_INVALID_BAUDRATE;
-  dev->baudrate = baudrate;
+    return FTDI_ERROR_INVALID_BAUD_RATE;
+  dev->baud_rate = baud_rate;
   if (error)
     return FTDI_ERROR_SETUP;
 

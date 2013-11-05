@@ -39,9 +39,9 @@
 #define SERIAL_ERROR_CLOSE                2
 #define SERIAL_ERROR_DRAIN                3
 #define SERIAL_ERROR_FLUSH                4
-#define SERIAL_ERROR_INVALID_BAUDRATE     5
-#define SERIAL_ERROR_INVALID_DATABITS     6
-#define SERIAL_ERROR_INVALID_STOPBITS     7
+#define SERIAL_ERROR_INVALID_BAUD_RATE    5
+#define SERIAL_ERROR_INVALID_DATA_BITS    6
+#define SERIAL_ERROR_INVALID_STOP_BITS    7
 #define SERIAL_ERROR_INVALID_PARITY       8
 #define SERIAL_ERROR_INVALID_FLOW_CTRL    9
 #define SERIAL_ERROR_SETUP                10
@@ -57,17 +57,17 @@ extern const char* serial_errors[];
 /** \brief Parity enumeratable type
   */
 typedef enum {
-  serial_parity_none = 0,         //!< No parity.
-  serial_parity_odd = 1,          //!< Odd parity.
-  serial_parity_even = 2          //!< Even parity.
+  serial_parity_none,             //!< No parity.
+  serial_parity_odd,              //!< Odd parity.
+  serial_parity_even              //!< Even parity.
 } serial_parity_t;
 
 /** \brief Flow control enumeratable type
   */
 typedef enum {
-  serial_flow_ctrl_off = 0,       //!< Disable flow control.
-  serial_flow_ctrl_xon_xoff = 1,  //!< XON/XOFF flow control.
-  serial_flow_ctrl_rts_cts = 2    //!< RTS/CTS (hardware) flow control.
+  serial_flow_ctrl_off,           //!< Disable flow control.
+  serial_flow_ctrl_xon_xoff,      //!< XON/XOFF flow control.
+  serial_flow_ctrl_rts_cts        //!< RTS/CTS (hardware) flow control.
 } serial_flow_ctrl_t;
 
 /** \brief Serial device structure
@@ -76,9 +76,9 @@ typedef struct serial_device_t {
   int fd;                         //!< File descriptor.
   char name[256];                 //!< Device name.
 
-  int baudrate;                   //!< Device baudrate.
-  int databits;                   //!< Number of databits.
-  int stopbits;                   //!< Number of stopbits.
+  int baud_rate;                  //!< Device baud rate.
+  int data_bits;                  //!< Number of data bits.
+  int stop_bits;                  //!< Number of stop bits.
   serial_parity_t parity;         //!< Device parity.
   serial_flow_ctrl_t flow_ctrl;   //!< Device flow control.
 
@@ -106,9 +106,9 @@ int serial_close(
 
 /** \brief Setup an already opened serial device
   * \param[in] dev The open serial device to be set up.
-  * \param[in] baudrate The device baudrate to be set.
-  * \param[in] databits The device's number of databits to be set.
-  * \param[in] stopbits The device's number of stopbits to be set.
+  * \param[in] baud_rate The device baud rate to be set.
+  * \param[in] data_bits The device's number of data bits to be set.
+  * \param[in] stop_bits The device's number of stop bits to be set.
   * \param[in] parity The device parity to be set.
   * \param[in] flow_ctrl The device flow control to be set.
   * \param[in] timeout The device select timeout to be set in [s].
@@ -116,9 +116,9 @@ int serial_close(
   */
 int serial_setup(
   serial_device_p dev,
-  int baudrate,
-  int databits,
-  int stopbits,
+  int baud_rate,
+  int data_bits,
+  int stop_bits,
   serial_parity_t parity,
   serial_flow_ctrl_t flow_ctrl,
   double timeout);

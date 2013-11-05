@@ -28,13 +28,13 @@
 #include "man.h"
 
 const char* config_parser_errors[] = {
-  "success",
-  "failed to write manual page",
-  "unexpected argument",
-  "missing argument",
-  "invalid argument format",
-  "invalid argument key",
-  "invalid argument value"
+  "Success",
+  "Failed to write manual page",
+  "Unexpected argument",
+  "Missing argument",
+  "Invalid argument format",
+  "Invalid argument key",
+  "Invalid argument value"
 };
 
 config_param_t config_parser_default_params[] = {
@@ -59,11 +59,8 @@ void config_parser_init(config_parser_p parser, config_p arguments,
   else
     config_init(&parser->arguments);
 
-  if (options) {
-    int i;
-    for (i = 0; i < options->num_params; ++i)
-      config_set_param(&parser->options, &options->params[i]);
-  }
+  if (options)
+    config_merge(&parser->options, options);
 }
 
 void config_parser_init_default(config_parser_p parser, const char* summary,
@@ -281,9 +278,7 @@ void config_parser_print_usage(FILE* stream, config_parser_p parser) {
   if (parser->error) {
     char error[strlen(config_parser_errors[parser->error])+
       strlen(parser->error_what)+32];
-    i = sprintf(error, "Error: %c%s",
-      toupper(config_parser_errors[parser->error][0]),
-      &config_parser_errors[parser->error][1]);
+    i = sprintf(error, "Error: %s", config_parser_errors[parser->error]);
     if (parser->error_what[0])
       sprintf(&error[i], " \"%s\"", parser->error_what);
     strcat(error, "\n");

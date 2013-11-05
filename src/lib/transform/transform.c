@@ -25,10 +25,6 @@
 
 #include "transform.h"
 
-const char* transform_errors[] = {
-  "success",
-};
-
 void transform_init_identity(transform_t transform) {
   int i, j;
 

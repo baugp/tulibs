@@ -26,9 +26,9 @@
 #include "param.h"
 
 const char* config_param_errors[] = {
-  "success",
-  "parameter value type mismatch"
-  "parameter value out of range"
+  "Success",
+  "Parameter value type mismatch"
+  "Parameter value out of range"
 };
 
 const char* config_param_types[] = {

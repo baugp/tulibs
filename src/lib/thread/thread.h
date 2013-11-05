@@ -49,8 +49,8 @@ extern const char* thread_errors[];
 /** \brief Thread state enumeratable type
   */
 typedef enum {
-  thread_state_stopped = 0,       //!< Thread is stopped.
-  thread_state_running = 1,       //!< Thread is running.
+  thread_state_stopped,          //!< Thread is stopped.
+  thread_state_running,          //!< Thread is running.
 } thread_state_t;
 
 /** \brief Structure defining the thread context

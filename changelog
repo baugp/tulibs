@@ -1,3 +1,12 @@
+tulibs (0.2-62) lucid; urgency=low
+
+  * Removed enumerable value assignments from headers (now successive
+    to comply with the assumptions of an enumerable configuration
+    parameter)
+  * Added config_merge() function
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 05 Nov 2013 13:54:00 +0100
+ 
 tulibs (0.2-61) lucid; urgency=low
 
   * Restructured development header directory layout (headers are now
@@ -8,7 +17,7 @@ tulibs (0.2-61) lucid; urgency=low
   * Added utility manual page generation via new remake_doc_targets() macro
   * Increased minor version
 
- -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 29 Oct 2013 15:03:00 +0100
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 05 Nov 2013 09:45:00 +0100
  
 tulibs (0.1-60) lucid; urgency=low
 

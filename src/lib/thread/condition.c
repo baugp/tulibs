@@ -27,9 +27,9 @@
 #include "condition.h"
 
 const char* thread_condition_errors[] = {
-  "success",
-  "mutex operation error",
-  "wait operation timed out",
+  "Success",
+  "Mutex operation error",
+  "Wait operation timed out",
 };
 
 void thread_condition_init(thread_condition_p condition) {

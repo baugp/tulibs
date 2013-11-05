@@ -25,10 +25,10 @@
 #include "timer/timer.h"
 
 const char* thread_errors[] = {
-  "success",
-  "error creating thread",
-  "wait operation timed out",
-  "state error",
+  "Success",
+  "Error creating thread",
+  "Wait operation timed out",
+  "State error",
 };
 
 int thread_start(thread_p thread, void* (*thread_routine)(void*),

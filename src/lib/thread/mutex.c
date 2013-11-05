@@ -21,8 +21,8 @@
 #include "mutex.h"
 
 const char* thread_mutex_errors[] = {
-  "success",
-  "failed to acquire mutex lock",
+  "Success",
+  "Failed to acquire mutex lock",
 };
 
 void thread_mutex_init(thread_mutex_p mutex) {

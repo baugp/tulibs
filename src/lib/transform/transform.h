@@ -33,10 +33,6 @@
 #include "transform/point.h"
 #include "transform/pose.h"
 
-/** \brief Predefined transform error descriptions
-  */
-extern const char* transform_errors[];
-
 /** \brief Structure defining a transformation
   * \note A linear transformation is defined by a 4x4 transformation matrix.
   */

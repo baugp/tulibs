@@ -26,12 +26,12 @@
 #define cub(a) ((a)*(a)*(a))
 
 const char* spline_errors[] = {
-  "success",
-  "error opening file",
-  "invalid file format",
-  "error creating file",
-  "error writing file",
-  "value undefined",
+  "Success",
+  "Error opening file",
+  "Invalid file format",
+  "Error creating file",
+  "Error writing file",
+  "Value undefined",
 };
 
 void spline_init_segment(spline_segment_p segment) {

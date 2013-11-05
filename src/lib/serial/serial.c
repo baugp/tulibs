@@ -27,20 +27,20 @@
 #include "serial.h"
 
 const char* serial_errors[] = {
-  "success",
-  "error opening serial device",
-  "error closing serial device",
-  "error draining serial device",
-  "error flushing serial device",
-  "invalid baudrate",
-  "invalid number of databits",
-  "invalid number of stopbits",
-  "invalid parity",
-  "invalid flow control",
-  "error setting serial device parameters",
-  "serial device select timeout",
-  "error reading from serial device",
-  "error writing to serial device",
+  "Success",
+  "Error opening serial device",
+  "Error closing serial device",
+  "Error draining serial device",
+  "Error flushing serial device",
+  "Invalid baud rate",
+  "Invalid number of data bits",
+  "Invalid number of stop bits",
+  "Invalid parity",
+  "Invalid flow control",
+  "Error setting serial device parameters",
+  "Serial device select timeout",
+  "Error reading from serial device",
+  "Error writing to serial device",
 };
 
 int serial_open(serial_device_p dev, const char* name) {
@@ -72,12 +72,13 @@ int serial_close(serial_device_p dev) {
   return SERIAL_ERROR_NONE;
 }
 
-int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
-    serial_parity_t parity, serial_flow_ctrl_t flow_ctrl, double timeout) {
+int serial_setup(serial_device_p dev, int baud_rate, int data_bits, int
+    stop_bits, serial_parity_t parity, serial_flow_ctrl_t flow_ctrl, double
+    timeout) {
   struct termios tio;
   memset(&tio, 0, sizeof(struct termios));
   
-  switch (baudrate) {
+  switch (baud_rate) {
     case 50L    : tio.c_cflag |= B50;
                   break;
     case 75L    : tio.c_cflag |= B75;
@@ -114,11 +115,11 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
                   break;
     case 230400L: tio.c_cflag |= B230400;
                   break;
-    default     : return SERIAL_ERROR_INVALID_BAUDRATE;
+    default     : return SERIAL_ERROR_INVALID_BAUD_RATE;
   }
-  dev->baudrate = baudrate;
+  dev->baud_rate = baud_rate;
   
-  switch (databits) {
+  switch (data_bits) {
     case 5 : tio.c_cflag |= CS5;
              break;
     case 6 : tio.c_cflag |= CS6;
@@ -127,17 +128,17 @@ int serial_setup(serial_device_p dev, int baudrate, int databits, int stopbits,
              break;
     case 8 : tio.c_cflag |= CS8;
              break;
-    default: return SERIAL_ERROR_INVALID_DATABITS;
+    default: return SERIAL_ERROR_INVALID_DATA_BITS;
   }
-  dev->databits = databits;
+  dev->data_bits = data_bits;
   
-  switch (stopbits) {
+  switch (stop_bits) {
     case 1 : break;
     case 2 : tio.c_cflag |= CSTOPB;
              break;
-    default: return SERIAL_ERROR_INVALID_STOPBITS;
+    default: return SERIAL_ERROR_INVALID_STOP_BITS;
   }
-  dev->stopbits = stopbits;
+  dev->stop_bits = stop_bits;
   
   switch (parity) {
     case serial_parity_none: break;
