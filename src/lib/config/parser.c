@@ -87,7 +87,10 @@ void config_parser_init_default(config_parser_p parser, const char* summary,
   parser->error_what[0] = 0;
   
   config_parser_add_option_group(parser, &config_man_default_options,
-    CONFIG_MAN_ARG_PREFIX, "Manual page generating options");
+    CONFIG_MAN_ARG_PREFIX, "Manual page generating options",
+    "These options control the generation of manual pages for parser "
+    "configurations. They are usually hidden from the textual help and "
+    "manual page content of these parser.");
 }
 
 void config_parser_destroy(config_parser_p parser) {
@@ -108,7 +111,7 @@ void config_parser_destroy(config_parser_p parser) {
 
 config_parser_option_group_p config_parser_add_option_group(
     config_parser_p parser, config_p options, const char* prefix,
-    const char* description) {
+    const char* summary, const char* description) {
   config_parser_option_group_p option_group = 0;
   
   parser->option_groups = realloc(parser->option_groups,
@@ -116,11 +119,19 @@ config_parser_option_group_p config_parser_add_option_group(
   option_group = &parser->option_groups[parser->num_option_groups];
   ++parser->num_option_groups;
   
-  config_init_copy(&option_group->options, options);
+  if (options)
+    config_init_copy(&option_group->options, options);
+  else
+    config_init(&option_group->options);
+  
   if (prefix)
     strcpy(option_group->prefix, prefix);
   else
     option_group->prefix[0] = 0;
+  if (summary)
+    strcpy(option_group->summary, summary);
+  else
+    option_group->summary[0] = 0;
   if (description)
     strcpy(option_group->description, description);
   else
@@ -380,16 +391,16 @@ int config_parser_write_man(const char* filename, config_parser_p parser) {
   config_man_write_description(&file, description);
 
   if (parser->arguments.num_params)
-    config_man_write_arguments(&file, "Positional arguments",
+    config_man_write_arguments(&file, "Positional arguments", 0,
       &parser->arguments);
 
   if (parser->options.num_params)
-    config_man_write_options(&file, "General options", &parser->options, 0);
+    config_man_write_options(&file, "General options", 0, &parser->options, 0);
 
   for (i = 1; i < parser->num_option_groups; ++i) {
     config_parser_option_group_p option_group = &parser->option_groups[i];
-    config_man_write_options(&file, option_group->description,
-      &option_group->options, option_group->prefix);
+    config_man_write_options(&file, option_group->summary,
+      option_group->description, &option_group->options, option_group->prefix);
   }
 
   const char* project_name = config_get_string(&man_option_group->options,

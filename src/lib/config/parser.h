@@ -84,7 +84,9 @@ typedef struct config_parser_option_group_t {
   config_t options;             //!< The parser option group's options.
   
   char prefix[128];             //!< The parser option group prefix.
-  char description[512];        //!< The parser option group description.
+  
+  char summary[128];            //!< The parser option group summary.
+  char description[1024];       //!< The parser option group description.
 } config_parser_option_group_t, *config_parser_option_group_p;
 
 /** \brief Configuration parser structure
@@ -145,9 +147,11 @@ void config_parser_destroy(
 /** \brief Add an option group to the configuration parser
   * \param[in] parser The configuration parser to which the option group
   *   will be added.
-  * \param[in] options The options to be assigned to the option group.
+  * \param[in] options The options to be assigned to the option group, can
+  *   be null in which case the added option group will be empty.
   * \param[in] prefix An optional prefix of the parser option group.
-  * \param[in] description An optional description of the parser option
+  * \param[in] summary An optional, short summary of the parser option group.
+  * \param[in] description An optional, long description of the parser option
   *   group.
   * \return The option group added to the configuration parser.
   */
@@ -155,6 +159,7 @@ config_parser_option_group_p config_parser_add_option_group(
   config_parser_p parser,
   config_p options,
   const char* prefix,
+  const char* summary,
   const char* description);
 
 /** \brief Parse command line arguments

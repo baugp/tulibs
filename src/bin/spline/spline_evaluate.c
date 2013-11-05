@@ -61,7 +61,10 @@ int main(int argc, char **argv) {
     "from the base function or its derivatives.");
   config_set_param(&parser.arguments, &file_param);
   config_set_param(&parser.arguments, &step_size_param);
-  config_set_param(&parser.options, &eval_type_param);
+  config_parser_option_group_p spline_option_group =
+    config_parser_add_option_group(&parser, 0, "spline-", "Spline options",
+    "These options control the spline operations performed by the command.");
+  config_set_param(&spline_option_group->options, &eval_type_param);
   config_parser_parse(&parser, argc, argv, config_parser_exit_both);
   
   const char* file = config_param_get_string(&file_param);

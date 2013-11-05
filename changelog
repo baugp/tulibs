@@ -1,3 +1,10 @@
+tulibs (0.2-63) lucid; urgency=low
+
+  * Added long description to parser option groups (long descriptions
+    are written to manual pages as section prefaces)
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 05 Nov 2013 14:31:00 +0100
+ 
 tulibs (0.2-62) lucid; urgency=low
 
   * Removed enumerable value assignments from headers (now successive

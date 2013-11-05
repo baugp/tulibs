@@ -116,7 +116,7 @@ int config_man_write_description(file_p file, const char* text) {
 }
 
 int config_man_write_arguments(file_p file, const char* section_title,
-    config_p arguments) {
+    const char* section_preface, config_p arguments) {
   int i;    
    
   if (arguments->num_params) {
@@ -124,6 +124,9 @@ int config_man_write_arguments(file_p file, const char* section_title,
     for (i = 0; i < sizeof(title); ++i)
       title[i] = toupper(section_title[i]);
     file_printf(file, ".SH %s\n", title);
+    
+    if (section_preface && section_preface[0])
+      file_printf(file, ".PP\n%s\n", section_preface);
   }
   
   for (i = 0; i < arguments->num_params; ++i)
@@ -168,7 +171,7 @@ int config_man_write_argument(file_p file, config_param_p param) {
 }
 
 int config_man_write_options(file_p file, const char* section_title,
-    config_p options, const char* prefix) {
+    const char* section_preface, config_p options, const char* prefix) {
   int i;    
    
   if (options->num_params) {
@@ -176,6 +179,9 @@ int config_man_write_options(file_p file, const char* section_title,
     for (i = 0; i < sizeof(title); ++i)
       title[i] = toupper(section_title[i]);
     file_printf(file, ".SH %s\n", title);
+
+    if (section_preface && section_preface[0])
+      file_printf(file, ".PP\n%s\n", section_preface);    
   }
   
   for (i = 0; i < options->num_params; ++i)

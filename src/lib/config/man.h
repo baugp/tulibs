@@ -114,6 +114,7 @@ int config_man_write_description(
   * \param[in] file The open file that will be used for writing the
   *   generated manual page section.
   * \param[in] section_title The title of the manual page section.
+  * \param[in] section_preface An optional preface of the manual page section.
   * \param[in] arguments The arguments for which to generate the manual
   *   page section.
   * \return The resulting error code.
@@ -121,6 +122,7 @@ int config_man_write_description(
 int config_man_write_arguments(
   file_p file,
   const char* section_title,
+  const char* section_preface,
   config_p arguments);
 
 /** \brief Write manual page paragraph for a positional argument parameter
@@ -138,6 +140,7 @@ int config_man_write_argument(
   * \param[in] file The open file that will be used for writing the
   *   generated manual page section.
   * \param[in] section_title The title of the manual page section.
+  * \param[in] section_preface An optional preface of the manual page section.
   * \param[in] options The options for which to generate the manual page
   *   section.
   * \param[in] prefix An optional argument prefix that will be appended to
@@ -147,6 +150,7 @@ int config_man_write_argument(
 int config_man_write_options(
   file_p file,
   const char* section_title,
+  const char* section_preface,
   config_p options,
   const char* prefix);
 
