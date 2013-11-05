@@ -22,7 +22,7 @@
 
 #include "thread.h"
 
-#include "timer.h"
+#include "timer/timer.h"
 
 const char* thread_errors[] = {
   "success",

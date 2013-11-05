@@ -9,4 +9,4 @@ remake_add_library(
   usb
   LINK ${LIBUSB_1_0_LIBRARIES} ${LIBUDEV_LIBRARIES}
 )
-remake_add_headers()
+remake_add_headers(INSTALL usb)

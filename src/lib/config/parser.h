@@ -23,7 +23,7 @@
 
 #include <stdlib.h>
 
-#include "config.h"
+#include "config/config.h"
 
 /** \file parser.h
   * \brief Simple configuration parser
@@ -193,7 +193,7 @@ void config_parser_print_usage(
 
 /** \brief Print help text for a configuration parser
   * \note This is a convenience function which may be used to generate
-  *   textual help according to a parser's configurations.
+  *   textual help according to a parser's configuration.
   * \param[in] stream The output stream that will be used for printing the
   *   help text.
   * \param[in] parser The configuration parser for which the help text
@@ -203,16 +203,18 @@ void config_parser_print_help(
   FILE* stream,
   config_parser_p parser);
 
-/** \brief Print manpage for a configuration parser
+/** \brief Write manual page for a configuration parser
   * \note This is a convenience function which may be used to generate
-  *   Linux manual pages according to a parser's configurations.
-  * \param[in] stream The output stream that will be used for printing the
-  *   manpage.
+  *   Linux manual pages according to a parser's configuration.
+  * \param[in] filename The name of the manual page file to be written.
+  *   The special filename '-' indicates that the manual page shall be
+  *   written to stdout.
   * \param[in] parser The configuration parser for which the manpage
-  *   will be printed.
+  *   will be written.
+  * \return The resulting error code.
   */
-void config_parser_print_man(
-  FILE* stream,
+int config_parser_write_man(
+  const char* filename,
   config_parser_p parser);
 
 #endif

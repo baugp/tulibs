@@ -11,4 +11,4 @@ remake_add_library(
   LINK ${LIBFTDI_LIBRARIES} ${LIBUDEV_LIBRARIES}
   NO_INCLUDE
 )
-remake_add_headers()
+remake_add_headers(INSTALL ftdi)

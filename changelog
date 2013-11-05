@@ -1,3 +1,15 @@
+tulibs (0.2-61) lucid; urgency=low
+
+  * Restructured development header directory layout (headers are now
+    grouped per library)
+  * Added file library for support of gzip and bzip2 file streams
+  * Removed (useless) spline_print utility
+  * Added parser configuration to remaining utilities
+  * Added utility manual page generation via new remake_doc_targets() macro
+  * Increased minor version
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 29 Oct 2013 15:03:00 +0100
+ 
 tulibs (0.1-60) lucid; urgency=low
 
   * Major rewriting of the configuration library

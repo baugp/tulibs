@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "point.h"
-#include "pose.h"
+#include "transform/point.h"
+#include "transform/pose.h"
 
 /** \brief Predefined transform error descriptions
   */

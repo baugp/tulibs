@@ -23,7 +23,9 @@
 
 #include <stdlib.h>
 
-#include "config.h"
+#include <file/file.h>
+
+#include "config/config.h"
 
 /** \file man.h
   * \brief Configuration manual page output
@@ -44,18 +46,30 @@
 #define CONFIG_MAN_PARAMETER_TITLE                  "title"
 #define CONFIG_MAN_PARAMETER_PROJECT_NAME           "project-name"
 #define CONFIG_MAN_PARAMETER_PROJECT_VERSION        "project-version"
-#define CONFIG_MAN_PARAMETER_PROJECT_AUTHOR         "project-author"
+#define CONFIG_MAN_PARAMETER_PROJECT_AUTHORS        "project-authors"
 #define CONFIG_MAN_PARAMETER_PROJECT_CONTACT        "project-contact"
 #define CONFIG_MAN_PARAMETER_PROJECT_HOME           "project-home"
 #define CONFIG_MAN_PARAMETER_PROJECT_LICENSE        "project-license"
 //@}
 
+/** \name Error Codes
+  * \brief Predefined manual page error codes
+  */
+//@{
+#define CONFIG_MAN_ERROR_NONE                       0
+#define CONFIG_MAN_ERROR_WRITE                      1
+//@}
+
+/** \brief Predefined configuration help error descriptions
+  */
+extern const char* config_help_errors[];
+
 /** \brief Predefined manual page default options
   */
 extern config_t config_man_default_options;
 
-/** \brief Print manual page header
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page header
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page header.
   * \param[in] page_name The name of the manual page to appear in the
   *   generated header.
@@ -63,119 +77,131 @@ extern config_t config_man_default_options;
   *   in the generated header.
   * \param[in] page_title The manual page title to appear in the generated
   *   header.
-  * \param[in] command The command to print the manual page header for.
+  * \param[in] command The command to generate the manual page header for.
   * \param[in] summary The command summary to appear in the manual page
   *   header.
+  * \return The resulting error code.
   */
-void config_man_print_header(
-  FILE* stream,
+int config_man_write_header(
+  file_p file,
   const char* page_name,
   size_t page_section,
   const char* page_title,
   const char* command,
   const char* summary);
 
-/** \brief Print manual page synopsis
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page synopsis
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page synopsis.
   * \param[in] usage The usage line to appear in the manual page synopsis.
+  * \return The resulting error code.
   */
-void config_man_print_synopsis(
-  FILE* stream,
+int config_man_write_synopsis(
+  file_p file,
   const char* usage);
 
-/** \brief Print manual page description
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page description
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page description.
   * \param[in] text The text to appear in the manual page description.
+  * \return The resulting error code.
   */
-void config_man_print_description(
-  FILE* stream,
+int config_man_write_description(
+  file_p file,
   const char* text);
 
-/** \brief Print manual page section for a group of positional arguments
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page section for a group of positional arguments
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page section.
   * \param[in] section_title The title of the manual page section.
   * \param[in] arguments The arguments for which to generate the manual
   *   page section.
+  * \return The resulting error code.
   */
-void config_man_print_arguments(
-  FILE* stream,
+int config_man_write_arguments(
+  file_p file,
   const char* section_title,
   config_p arguments);
 
-/** \brief Print manual page paragraph for a positional argument parameter
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page paragraph for a positional argument parameter
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page paragraph.
   * \param[in] param The argument parameter for which to generate the manual
   *   page paragraph.
+  * \return The resulting error code.
   */
-void config_man_print_argument(
-  FILE* stream,
+int config_man_write_argument(
+  file_p file,
   config_param_p param);
 
-/** \brief Print manual page section for a group of non-positional options
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page section for a group of non-positional options
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page section.
   * \param[in] section_title The title of the manual page section.
   * \param[in] options The options for which to generate the manual page
   *   section.
   * \param[in] prefix An optional argument prefix that will be appended to
   *   the parameters' keys.
+  * \return The resulting error code.
   */
-void config_man_print_options(
-  FILE* stream,
+int config_man_write_options(
+  file_p file,
   const char* section_title,
   config_p options,
   const char* prefix);
 
-/** \brief Print manual page paragraph for a non-positional option parameter
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page paragraph for a non-positional option parameter
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page paragraph.
   * \param[in] param The option parameter for which to generate the manual
   *   page paragraph.
   * \param[in] prefix An optional argument prefix that will be appended to
   *   the parameter's key.
+  * \return The resulting error code.
   */
-void config_man_print_option(
-  FILE* stream,
+int config_man_write_option(
+  file_p file,
   config_param_p param,
   const char* prefix);
 
-/** \brief Print manual page section crediting the author
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page section crediting the authors
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page section.
-  * \param[in] author The author to appear in the manual page section.
+  * \param[in] project_authors The project authors to appear in the manual
+  *   page section.
+  * \return The resulting error code.
   */
-void config_man_print_author(
-  FILE* stream,
-  const char* author);
+int config_man_write_authors(
+  file_p file,
+  const char* project_authors);
 
-/** \brief Print manual page section for bug reporting
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page section for bug reporting
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page section.
-  * \param[in] contact The contact of the maintainer responsible for
-  *   taking bug reports.
+  * \param[in] project_contact The project contact of the maintainer
+  *   responsible for taking bug reports.
+  * \return The resulting error code.
   */
-void config_man_print_bugs(
-  FILE* stream,
-  const char* contact);
+int config_man_write_bugs(
+  file_p file,
+  const char* project_contact);
 
-/** \brief Print manual page copyright section
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page copyright section
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page section.
   * \param[in] project_name The name of the project for which to generate
   *   the copyright section.
-  * \param[in] license The license under which the project is published.
+  * \param[in] project_license The license under which the project is
+  *   published.
+  * \return The resulting error code.
   */
-void config_man_print_copyright(
-  FILE* stream,
+int config_man_write_copyright(
+  file_p file,
   const char* project_name,
-  const char* license);
+  const char* project_license);
 
-/** \brief Print manual page colophon
-  * \param[in] stream The output stream that will be used for printing the
+/** \brief Write manual page colophon
+  * \param[in] file The open file that will be used for writing the
   *   generated manual page colophon.
   * \param[in] project_name The name of the project for which to generate
   *   the manual page colophon.
@@ -183,9 +209,10 @@ void config_man_print_copyright(
   *   which to generate the manual page colophon.
   * \param[in] project_home The optional project homepage to appear in the
   *   manual page colophon.
+  * \return The resulting error code.
   */
-void config_man_print_colophon(
-  FILE* stream,
+int config_man_write_colophon(
+  file_p file,
   const char* project_name,
   const char* project_version,
   const char* project_home);

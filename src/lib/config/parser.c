@@ -227,18 +227,12 @@ int config_parser_parse(config_parser_p parser, int argc, char** argv,
   }
   else if (man_output[0]) {
     if (parser_exit & config_parser_exit_help) {
-      FILE* stream = strcmp(man_output, "-") ? fopen(man_output, "w") : stdout;
-    
-      if (stream) {
-        config_parser_print_man(stream, parser);
-        if (stream != stdout)
-          fclose(stream);
-        exit(EXIT_SUCCESS);
-      }
-      else {
+      if (config_parser_write_man(man_output, parser)) {
         parser->error = CONFIG_PARSER_ERROR_WRITE_MAN;
         strcpy(parser->error_what, man_output);
       }
+      else
+        exit(EXIT_SUCCESS);
     }
   }
   else if (!parser->error) {
@@ -355,20 +349,31 @@ void config_parser_print_help(FILE* stream, config_parser_p parser) {
   }
 }
 
-void config_parser_print_man(FILE* stream, config_parser_p parser) {
+int config_parser_write_man(const char* filename, config_parser_p parser) {
+  file_t file;
+  
+  file_init_name(&file, filename);
+  if (strcmp(filename, "-"))
+    file_open(&file, file_mode_write);
+  else 
+    file_open_stream(&file, stdout, file_mode_write);
+
+  if (!file.handle)
+    return CONFIG_PARSER_ERROR_WRITE_MAN;
+  
   config_parser_option_group_p man_option_group = &parser->option_groups[0];
   const char* command = strrchr(parser->command, '/');
   command = command ? command+1 : parser->command;
   int i;
   
-  config_man_print_header(stream, command,
+  config_man_write_header(&file, command,
     config_get_int(&man_option_group->options,
       CONFIG_MAN_PARAMETER_SECTION),
     config_get_string(&man_option_group->options,
       CONFIG_MAN_PARAMETER_TITLE),
     command, parser->summary);
   
-  config_man_print_synopsis(stream, parser->usage);
+  config_man_write_synopsis(&file, parser->usage);
   
   char description[strlen(parser->description)+512];
   strcpy(description, parser->description);
@@ -377,18 +382,18 @@ void config_parser_print_man(FILE* stream, config_parser_p parser) {
     "expected order. Non-positional arguments OPTi should precede any "
     "positional arguments and are required to be of the format "
     "--KEYi[=VALUEi].");
-  config_man_print_description(stream, description);
+  config_man_write_description(&file, description);
 
   if (parser->arguments.num_params)
-    config_man_print_arguments(stream, "Positional arguments",
+    config_man_write_arguments(&file, "Positional arguments",
       &parser->arguments);
 
   if (parser->options.num_params)
-    config_man_print_options(stream, "General options", &parser->options, 0);
+    config_man_write_options(&file, "General options", &parser->options, 0);
 
   for (i = 1; i < parser->num_option_groups; ++i) {
     config_parser_option_group_p option_group = &parser->option_groups[i];
-    config_man_print_options(stream, option_group->description,
+    config_man_write_options(&file, option_group->description,
       &option_group->options, option_group->prefix);
   }
 
@@ -396,8 +401,8 @@ void config_parser_print_man(FILE* stream, config_parser_p parser) {
     CONFIG_MAN_PARAMETER_PROJECT_NAME);
   const char* project_version = config_get_string(&man_option_group->options,
     CONFIG_MAN_PARAMETER_PROJECT_VERSION);
-  const char* project_author = config_get_string(&man_option_group->options,
-    CONFIG_MAN_PARAMETER_PROJECT_AUTHOR);
+  const char* project_authors = config_get_string(&man_option_group->options,
+    CONFIG_MAN_PARAMETER_PROJECT_AUTHORS);
   const char* project_contact = config_get_string(&man_option_group->options,
     CONFIG_MAN_PARAMETER_PROJECT_CONTACT);
   const char* project_home = config_get_string(&man_option_group->options,
@@ -405,13 +410,21 @@ void config_parser_print_man(FILE* stream, config_parser_p parser) {
   const char* project_license = config_get_string(&man_option_group->options,
     CONFIG_MAN_PARAMETER_PROJECT_LICENSE);
   
-  if (project_author[0])
-    config_man_print_author(stream, project_author);
+  if (project_authors[0])
+    config_man_write_authors(&file, project_authors);
   if (project_contact[0])
-    config_man_print_bugs(stream, project_contact);
+    config_man_write_bugs(&file, project_contact);
   if (project_name[0] && project_license[0])
-    config_man_print_copyright(stream, project_name, project_license);
+    config_man_write_copyright(&file, project_name, project_license);
   if (project_name[0])
-    config_man_print_colophon(stream, project_name, project_version,
+    config_man_write_colophon(&file, project_name, project_version,
       project_home);
+
+  int error = file_error(&file);
+  file_close(&file);
+  
+  if (error)
+    return CONFIG_PARSER_ERROR_WRITE_MAN;
+  else
+    return CONFIG_PARSER_ERROR_NONE;
 }

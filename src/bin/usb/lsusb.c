@@ -20,8 +20,8 @@
 
 #include <stdio.h>
 
-#include <usb.h>
-#include <parser.h>
+#include "config/parser.h"
+#include "usb/usb.h"
 
 int main(int argc, char **argv) {
   config_parser_t parser;

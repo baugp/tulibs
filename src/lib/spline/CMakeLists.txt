@@ -1,2 +1,2 @@
 remake_add_library(spline)
-remake_add_headers()
+remake_add_headers(INSTALL spline)

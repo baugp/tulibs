@@ -23,7 +23,7 @@
 
 #include <stdlib.h>
 
-#include "config.h"
+#include "config/config.h"
 
 /** \file help.h
   * \brief Configuration help output

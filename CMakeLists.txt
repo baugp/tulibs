@@ -4,7 +4,7 @@ include(ReMake)
 
 remake_project(
   Tulibs
-  VERSION 0.1
+  VERSION 0.2
   RELEASE alpha
   SUMMARY "A collection of C-based Tool and Utility LIBrarieS."
   AUTHOR "Ralf Kaestner"
@@ -15,11 +15,18 @@ remake_project(
 )
 
 remake_doc(
+  man INSTALL share
   html
 )
 
 remake_pack_deb(
   DEPENDS libudev0[:a-z]* libusb-1.0-0[:a-z]* libftdi1 libgsl0ldbl
+    zlib1g libbz2-1.0
+)
+remake_pack_deb(
+  COMPONENT utils
+  DESCRIPTION "utilities"
+  DEPENDS tulibs
 )
 remake_pack_deb(
   COMPONENT dev
@@ -37,7 +44,7 @@ remake_distribute_deb(
   SECTION libs
   UPLOAD ppa:kralf/asl
   DEPENDS libudev-dev libusb-1.0-0-dev libftdi-dev libgsl0-dev
-    remake pkg-config doxygen
+    zlib1g-dev libbz2-dev remake pkg-config doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
 remake_distribute_deb(
@@ -45,6 +52,6 @@ remake_distribute_deb(
   SECTION libs
   UPLOAD ppa:kralf/asl
   DEPENDS libudev-dev libusb-1.0-0-dev libftdi-dev libgsl0-dev
-    remake pkg-config doxygen
+    zlib1g-dev libbz2-dev remake pkg-config doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )

@@ -29,7 +29,7 @@
 
 #include <pthread.h>
 
-#include "mutex.h"
+#include "thread/mutex.h"
 
 /** \name Constants
   * \brief Predefined wait condition constants

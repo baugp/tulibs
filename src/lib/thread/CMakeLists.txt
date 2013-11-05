@@ -4,9 +4,8 @@ if(NOT ${CMAKE_USE_PTHREADS_INIT})
 endif(NOT ${CMAKE_USE_PTHREADS_INIT})
 remake_find_library(rt time.h)
 
-remake_include(../timer)
 remake_add_library(
   thread
   LINK timer ${CMAKE_THREAD_LIBS_INIT} ${RT_LIBRARY}
 )
-remake_add_headers()
+remake_add_headers(INSTALL thread)

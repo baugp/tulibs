@@ -1,2 +1,2 @@
-remake_add_library(config)
-remake_add_headers()
+remake_add_library(config LINK file)
+remake_add_headers(INSTALL config)

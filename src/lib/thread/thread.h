@@ -23,8 +23,8 @@
 
 #include <pthread.h>
 
-#include "mutex.h"
-#include "condition.h"
+#include "thread/mutex.h"
+#include "thread/condition.h"
 
 /** \file thread.h
   * \brief POSIX-compliant thread handling

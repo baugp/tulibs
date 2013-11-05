@@ -23,7 +23,7 @@
 
 #include <stdlib.h>
 
-#include "param.h"
+#include "config/param.h"
 
 /** \file config.h
   * \brief Simple configuration implementation
