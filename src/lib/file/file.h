@@ -24,10 +24,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/** \defgroup file File Input/Output Module
+  * \brief Library functions for managing file input/output
+  * 
+  * The file module provides library functions for managing file input
+  * and output operations, and for working with filesystem paths.
+  */
+
 /** \file file.h
+  * \ingroup file
   * \brief Simple file input/output implementation
   * \author Ralf Kaestner
-  * POSIX-compliant file input/output functions.
+  * 
+  * In addition to standard file input/ouput operations, this implementation
+  * opaquely manages gzip-compressed and bzip2-compressed files through the
+  * same interface.
   */
 
 /** \name Error Codes

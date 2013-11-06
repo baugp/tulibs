@@ -28,9 +28,14 @@
 #include "config/config.h"
 
 /** \file man.h
+  * \ingroup config
   * \brief Configuration manual page output
   * \author Ralf Kaestner
-  * POSIX-compliant manual page generator functions.
+  * 
+  * The functions provided in this file facilitate automated generation
+  * of Linux manual page content from configuration parameter properties.
+  * In most applications, they should be used indirectly through the
+  * configuration parser interface.
   */
 
 /** \brief Predefined manual page argument prefix

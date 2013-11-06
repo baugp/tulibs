@@ -26,9 +26,15 @@
 #include "config/config.h"
 
 /** \file parser.h
+  * \ingroup config
   * \brief Simple configuration parser
   * \author Ralf Kaestner
-  * A POSIX-compliant configuration parser for command-line applications.
+  * 
+  * The parser interface allows for parsing parameter values for entire
+  * configurations from command line arguments. It implements the concepts
+  * of positional and non-positional arguments (called options), and
+  * provides the possibility to group non-positional arguments for
+  * re-usability in library projects.
   */
 
 /** \name Parameters

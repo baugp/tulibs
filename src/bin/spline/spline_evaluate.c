@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
   config_parser_t parser;
 
   config_parser_init_default(&parser,
-    "Evaluate a bicubic spline for equidistant arguments",
-    "The command evaluates a bicubic input spline for equidistant "
+    "Evaluate a cubic spline for equidistant arguments",
+    "The command evaluates a cubic input spline for equidistant "
     "arguments and prints the corresponding function values to stdout. "
     "Depending on the options provided, these values may be generated "
     "from the base function or its derivatives.");

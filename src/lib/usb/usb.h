@@ -21,10 +21,21 @@
 #ifndef USB_H
 #define USB_H
 
+/** \defgroup usb USB Communication Module
+  * \brief Library functions for USB device support
+  * 
+  * The USB module provides library functions for working with standard USB
+  * communication devices.
+  */
+
 /** \file usb.h
-  * \brief USB communication library
+  * \ingroup usb
+  * \brief USB device interface
   * \author Ralf Kaestner
-  * A USB communication library providing very basic functionality.
+  * 
+  * The USB device interface provides high-level support for enumerating,
+  * configuring, and operating standard USB devices. Major parts of the
+  * implementation are based on the open libusb API.
   */
 
 #include <unistd.h>
@@ -53,7 +64,7 @@
   */
 extern const char* usb_errors[];
 
-/** \brief USB debug level enumeratable type
+/** \brief USB debug level enumerable type
   */
 typedef enum {
   usb_debug_level_minimal,          //!< No debugging output.
@@ -62,7 +73,7 @@ typedef enum {
   usb_debug_level_verbose           //!< Verbose debugging output.
 } usb_debug_level_t;
 
-/** \brief USB device class enumeratable type
+/** \brief USB device class enumerable type
   */
 typedef enum {
   usb_class_per_interface,          //!< Class specified per interface.
@@ -90,7 +101,7 @@ typedef enum {
   */
 extern const char* usb_classes[];
 
-/** \brief USB request type enumeratable type
+/** \brief USB request type enumerable type
   */
 typedef enum {
   usb_request_type_standard,        //!< Standard request type.
@@ -99,7 +110,7 @@ typedef enum {
   usb_request_type_reserved         //!< Reserved.
 } usb_request_type_t;
 
-/** \brief USB recipient enumeratable type
+/** \brief USB recipient enumerable type
   */
 typedef enum {
   usb_recipient_device,             //!< Device recipient.
@@ -108,7 +119,7 @@ typedef enum {
   usb_recipient_other               //!< Other recipient.
 } usb_recipient_t;
 
-/** \brief USB direction enumeratable type
+/** \brief USB direction enumerable type
   */
 typedef enum {
   usb_direction_out,                //!< Host-to-device direction.

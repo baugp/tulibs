@@ -349,7 +349,7 @@ void config_parser_print_help(FILE* stream, config_parser_p parser) {
   for (i = 1; i < parser->num_option_groups; ++i) {
     config_parser_option_group_p option_group = &parser->option_groups[i];
     fprintf(stream, "\n");
-    config_help_print_options(stream, option_group->description,
+    config_help_print_options(stream, option_group->summary,
       &option_group->options, option_group->prefix, CONFIG_PARSER_HELP_WIDTH,
       CONFIG_PARSER_HELP_KEY_INDENT, CONFIG_PARSER_HELP_PAR_INDENT);
   }
@@ -361,7 +361,7 @@ int config_parser_write_man(const char* filename, config_parser_p parser) {
   file_init_name(&file, filename);
   if (strcmp(filename, "-"))
     file_open(&file, file_mode_write);
-  else 
+  else
     file_open_stream(&file, stdout, file_mode_write);
 
   if (!file.handle)

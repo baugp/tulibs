@@ -26,10 +26,23 @@
 #include "thread/mutex.h"
 #include "thread/condition.h"
 
+/** \defgroup thread Threading Module
+  * \brief Library functions for managing threads, mutexes, and conditions
+  * 
+  * The thread module provides library functions for working with
+  * light-weight processes (so-called threads). It implements the means
+  * to safely accessing memory objects in multi-threaded applications as
+  * well as the basic tools of thread concurrency.
+  */
+
 /** \file thread.h
-  * \brief POSIX-compliant thread handling
+  * \ingroup thread
+  * \brief POSIX-compliant thread implementation
   * \author Ralf Kaestner
-  * A basic POSIX-compliant thread handling implementation.
+  * 
+  * This simple thread interface mainly aims to support the implementation
+  * of periodic worker tasks, e.g., in sensor acquisition or control
+  * applications.
   */
 
 /** \name Error Codes
@@ -46,7 +59,7 @@
   */
 extern const char* thread_errors[];
 
-/** \brief Thread state enumeratable type
+/** \brief Thread state enumerable type
   */
 typedef enum {
   thread_state_stopped,          //!< Thread is stopped.

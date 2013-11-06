@@ -26,9 +26,14 @@
 #include "config/config.h"
 
 /** \file help.h
-  * \brief Configuration help output
+  * \ingroup config
+  * \brief Configuration help generator functions
   * \author Ralf Kaestner
-  * POSIX-compliant help generator functions.
+  * 
+  * The functions provided in this file facilitate automated generation
+  * of command line help from configuration parameter properties. In most
+  * applications, they should be used indirectly through the configuration
+  * parser interface.
   */
 
 /** \name Error Codes

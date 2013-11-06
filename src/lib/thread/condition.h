@@ -22,9 +22,13 @@
 #define THREAD_CONDITION_H
 
 /** \file condition.h
-  * \brief POSIX-compliant wait condition implementation
+  * \ingroup thread
+  * \brief Wait condition implementation
   * \author Ralf Kaestner
-  * A basic POSIX-compliant wait condition implementation.
+  * 
+  * Wait conditions are highly useful in cases where multiple threads must
+  * be synchronized. They basically employ mutexes which may be signaled to
+  * trigger a race of the involved threads for acquiring that mutex.
   */
 
 #include <pthread.h>

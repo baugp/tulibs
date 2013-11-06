@@ -21,10 +21,22 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+/** \defgroup timer Timer Module
+  * \brief Library functions for working with timers
+  * 
+  * The timer module provides basic library functions for representing,
+  * measuring, and delaying time.
+  */
+
 /** \file timer.h
-  * \brief POSIX timer library
+  * \ingroup timer
+  * \brief Simple timer implementation
   * \author Ralf Kaestner
-  * A basic POSIX-compliant time measurement library.
+  * 
+  * A timer is a useful tool in time-variant applications. This
+  * implementation specifically targets periodic tasks which require
+  * to measure and delay time in order to ensure relatively constant
+  * frequencies.
   */
 
 /** \name Error Codes

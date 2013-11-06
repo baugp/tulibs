@@ -22,9 +22,13 @@
 #define THREAD_MUTEX_H
 
 /** \file mutex.h
-  * \brief POSIX-compliant thread mutex implementation
+  * \ingroup thread
+  * \brief Thread mutex implementation
   * \author Ralf Kaestner
-  * A basic POSIX-compliant thread mutex implementation.
+  * 
+  * Mutexes typically ensure that no two threads may enter a critical section,
+  * e.g., involving non-atomic access to memory objects, at the same time.
+  * They thus provide the fundamental means to ensuring thread safety.
   */
 
 #include <pthread.h>

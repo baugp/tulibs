@@ -25,10 +25,22 @@
 
 #include "config/param.h"
 
+/** \defgroup config Configuration Module
+  * \brief Library functions for managing configuration parameters
+  * 
+  * The configuration module provides library functions for aggregating
+  * and accessing configuration parameters, for parsing their values from
+  * command line arguments, and for generating command line help as well
+  * as Linux manual pages to document their properties.
+  */
+
 /** \file config.h
+  * \ingroup config
   * \brief Simple configuration implementation
   * \author Ralf Kaestner
-  * A POSIX-compliant configuration implementation.
+  * 
+  * A configuration represents an aggregate of configuration parameters
+  * which can be accessed through their keys.
   */
 
 /** \name Arguments
@@ -133,6 +145,27 @@ config_param_p config_set_param(
   config_p config,
   config_param_p param);
 
+/** \brief Set a configuration parameter's value and range
+  * \note This function first initializes a new parameter by calling
+  *   config_param_init_value_range() with the provided arguments and
+  *   then attempts setting this parameter through config_set_param().
+  * \param[in] config The configuration to set the parameter for.
+  * \param[in] key The key of the parameter to be set.
+  * \param[in] type The type of the parameter value to be set.
+  * \param[in] value The string representation of the parameter's value.
+  * \param[in] range An optional formal string expression representing
+  *   the permissible range of the parameter value.
+  * \param[in] description An optional description of the parameter.
+  * \return The modified or inserted configuration parameter.
+  */
+config_param_p config_set_param_value_range(
+  config_p config,
+  const char* key,
+  config_param_type_t type,
+  const char* value,
+  const char* range,
+  const char* description);
+
 /** \brief Retrieve a configuration parameter
   * \param[in] config The configuration to retrieve the parameter from.
   * \param[in] key The key of the parameter to be retrieved.
@@ -143,7 +176,22 @@ config_param_p config_get_param(
   config_p config,
   const char* key);
 
+/** \brief Set a configuration parameter's value
+  * \note This function calls config_param_set_value() for the parameter
+  *   with the specified key.
+  * \param[in] config The configuration to set the value for.
+  * \param[in] key The key of the string value to be set.
+  * \param[in] value The string representation of the value to be set.
+  * \return The resulting error code.
+  */
+int config_set_value(
+  config_p config,
+  const char* key,
+  const char* value);
+
 /** \brief Set a configuration parameter's string value
+  * \note This function calls config_param_set_string() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to set the string value for.
   * \param[in] key The key of the string value to be set.
   * \param[in] value The string value to be set.
@@ -155,6 +203,8 @@ int config_set_string(
   const char* value);
 
 /** \brief Retrieve a configuration parameter's string value
+  * \note This function calls config_param_get_string() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to retrieve the string value from.
   * \param[in] key The key of the string value to be retrieved.
   * \return The parameter's string value or null if no such parameter
@@ -165,6 +215,8 @@ const char* config_get_string(
   const char* key);
 
 /** \brief Set a configuration parameter's integer value
+  * \note This function calls config_param_set_int() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to set the integer value for.
   * \param[in] key The key of the integer value to be set.
   * \param[in] value The integer value to be set.
@@ -176,6 +228,8 @@ int config_set_int(
   int value);
 
 /** \brief Retrieve a configuration parameter's integer value
+  * \note This function calls config_param_get_int() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to retrieve the integer value from.
   * \param[in] key The key of the integer value to be retrieved.
   * \return The parameter's integer value or zero if no such parameter
@@ -186,6 +240,8 @@ int config_get_int(
   const char* key);
 
 /** \brief Set a configuration parameter's floating point value
+  * \note This function calls config_param_set_float() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to set the floating point value for.
   * \param[in] key The key of the floating point value to be set.
   * \param[in] value The floating point value to be set.
@@ -197,6 +253,8 @@ int config_set_float(
   double value);
 
 /** \brief Retrieve a configuration parameter's floating point value
+  * \note This function calls config_param_get_float() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to retrieve the floating point
   *   value from.
   * \param[in] key The key of the floating point value to be retrieved.
@@ -208,6 +266,8 @@ double config_get_float(
   const char* key);
 
 /** \brief Set a configuration parameter's enumerable value
+  * \note This function calls config_param_set_enum() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to set the enumerable value for.
   * \param[in] key The key of the enumerable value to be set.
   * \param[in] value The enumerable value to be set.
@@ -219,6 +279,8 @@ int config_set_enum(
   int value);
 
 /** \brief Retrieve a configuration parameter's enumerable value
+  * \note This function calls config_param_get_enum() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to retrieve the enumerable
   *   value from.
   * \param[in] key The key of the enumerable value to be retrieved.
@@ -230,6 +292,8 @@ int config_get_enum(
   const char* key);
 
 /** \brief Set a configuration parameter's boolean value
+  * \note This function calls config_param_set_bool() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to set the boolean value for.
   * \param[in] key The key of the boolean value to be set.
   * \param[in] value The boolean value to be set.
@@ -241,6 +305,8 @@ int config_set_bool(
   config_param_bool_t value);
 
 /** \brief Retrieve a configuration parameter's boolean value
+  * \note This function calls config_param_get_bool() for the parameter
+  *   with the specified key.
   * \param[in] config The configuration to retrieve the boolean
   *   value from.
   * \param[in] key The key of the boolean value to be retrieved.

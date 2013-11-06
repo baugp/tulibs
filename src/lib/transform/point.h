@@ -25,10 +25,12 @@
 #include <stdio.h>
 
 /** \file point.h
-  * \brief Point definition for the POSIX linear transformation library
+  * \ingroup transform
+  * \brief Point definition for the linear transformation module
   * \author Ralf Kaestner
-  * A point definition to be used with the POSIX-compliant linear
-  * transformation math library.
+  * 
+  * A point in 3-dimensional space consists in three components
+  * describing location.
   */
 
 /** \brief Structure defining a point

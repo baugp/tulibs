@@ -25,10 +25,12 @@
 #include <stdio.h>
 
 /** \file pose.h
-  * \brief Pose definition for the POSIX linear transformation library
+  * \ingroup transform
+  * \brief Pose definition for the linear transformation module
   * \author Ralf Kaestner
-  * A pose definition to be used with the POSIX-compliant linear
-  * transformation math library.
+  * 
+  * A pose in 3-dimensional space consists in three components describing
+  * location and three additional components describing orientation.
   */
 
 /** \brief Structure defining a pose

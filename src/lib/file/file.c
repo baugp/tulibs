@@ -43,7 +43,7 @@ const char* file_errors[] = {
 
 const char* file_modes[] = {
   "r",
-  "w+",
+  "w",
   "a",
 };
 

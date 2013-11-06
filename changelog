@@ -1,3 +1,11 @@
+tulibs (0.3-64) lucid; urgency=low
+
+  * Added config_set_param_value_range() function to config module
+  * Improved documentation, now defining groups for the different libraries
+  * Increased minor version
+
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Wed, 06 Nov 2013 17:40:00 +0100
+ 
 tulibs (0.2-63) lucid; urgency=low
 
   * Added long description to parser option groups (long descriptions

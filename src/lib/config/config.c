@@ -79,7 +79,7 @@ int config_set(config_p dst_config, config_p src_config) {
 
   for (i = 0; i < src_config->num_params; ++i) {
     config_param_p src_param = &src_config->params[i];
-    if ((result = config_set_string(dst_config, src_param->key,
+    if ((result = config_set_value(dst_config, src_param->key,
         src_param->value)))
       return result;
   }
@@ -105,6 +105,16 @@ config_param_p config_set_param(config_p config, config_param_p param) {
   return config_param;
 }
 
+config_param_p config_set_param_value_range(config_p config, const char*
+    key, config_param_type_t type, const char* value, const char* range,
+    const char* description) {
+  config_param_t param;  
+  config_param_init_value_range(&param, key, type, value, range,
+    description);
+
+  return config_set_param(config, &param);
+}
+
 config_param_p config_get_param(config_p config, const char* key) {
   int i;
 
@@ -113,6 +123,19 @@ config_param_p config_get_param(config_p config, const char* key) {
       return &config->params[i];
 
   return 0;
+}
+
+int config_set_value(config_p config, const char* key, const char* value) {
+  config_param_p param = config_get_param(config, key);
+
+  if (param) {
+    if (config_param_set_value(param, value))
+      return CONFIG_ERROR_PARAM_VALUE;
+  }
+  else
+    return CONFIG_ERROR_PARAM_KEY;
+  
+  return CONFIG_ERROR_NONE;
 }
 
 int config_set_string(config_p config, const char* key, const char* value) {

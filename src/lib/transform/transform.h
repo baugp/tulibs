@@ -21,10 +21,22 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
+/** \defgroup transform Geometric Transformation Module
+  * \brief Library functions for linear transformation math
+  * 
+  * The transformation module implements the algebraic formalisms of
+  * linear transformations in 3-dimensional spaces.
+  */
+
 /** \file transform.h
-  * \brief POSIX linear transformation library
+  * \ingroup transform
+  * \brief Linear transformation interface
   * \author Ralf Kaestner
-  * A POSIX-compliant linear transformation math library.
+  * 
+  * The linear transformation interface facilitates the construction and
+  * chaining of matrix representations for translational, rotational, and
+  * scaling transforms as well as their application to points in 3-dimensional
+  * space.
   */
 
 #include <stdlib.h>

@@ -21,11 +21,20 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+/** \defgroup serial Serial Communication Module
+  * \brief Library functions for serial device support
+  * 
+  * The serial module provides library functions for working with standard
+  * serial communication devices.
+  */
+
 /** \file serial.h
-  * \brief POSIX serial communication library
+  * \ingroup serial
+  * \brief Serial device interface
   * \author Ralf Kaestner
-  * A POSIX-compliant serial communication library providing very basic
-  * functionality.
+  * 
+  * The serial device interface provides high-level support for configuring
+  * and operating all standard serial devices.
   */
 
 #include <unistd.h>
@@ -54,7 +63,7 @@
   */
 extern const char* serial_errors[];
 
-/** \brief Parity enumeratable type
+/** \brief Parity enumerable type
   */
 typedef enum {
   serial_parity_none,             //!< No parity.
@@ -62,7 +71,7 @@ typedef enum {
   serial_parity_even              //!< Even parity.
 } serial_parity_t;
 
-/** \brief Flow control enumeratable type
+/** \brief Flow control enumerable type
   */
 typedef enum {
   serial_flow_ctrl_off,           //!< Disable flow control.

@@ -21,11 +21,21 @@
 #ifndef FTDI_H
 #define FTDI_H
 
+/** \defgroup ftdi FTDI Communication Module
+  * \brief Library functions for FTDI device support
+  * 
+  * The FTDI module provides library functions for working with FTDI's USB
+  * to serial UART communication devices.
+  */
+
 /** \file ftdi.h
-  * \brief FTDI communication library
+  * \ingroup ftdi
+  * \brief FTDI device interface
   * \author Ralf Kaestner
-  * A communication library providing very basic support for FTDI's USB to
-  * serial UART interfaces.
+  * 
+  * The FTDI device interface provides high-level support for enumerating,
+  * configuring, and operating FTDI's USB to serial UART devices. Major parts
+  * of the implementation are based on the open libftdi API.
   */
 
 #include <unistd.h>
@@ -63,7 +73,7 @@
   */
 extern const char* ftdi_errors[];
 
-/** \brief Chip enumeratable type
+/** \brief Chip enumerable type
   */
 typedef enum {
   ftdi_chip_am,                 //!< FTDI AM chip series.
@@ -80,7 +90,7 @@ typedef enum {
   */
 extern const char* ftdi_chips[];
 
-/** \brief Interface enumeratable type
+/** \brief Interface enumerable type
   */
 typedef enum {
   ftdi_interface_any,           //!< Any interface.
@@ -90,7 +100,7 @@ typedef enum {
   ftdi_interface_d              //!< Interface D.
 } ftdi_interface_t;
 
-/** \brief Parity enumeratable type
+/** \brief Parity enumerable type
   */
 typedef enum {
   ftdi_parity_none,             //!< No parity.
@@ -100,7 +110,7 @@ typedef enum {
   ftdi_parity_space             //!< Space parity.
 } ftdi_parity_t;
 
-/** \brief Flow control enumeratable type
+/** \brief Flow control enumerable type
   */
 typedef enum {
   ftdi_flow_ctrl_off,           //!< Disable flow control.
@@ -109,7 +119,7 @@ typedef enum {
   ftdi_flow_ctrl_dtr_dsr        //!< DTR/DSR (hardware) flow control.
 } ftdi_flow_ctrl_t;
 
-/** \brief Break enumeratable type
+/** \brief Break enumerable type
   */
 typedef enum {
   ftdi_break_off,               //!< Break off.

@@ -22,9 +22,16 @@
 #define CONFIG_PARAM_H
 
 /** \file param.h
+  * \ingroup config
   * \brief Simple parameter implementation
   * \author Ralf Kaestner
-  * A POSIX-compliant parameter implementation.
+  * 
+  * A configuration parameter stores a key, a value type, the corresponding
+  * value representation in the form of a string, a formal expression for
+  * the permissible range of its values, and a description used by the
+  * command line help and manual page generating functions. Due to the lack
+  * of template meta-programming in C, type-compatibility is enforced at the
+  * runtime level.
   */
 
 #include <stdio.h>

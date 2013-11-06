@@ -72,11 +72,12 @@ int config_help_print_argument(FILE* stream, config_param_p param,
     strcpy(description, param->description);
   if (param->value[0]) {
     char default_value[sizeof(param->value)+3];
-    sprintf(default_value, " [%s]", param->value); 
+    sprintf(default_value, " (%s)", param->value); 
     strcat(description, default_value);
   }
-  
-  fprintf(stream, "%*s%s", (int)key_indent, "", argument);    
+
+  config_help_print(stream, argument, max_width, key_indent+
+    strlen(param->key)+3, key_indent, 0);
   if (argument_length+key_indent+2 <= par_indent) {
     int line_indent = (int)par_indent-(int)(argument_length+
       key_indent);
@@ -127,7 +128,8 @@ int config_help_print_option(FILE* stream, config_param_p param,
     strcpy(value, param->range);
   else if (param->type != config_param_type_bool)
     strcpy(value, config_param_types[param->type]);
-  
+
+  int prefix_length = prefix ? strlen(prefix) : 0;
   int argument_length = sprintf(argument, "--%s%s%s%s%s",
     prefix ? prefix : "", param->key, value[0] ? "=<" : "",
     value[0] ? value : "", value[0] ? ">" : "");
@@ -137,14 +139,15 @@ int config_help_print_option(FILE* stream, config_param_p param,
   description[0] = 0;
   if (param->description[0]) {
     if (param->type != config_param_type_bool)
-      sprintf(description, "%s [%s]", param->description, param->value);
+      sprintf(description, "%s (%s)", param->description, param->value);
     else
       strcpy(description, param->description);
   }
   else if (param->type != config_param_type_bool)
-    sprintf(description, "[%s]", param->value);
+    sprintf(description, "(%s)", param->value);
   
-  fprintf(stream, "%*s%s", (int)key_indent, "", argument);    
+  config_help_print(stream, argument, max_width, key_indent+prefix_length+
+    strlen(param->key)+4, key_indent, 0);
   if (argument_length+key_indent+2 <= par_indent) {
     int line_indent = (int)par_indent-(int)(argument_length+
       key_indent);
@@ -173,25 +176,31 @@ int config_help_print(FILE* stream, const char* text, size_t max_width,
     const char* word = &line[line_length];
     
     if (word[0]) {
-      while (isspace(word[i])) {
+      while (isspace(word[i]) || (word[i] == '|')) {
         i++;
         word_length++;
       }
-      while (word[i] && !isspace(word[i++]))
+      while (word[i] && !isspace(word[i]) && (word[i] != '|')) {
+        i++;
         word_length++;
+      }
+      if (word[i]) {
+        i++;
+        word_length++;
+      }
     }
     
     if (offset+indent+line_length+word_length >= max_width) {
       if (line_length > 0) {
         fprintf(stream, "%*s%.*s\n", (int)indent, "",
           (int)line_length, line);
-        line += line_length+1;
+        line += isspace(word[i]) ? line_length+1 : line_length;
         line_length = 0;
       }
       else {
-        fprintf(stream, "%*s%.*s\n", (int)indent, "",
+        fprintf(stream, "%*s%.*s", (int)indent, "",
           (int)word_length, line);
-        line += word_length+1;
+        line += word_length;
         
         result = CONFIG_HELP_ERROR_WIDTH;
       }

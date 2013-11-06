@@ -21,10 +21,22 @@
 #ifndef SPLINE_H
 #define SPLINE_H
 
+/** \defgroup spline Spline Math Module
+  * \brief Library functions for working with splines
+  * 
+  * The spline module provides library functions for representing and
+  * evaluating cubic splines, i.e., smooth polynomical functions serving
+  * as a piecewise description for interpolated data points.
+  */
+
 /** \file spline.h
-  * \brief POSIX spline computation library
+  * \ingroup spline
+  * \brief Simple spline implementation
   * \author Ralf Kaestner
-  * A POSIX-compliant bicubic spline computation library.
+  * 
+  * The spline interface facilitates construction, manipulation, and
+  * evaluation of cubic splines. A particular feature of this interface
+  * is the linear search evaluation method.
   */
 
 #include <stdlib.h>

@@ -24,9 +24,12 @@
 #include <stdlib.h>
 
 /** \file path.h
-  * \brief Simple file path-related functions
+  * \ingroup file
+  * \brief Simple filesystem path-related functions
   * \author Ralf Kaestner
-  * POSIX-compliant file path-related functions.
+  * 
+  * The current filesystem path interface provides very basic access to
+  * the filesystem status related to path names.
   */
 
 /** \brief Check if path exists
