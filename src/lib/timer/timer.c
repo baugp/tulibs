@@ -28,8 +28,7 @@ const char* timer_errors[] = {
   "Timer fault"
 };
 
-void timer_start(
-  double* timestamp) {
+void timer_start(double* timestamp) {
   struct timeval time;
   double million = 1e6;
 
@@ -38,8 +37,7 @@ void timer_start(
   *timestamp = time.tv_sec+time.tv_usec/million;
 }
 
-void timer_correct(
-  double* timestamp) {
+void timer_correct(double* timestamp) {
   struct timeval time;
   double million = 1e6;
 
@@ -48,8 +46,7 @@ void timer_correct(
   *timestamp = 0.5*(*timestamp+time.tv_sec+time.tv_usec/million);
 }
 
-double timer_stop(
-  double timestamp) {
+double timer_stop(double timestamp) {
   struct timeval time;
   double million = 1e6;
 
@@ -58,14 +55,11 @@ double timer_stop(
   return time.tv_sec+time.tv_usec/million-timestamp;
 }
 
-double timer_get_frequency(
-  double timestamp) {
+double timer_get_frequency(double timestamp) {
   return 1.0/timer_stop(timestamp);
 }
 
-int timer_wait(
-  double timestamp,
-  double frequency) {
+int timer_wait(double timestamp, double frequency) {
   if (frequency <= 0.0) return TIMER_ERROR_FAULT;
 
   return timer_sleep(1.0/frequency-timer_stop(timestamp));

@@ -26,6 +26,8 @@
 
 #include "ftdi.h"
 
+#include "timer/timer.h"
+
 ftdi_context_t _ftdi_default_context = {
   0,
   0,
@@ -355,15 +357,26 @@ int ftdi_setup(ftdi_device_p dev, int baud_rate, int data_bits, int stop_bits,
 }
 
 int ftdi_read(ftdi_device_p dev, unsigned char* data, size_t num) {
-  ssize_t result;
+  ssize_t result, num_read = 0;
+  double time, period;
   
-  result = ftdi_read_data(dev->libftdi_context, data, num);
-  if (result >= 0)
-    dev->num_read += result;
-  else
-    return -FTDI_ERROR_READ;
+  timer_start(&time);
+  while ((num_read < num) &&
+    ((period = timer_stop(time)) <= dev->timeout) &&
+    ((result = ftdi_read_data(dev->libftdi_context, &data[num_read],
+      num-num_read)) >= 0)) {
+    if (result)
+      timer_start(&time);
+    num_read += result;
+  }
+  dev->num_read += num_read;
     
-  return result;
+  if (result < 0)
+    return -FTDI_ERROR_READ;
+  else if (!num_read && (period > dev->timeout))
+    return -FTDI_ERROR_TIMEOUT;
+  else
+    return num_read;
 }
 
 int ftdi_write(ftdi_device_p dev, unsigned char* data, size_t num) {
