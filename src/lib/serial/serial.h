@@ -85,7 +85,7 @@ typedef struct serial_device_t {
   int fd;                         //!< File descriptor.
   char name[256];                 //!< Device name.
 
-  int baud_rate;                  //!< Device baud rate in [Baud].
+  int baud_rate;                  //!< Device baud rate in [baud].
   int data_bits;                  //!< Number of data bits.
   int stop_bits;                  //!< Number of stop bits.
   serial_parity_t parity;         //!< Device parity.
@@ -115,7 +115,7 @@ int serial_close(
 
 /** \brief Setup an already opened serial device
   * \param[in] dev The open serial device to be set up.
-  * \param[in] baud_rate The device baud rate to be set in [Baud].
+  * \param[in] baud_rate The device baud rate to be set in [baud].
   * \param[in] data_bits The device's number of data bits to be set.
   * \param[in] stop_bits The device's number of stop bits to be set.
   * \param[in] parity The device parity to be set.

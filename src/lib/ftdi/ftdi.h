@@ -139,7 +139,7 @@ typedef struct ftdi_device_t {
   ftdi_chip_t chip;               //!< Device chip type.
   ftdi_interface_t interface;     //!< Device interface number.
     
-  int baud_rate;                  //!< Device baud rate in [Baud].
+  int baud_rate;                  //!< Device baud rate in [baud].
   int data_bits;                  //!< Number of data bits.
   int stop_bits;                  //!< Number of stop bits.
   ftdi_parity_t parity;           //!< Device parity.
@@ -236,7 +236,7 @@ int ftdi_close(
 
 /** \brief Setup an already opened FTDI device
   * \param[in] dev The open FTDI device to be set up.
-  * \param[in] baud_rate The device baud rate to be set in [Baud].
+  * \param[in] baud_rate The device baud rate to be set in [baud].
   * \param[in] data_bits The device's number of data bits to be set.
   * \param[in] stop_bits The device's number of stop bits to be set.
   * \param[in] parity The device parity to be set.
