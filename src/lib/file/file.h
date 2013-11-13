@@ -31,7 +31,7 @@
   * and output operations, and for working with filesystem paths.
   */
 
-/** \file file.h
+/** \file file/file.h
   * \ingroup file
   * \brief Simple file input/output implementation
   * \author Ralf Kaestner
@@ -248,6 +248,24 @@ ssize_t file_write(
   file_p file,
   const unsigned char* data,
   size_t size);
+
+/** \brief Read line from file
+  * \param[in] file The open file to read the line from.
+  * \param[in,out] line The pointer to a string whose length will dynamically
+  *   be increased in order to hold all characters in the read line except for
+  *   the trailing new-line character. If the line does not contain any such
+  *   characters, the string will not be modified. Otherwise, it remains the
+  *   caller's duty to free the allocated string.
+  * \param[in] block_size The size of the string blocks to be allocated
+  *   dynamically. Any time the line length exceeds the length of the
+  *   allocated string buffer, the size of that buffer will be increased by
+  *   the given block size.
+  * \return The number of line characters read or the negative error code.
+  */
+ssize_t file_read_line(
+  file_p file,
+  char** line,
+  size_t block_size);
 
 /** \brief Write formatted data to file
   * \param[in] file The open file to write the formatted data to.

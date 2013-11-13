@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/** \file pose.h
+/** \file transform/pose.h
   * \ingroup transform
   * \brief Pose definition for the linear transformation module
   * \author Ralf Kaestner

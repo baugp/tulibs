@@ -1,3 +1,14 @@
+tulibs (0.4-69) lucid; urgency=low
+
+  * Renamed spline evaluation functions and executable
+  * Added configuration file and project configuration support
+  * Completely revised manual page support
+  * Added Doxygen main page
+  * Some bugfixes
+  * Increased minor version
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Wed, 13 Nov 2013 08:12:00 +0100
+ 
 tulibs (0.3-68) lucid; urgency=low
 
   * Fixed ftdi_read() to properly implement timeout (libftdi's

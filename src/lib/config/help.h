@@ -25,7 +25,7 @@
 
 #include "config/config.h"
 
-/** \file help.h
+/** \file config/help.h
   * \ingroup config
   * \brief Configuration help generator functions
   * \author Ralf Kaestner

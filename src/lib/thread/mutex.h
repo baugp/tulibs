@@ -21,7 +21,7 @@
 #ifndef THREAD_MUTEX_H
 #define THREAD_MUTEX_H
 
-/** \file mutex.h
+/** \file thread/mutex.h
   * \ingroup thread
   * \brief Thread mutex implementation
   * \author Ralf Kaestner

@@ -357,8 +357,8 @@ int ftdi_setup(ftdi_device_p dev, int baud_rate, int data_bits, int stop_bits,
 }
 
 int ftdi_read(ftdi_device_p dev, unsigned char* data, size_t num) {
-  ssize_t result, num_read = 0;
-  double time, period;
+  ssize_t result = 0, num_read = 0;
+  double time, period = 0.0;
   
   timer_start(&time);
   while ((num_read < num) &&

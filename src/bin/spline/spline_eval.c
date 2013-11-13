@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     "The step size used to generate equidistant arguments "
     "of the spline function");
   config_parser_option_group_p spline_option_group =
-    config_parser_add_option_group(&parser, 0, "spline-", "Spline options",
+    config_parser_add_option_group(&parser, "spline", 0, "Spline options",
     "These options control the spline operations performed by the command.");
   config_param_p eval_type_param = config_set_param_value_range(
     &spline_option_group->options,
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     "The type of spline evaluation requested, where 'base' refers to "
     "the base function, and 'first' or 'second' indicates the first or "
     "second derivative, respectively");
-  config_parser_parse(&parser, argc, argv, config_parser_exit_both);
+  config_parser_parse(&parser, argc, argv, config_parser_exit_error);
   
   const char* file = config_param_get_string(file_param);
   double step_size = config_param_get_float(step_size_param);
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
   double x = 0.0, f_x;
   
   int i = 0;
-  while ((i = spline_evaluate_linear_search(
+  while ((i = spline_eval_linear_search(
       &spline, eval_type, x, i, &f_x)) >= 0) {
     fprintf(stdout, "%lf %lf\n", x, f_x);
     x += step_size;

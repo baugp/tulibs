@@ -35,7 +35,7 @@
   * well as the basic tools of thread concurrency.
   */
 
-/** \file thread.h
+/** \file thread/thread.h
   * \ingroup thread
   * \brief POSIX-compliant thread implementation
   * \author Ralf Kaestner

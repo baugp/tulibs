@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   config_parser_init_default(&parser, "List FTDI devices",
     "The command displays lsusb-like information about USB buses in "
     "the system and the FTDI devices connected to them.");
-  config_parser_parse(&parser, argc, argv, config_parser_exit_both);
+  config_parser_parse(&parser, argc, argv, config_parser_exit_error);
   
   ftdi_context_init(ftdi_default_context);
   if (ftdi_default_context->num_devices) {

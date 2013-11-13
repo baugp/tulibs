@@ -180,7 +180,8 @@ int config_param_set_value(config_param_p param, const char* value) {
         int i = 0;
         
         while ((value_end = strchr(value_start, '|'))) {
-          if (!strncmp(value, value_start, value_end-value_start))
+          if ((value_end-value_start == strlen(value)) &&
+              !strncmp(value, value_start, value_end-value_start))
             return config_param_set_enum(param, i);
           
           value_start = value_end+1;
@@ -195,7 +196,8 @@ int config_param_set_value(config_param_p param, const char* value) {
       if (param->range[0]) {
         const char* value_split = strchr(param->range, '|');
         if ((value_split > param->range) && value_split[1]) {
-          if (!strncmp(value, param->range, value_split-param->range))
+          if ((value_split-param->range == strlen(value)) &&
+              !strncmp(value, param->range, value_split-param->range))
             return config_param_set_bool(param, config_param_false);
           else if (!strcmp(value, value_split+1))
             return config_param_set_bool(param, config_param_true);
@@ -337,7 +339,8 @@ int config_param_get_enum(config_param_p param) {
     int i = 0;
     
     while ((value_end = strchr(value_start, '|'))) {
-      if (!strncmp(param->value, value_start, value_end-value_start))
+      if ((value_end-value_start == strlen(param->value)) &&
+          !strncmp(param->value, value_start, value_end-value_start))
         return i;
       
       value_start = value_end+1;
@@ -384,7 +387,8 @@ config_param_bool_t config_param_get_bool(config_param_p param) {
     const char* value_split = strchr(param->range, '|');
     
     if ((value_split > param->range) && value_split[1]) {
-      if (!strncmp(param->value, param->range, value_split-param->range))
+      if ((value_split-param->range == strlen(param->value)) &&
+          !strncmp(param->value, param->range, value_split-param->range))
         return config_param_false;
       else if (!strcmp(param->value, value_split+1))
         return config_param_true;

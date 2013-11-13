@@ -29,7 +29,7 @@
   * as a piecewise description for interpolated data points.
   */
 
-/** \file spline.h
+/** \file spline/spline.h
   * \ingroup spline
   * \brief Simple spline implementation
   * \author Ralf Kaestner
@@ -162,7 +162,7 @@ void spline_add_segment(
   * \param[in] argument The argument for which to evaluate the spline segment.
   * \return The value of the spline segment for the given argument.
   */
-double spline_evaluate_segment(
+double spline_eval_segment(
   spline_p spline,
   spline_eval_type_t eval_type,
   int seg_index,
@@ -180,7 +180,7 @@ double spline_evaluate_segment(
   * \return The index of the evaluated bicubic spline segment or the negative 
   *   error code.
   */
-int spline_evaluate_linear_search(
+int spline_eval_linear_search(
   spline_p spline,
   spline_eval_type_t eval_type,
   double argument,

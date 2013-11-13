@@ -28,7 +28,7 @@
   * to serial UART communication devices.
   */
 
-/** \file ftdi.h
+/** \file ftdi/ftdi.h
   * \ingroup ftdi
   * \brief FTDI device interface
   * \author Ralf Kaestner

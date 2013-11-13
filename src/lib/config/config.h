@@ -34,7 +34,7 @@
   * as Linux manual pages to document their properties.
   */
 
-/** \file config.h
+/** \file config/config.h
   * \ingroup config
   * \brief Simple configuration implementation
   * \author Ralf Kaestner

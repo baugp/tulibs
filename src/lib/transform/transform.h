@@ -28,7 +28,7 @@
   * linear transformations in 3-dimensional spaces.
   */
 
-/** \file transform.h
+/** \file transform/transform.h
   * \ingroup transform
   * \brief Linear transformation interface
   * \author Ralf Kaestner

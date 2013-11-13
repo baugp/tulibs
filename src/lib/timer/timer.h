@@ -28,7 +28,7 @@
   * measuring, and delaying time.
   */
 
-/** \file timer.h
+/** \file timer/timer.h
   * \ingroup timer
   * \brief Simple timer implementation
   * \author Ralf Kaestner

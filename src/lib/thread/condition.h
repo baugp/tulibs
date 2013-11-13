@@ -21,7 +21,7 @@
 #ifndef THREAD_CONDITION_H
 #define THREAD_CONDITION_H
 
-/** \file condition.h
+/** \file thread/condition.h
   * \ingroup thread
   * \brief Wait condition implementation
   * \author Ralf Kaestner

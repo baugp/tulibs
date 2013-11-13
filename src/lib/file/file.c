@@ -302,13 +302,13 @@ ssize_t file_seek(file_p file, ssize_t offset, file_whence_t whence) {
       if (pos >= file->pos) {
         int error = BZ_OK;
         char buffer[4096];
-        ssize_t result;
+        ssize_t num_read;
 
         while ((file->pos < pos) && (error == BZ_OK)) {
-          result = BZ2_bzRead(&error, file->handle, buffer,
+          num_read = BZ2_bzRead(&error, file->handle, buffer,
             sizeof(buffer) < pos-file->pos ? sizeof(buffer) : pos-file->pos);
-          if (result > 0)
-            file->pos += result;
+          if (num_read > 0)
+            file->pos += num_read;
         }
           
         if (error != BZ_OK)
@@ -399,6 +399,32 @@ ssize_t file_write(file_p file, const unsigned char* data, size_t size) {
   }
   
   return result;
+}
+
+ssize_t file_read_line(file_p file, char** line, size_t block_size) {
+  ssize_t line_length = 0;
+  unsigned char character;
+  ssize_t result;
+
+  while ((result = file_read(file, &character, 1) == 1)) {
+    if (character == '\n')
+      break;
+    
+    if (line_length % block_size == 0)
+      *line = realloc(*line, line_length+block_size);
+    (*line)[line_length] = character;
+    ++line_length;
+  }
+  
+  if (result >= 0) {
+    if (line_length && (line_length % block_size == 0))
+      *line = realloc(*line, line_length+block_size);
+    (*line)[line_length] = 0;
+      
+    return line_length;
+  }
+  else
+    return result;
 }
 
 ssize_t file_printf(file_p file, const char* format, ...) {

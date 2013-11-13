@@ -165,7 +165,7 @@ void spline_add_segment(spline_p spline, spline_segment_p segment) {
   ++spline->num_segments;
 }
 
-double spline_evaluate_segment(spline_p spline, spline_eval_type_t eval_type, 
+double spline_eval_segment(spline_p spline, spline_eval_type_t eval_type, 
     int seg_index, double argument) {
   spline_segment_p segment = &spline->segments[seg_index];
   double x = argument-spline->arg_start[seg_index];
@@ -178,14 +178,14 @@ double spline_evaluate_segment(spline_p spline, spline_eval_type_t eval_type,
     return segment->a*cub(x)+segment->b*sqr(x)+segment->c*x+segment->d;
 }
 
-int spline_evaluate_linear_search(spline_p spline, spline_eval_type_t
+int spline_eval_linear_search(spline_p spline, spline_eval_type_t
     eval_type, double argument, int seg_index, double* value) {
   int i = seg_index;
 
   while ((i >= 0) && (i < spline->num_segments)) {
     if (argument >= spline->arg_start[i]) {
       if (argument <= spline->arg_start[i]+spline->segments[i].arg_width) {
-        *value = spline_evaluate_segment(spline, eval_type, i, argument);
+        *value = spline_eval_segment(spline, eval_type, i, argument);
         return i;
       }
       else

@@ -139,11 +139,15 @@ int config_help_print_option(FILE* stream, config_param_p param,
   description[0] = 0;
   if (param->description[0]) {
     if (param->type != config_param_type_bool)
-      sprintf(description, "%s (%s)", param->description, param->value);
+      sprintf(description, "%s%s%s%s",
+        param->description,
+        param->value[0] ? " (" : "",
+        param->value[0] ? param->value : "",
+        param->value[0] ? ")" : "");
     else
       strcpy(description, param->description);
   }
-  else if (param->type != config_param_type_bool)
+  else if ((param->type != config_param_type_bool) && param->value[0])
     sprintf(description, "(%s)", param->value);
   
   config_help_print(stream, argument, max_width, key_indent+prefix_length+

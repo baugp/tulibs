@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/** \file point.h
+/** \file transform/point.h
   * \ingroup transform
   * \brief Point definition for the linear transformation module
   * \author Ralf Kaestner

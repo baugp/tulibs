@@ -25,7 +25,7 @@
 
 #include "config/config.h"
 
-/** \file parser.h
+/** \file config/parser.h
   * \ingroup config
   * \brief Simple configuration parser
   * \author Ralf Kaestner
@@ -42,6 +42,9 @@
   */
 //@{
 #define CONFIG_PARSER_PARAMETER_HELP              "help"
+#define CONFIG_PARSER_PARAMETER_FILE              "file"
+#define CONFIG_PARSER_PARAMETER_FILE_OUTPUT       "file-output"
+#define CONFIG_PARSER_PARAMETER_MAN_OUTPUT        "man-output"
 //@}
 
 /** \name Constants
@@ -59,12 +62,16 @@
   */
 //@{
 #define CONFIG_PARSER_ERROR_NONE                  0
-#define CONFIG_PARSER_ERROR_WRITE_MAN             1
-#define CONFIG_PARSER_ERROR_ARGUMENT              2
-#define CONFIG_PARSER_ERROR_ARGUMENT_MISSING      3
-#define CONFIG_PARSER_ERROR_ARGUMENT_FORMAT       4
-#define CONFIG_PARSER_ERROR_ARGUMENT_KEY          5
-#define CONFIG_PARSER_ERROR_ARGUMENT_VALUE        6
+#define CONFIG_PARSER_ERROR_MAN_WRITE             1
+#define CONFIG_PARSER_ERROR_FILE_READ             2
+#define CONFIG_PARSER_ERROR_FILE_WRITE            3
+#define CONFIG_PARSER_ERROR_FILE_FORMAT           4
+#define CONFIG_PARSER_ERROR_FILE_SECTION          5
+#define CONFIG_PARSER_ERROR_ARGUMENT              6
+#define CONFIG_PARSER_ERROR_ARGUMENT_MISSING      7
+#define CONFIG_PARSER_ERROR_ARGUMENT_FORMAT       8
+#define CONFIG_PARSER_ERROR_ARGUMENT_KEY          9
+#define CONFIG_PARSER_ERROR_ARGUMENT_VALUE        10
 //@}
 
 /** \brief Predefined configuration parser error descriptions
@@ -75,21 +82,22 @@ extern const char* config_parser_errors[];
   */
 extern config_t config_parser_default_options;
 
-/** \brief Configuration parser
+/** \brief Predefined configuration parser description
+  */
+extern const char* config_parser_description;
+
+/** \brief Configuration parser exit strategies
   */
 typedef enum {
-  config_parser_exit_never,     //!< Parser never terminates its process.
-  config_parser_exit_error,     //!< Parser terminates in case of error.
-  config_parser_exit_help,      //!< Parser terminates in case of help.
-  config_parser_exit_both       //!< Parser terminates in case of error or help.
+  config_parser_exit_request,   //!< Parser only terminates on request.
+  config_parser_exit_error      //!< Parser terminates in case of error.
 } config_parser_exit_t;
 
 /** \brief Configuration parser option group structure
   */
 typedef struct config_parser_option_group_t {
+  char name[128];               //!< The parser option group name.  
   config_t options;             //!< The parser option group's options.
-  
-  char prefix[128];             //!< The parser option group prefix.
   
   char summary[128];            //!< The parser option group summary.
   char description[1024];       //!< The parser option group description.
@@ -114,7 +122,7 @@ typedef struct config_parser_t {
   char error_what[256];         //!< What produced the parsing error.
 } config_parser_t, *config_parser_p;
 
-/** \brief Initialize a configuration parser
+/** \brief Initialize configuration parser
   * \param[in] parser The configuration parser to be initialized.
   * \param[in] arguments An optional configuration used to initialize the
   *   positional parser arguments.
@@ -132,7 +140,7 @@ void config_parser_init(
   const char* summary,
   const char* description);
 
-/** \brief Initialize a configuration parser from default options
+/** \brief Initialize configuration parser from default options
   * \param[in] parser The configuration parser to be initialized.
   * \param[in] summary An optional, short summary describing the command
   *   which is running the parser.
@@ -144,18 +152,20 @@ void config_parser_init_default(
   const char* summary,
   const char* description);
 
-/** \brief Destroy a configuration parser
+/** \brief Destroy configuration parser
   * \param[in] parser The configuration parser to be destroyed.
   */
 void config_parser_destroy(
   config_parser_p parser);
 
-/** \brief Add an option group to the configuration parser
+/** \brief Add option group to the configuration parser
   * \param[in] parser The configuration parser to which the option group
   *   will be added.
+  * \param[in] name The unique name of the parser option group. The name
+  *   will for instance be used to generated a prefix for the command line
+  *   options associated with the option group.
   * \param[in] options The options to be assigned to the option group, can
   *   be null in which case the added option group will be empty.
-  * \param[in] prefix An optional prefix of the parser option group.
   * \param[in] summary An optional, short summary of the parser option group.
   * \param[in] description An optional, long description of the parser option
   *   group.
@@ -163,10 +173,21 @@ void config_parser_destroy(
   */
 config_parser_option_group_p config_parser_add_option_group(
   config_parser_p parser,
+  const char* name,
   config_p options,
-  const char* prefix,
   const char* summary,
   const char* description);
+
+/** \brief Retrieve option group of the configuration parser
+  * \param[in] parser The configuration parser for which the option group
+  *   shall be retrieved.
+  * \param[in] name The name of the parser option group.
+  * \return The option group of the configuration parser with the given
+  *   name or null if no such option group exists.
+  */
+config_parser_option_group_p config_parser_get_option_group(
+  config_parser_p parser,
+  const char* name);
 
 /** \brief Parse command line arguments
   * \param[in,out] parser The configuration parser used to parse the
@@ -188,6 +209,38 @@ int config_parser_parse(
   int argc,
   char** argv,
   config_parser_exit_t exit);
+
+/** \brief Read parser configuration from file
+  * \note This is a convenience function which may be used to read a
+  *   parser's non-positional arguments from a configuration file.
+  * \param[in] filename The name of the configuration file to read.
+  *   The special filename '-' indicates that the configuration file
+  *   content shall be read from stdin.
+  * \param[in,out] parser The configuration parser whose non-positional
+  *   arguments will be read from the configuration file.
+  * \param[in] file_options The configuration file interpreting options.
+  * \return The resulting error code.
+  */
+int config_parser_read_file(
+  const char* filename,
+  config_parser_p parser,
+  config_p file_options);
+
+/** \brief Write parser configuration to file
+  * \note This is a convenience function which may be used to write a
+  *   parser's non-positional arguments to a configuration file.
+  * \param[in] filename The name of the configuration file to write.
+  *   The special filename '-' indicates that the configuration file
+  *   content shall be written to stdout.
+  * \param[in] parser The configuration parser whose non-positional
+  *   arguments will be written to the configuration file.
+  * \param[in] file_options The configuration file generating options.
+  * \return The resulting error code.
+  */
+int config_parser_write_file(
+  const char* filename,
+  config_parser_p parser,
+  config_p file_options);
 
 /** \brief Print usage information for a configuration parser
   * \note This is a convenience function which may be used to generate
@@ -216,16 +269,21 @@ void config_parser_print_help(
 
 /** \brief Write manual page for a configuration parser
   * \note This is a convenience function which may be used to generate
-  *   Linux manual pages according to a parser's configuration.
+  *   Linux manual pages according to a parser's configuration and
+  *   a project's configuration.
   * \param[in] filename The name of the manual page file to be written.
-  *   The special filename '-' indicates that the manual page shall be
-  *   written to stdout.
+  *   The special filename '-' indicates that the manual page content
+  *   shall be written to stdout.
   * \param[in] parser The configuration parser for which the manpage
   *   will be written.
+  * \param[in] man_options The manual page generating options.
+  * \param[in] project_options The project options.
   * \return The resulting error code.
   */
 int config_parser_write_man(
   const char* filename,
-  config_parser_p parser);
+  config_parser_p parser,
+  config_p man_options,
+  config_p project_options);
 
 #endif

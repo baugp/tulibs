@@ -28,7 +28,7 @@
   * communication devices.
   */
 
-/** \file usb.h
+/** \file usb/usb.h
   * \ingroup usb
   * \brief USB device interface
   * \author Ralf Kaestner

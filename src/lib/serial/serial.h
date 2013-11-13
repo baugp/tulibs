@@ -28,7 +28,7 @@
   * serial communication devices.
   */
 
-/** \file serial.h
+/** \file serial/serial.h
   * \ingroup serial
   * \brief Serial device interface
   * \author Ralf Kaestner

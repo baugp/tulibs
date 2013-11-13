@@ -18,41 +18,17 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef FILE_PATH_H
-#define FILE_PATH_H
-
-#include <stdlib.h>
-
-/** \file file/path.h
-  * \ingroup file
-  * \brief Simple filesystem path-related functions
-  * \author Ralf Kaestner
-  * 
-  * The current filesystem path interface provides very basic access to
-  * the filesystem status related to path names.
+/** \mainpage Main Page
+  * \par Project:
+  *   ${REMAKE_PROJECT_NAME} - ${REMAKE_PROJECT_SUMMARY}
+  * \par Contact:
+  *   ${REMAKE_PROJECT_ADMIN} <${REMAKE_PROJECT_CONTACT}>
+  * \par Authors:
+  *   ${REMAKE_PROJECT_AUTHORS}
+  * \par Version:
+  *   ${REMAKE_PROJECT_VERSION}
+  * \par License:
+  *   \ref license "${REMAKE_PROJECT_LICENSE}"
+  * \par Home:
+  *   ${REMAKE_PROJECT_HOME}
   */
-
-/** \brief Check if path exists
-  * \note This function is ignorant about the type of file the path is
-  *   pointing to.
-  * \param[in] path The path to be checked for existence.
-  * \return One if the path exists and zero otherwise.
-  */
-int file_path_exits(
-  const char* path);
-
-/** \brief Check if the path points to a regular file
-  * \param[in] path The path to be checked.
-  * \return One if the path points to a regular file and zero otherwise.
-  */
-int file_path_is_file(
-  const char* path);
-
-/** \brief Check if the path points to a directory
-  * \param[in] path The path to be checked.
-  * \return One if the path points to a directory and zero otherwise.
-  */
-int file_path_is_directory(
-  const char* path);
-
-#endif

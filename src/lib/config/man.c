@@ -18,20 +18,23 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#define _GNU_SOURCE
+
 #include <string.h>
-#include <unistd.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include <sys/time.h>
 #include <time.h>
 #include <ctype.h>
 
 #include "man.h"
 
+const char* config_man_errors[] = {
+  "Success",
+  "Failed to write manual page to file",
+};
+
 config_param_t config_man_default_params[] = {
-  {CONFIG_MAN_PARAMETER_OUTPUT,
-    config_param_type_string,
-    "",
-    "",
-    "The name of the manual page output file or '-' for stdout"},
   {CONFIG_MAN_PARAMETER_SECTION,
     config_param_type_int,
     "1",
@@ -42,36 +45,6 @@ config_param_t config_man_default_params[] = {
     "",
     "",
     "The title of the manual page"},
-  {CONFIG_MAN_PARAMETER_PROJECT_NAME,
-    config_param_type_string,
-    "",
-    "",
-    "The project name to appear in the manual page"},
-  {CONFIG_MAN_PARAMETER_PROJECT_VERSION,
-    config_param_type_string,
-    "",
-    "",
-    "The project version to appear in the manual page"},
-  {CONFIG_MAN_PARAMETER_PROJECT_AUTHORS,
-    config_param_type_string,
-    "",
-    "",
-    "The project authors to appear in the manual page"},
-  {CONFIG_MAN_PARAMETER_PROJECT_CONTACT,
-    config_param_type_string,
-    "",
-    "",
-    "The project contact to appear in the manual page"},
-  {CONFIG_MAN_PARAMETER_PROJECT_HOME,
-    config_param_type_string,
-    "",
-    "",
-    "The project homepage to appear in the manual page"},
-  {CONFIG_MAN_PARAMETER_PROJECT_LICENSE,
-    config_param_type_string,
-    "",
-    "",
-    "The project licensing information to appear in the manual page"},
 };
 
 config_t config_man_default_options = {
@@ -79,191 +52,317 @@ config_t config_man_default_options = {
   sizeof(config_man_default_params)/sizeof(config_param_t),
 };
 
-int config_man_write_header(file_p file, const char* page_name, size_t
-    page_section, const char* page_title, const char* command, const char*
-    summary) {
+void config_man_init(config_man_page_p page, const char* name, size_t section,
+    const char* title) {
+  strcpy(page->header.name, name);
+  page->header.section = section;
+  strcpy(page->header.title, title);
+  
+  page->sections = 0;
+  page->num_sections = 0;
+}
+
+void config_man_init_config(config_man_page_p page, const char* name,
+    config_p config) {
+  config_man_init(page, name, 
+    config_get_int(config, CONFIG_MAN_PARAMETER_SECTION),
+    config_get_string(config, CONFIG_MAN_PARAMETER_TITLE));
+}
+
+void config_man_destroy(config_man_page_p page) {
+  int i, j;
+  
+  for (i = 0; i < page->num_sections; ++i) {
+    config_man_page_section_p section = &page->sections[i];
+    for (j = 0; j < section->num_paragraphs; ++j)
+      free(section->paragraphs[j]);
+    free(section->paragraphs);
+  }
+  
+  if (page->num_sections)
+    free(page->sections);
+  page->sections = 0;
+  page->num_sections = 0;
+}
+
+config_man_page_section_p config_man_add_section(config_man_page_p page,
+    const char* title) {
+  page->sections = realloc(page->sections, (page->num_sections+1)*
+    sizeof(config_man_page_section_t));
+  config_man_page_section_p section = &page->sections[page->num_sections];
+  ++page->num_sections;
+  
+  size_t title_length = strlen(title);
+  int i;
+  for (i = 0; i < title_length; ++i)
+    section->title[i] = toupper(title[i]);
+  section->title[title_length] = 0;
+  
+  section->paragraphs = 0;
+  section->num_paragraphs = 0;
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_summary(config_man_page_p page,
+    const char* summary) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_SUMMARY);
+  config_man_printf(section, summary);
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_command_summary(config_man_page_p
+    page, const char* command, const char* summary) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_SUMMARY);
+  config_man_printf(section, "%s - %s", command, summary);
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_synopsis(config_man_page_p page,
+    const char* synopsis) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_SYNOPSIS);
+  config_man_printf(section, synopsis);
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_description(config_man_page_p page,
+    const char* description) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_DESCRIPTION);
+  config_man_printf(section, description);
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_config(config_man_page_p page,
+    const char* title, const char* preface, config_p config, const char*
+    format) {
+  config_man_page_section_p  section = config_man_add_section(page, title);
+  int i;
+
+  if (preface && preface[0])
+    config_man_printf(section, preface);
+  if (config) {
+    for (i = 0; i < config->num_params; ++i)
+      config_man_add_param(section, &config->params[i], format);
+  }
+  
+  return section;
+}
+
+const char* config_man_add_param(config_man_page_section_p section,
+    config_param_p param, const char* format) {
+  char par_format[strlen(format)+64];
+  sprintf(par_format, "%s\n.RS\n%%s\n.P\n%%s.RE", format);
+  
+  char param_range[strlen(param->range)+strlen(param->value)+128];
+  if ((param->type != config_param_type_enum) &&
+      (param->type != config_param_type_bool) &&
+      param->range[0])
+    sprintf(param_range,
+      "The permissible range of this argument is '%s'%s%s%s.\n",
+      param->range,
+      param->value[0] ? ", and its value defaults to '" : "",
+      param->value[0] ? param->value : "",
+      param->value[0] ? "'" : "");
+  else if ((param->type != config_param_type_bool) &&
+      param->value[0])
+    sprintf(param_range, "The default value of this argument is '%s'.\n",
+      param->value);
+  else
+    param_range[0] = 0;
+  
+  return config_man_printf(section, par_format, param->key,
+    (param->type == config_param_type_enum) ||
+      (param->type == config_param_type_bool) ? param->range :
+      config_param_types[param->type],
+    param->description[0] ? param->description :
+      "This argument requires documentation.", param_range);
+}
+
+config_man_page_section_p config_man_add_arguments(config_man_page_p page,
+    const char* title, const char* preface, config_p arguments) {
+  config_man_page_section_p section = config_man_add_config(page, title,
+    preface, 0, 0);
+  
+  char format[64];
+  int i;
+
+  for (i = 0; i < arguments->num_params; ++i) {
+    if ((arguments->params[i].type == config_param_type_enum) ||
+        (arguments->params[i].type == config_param_type_bool))
+      strcpy(format, ".BI \"%s\"\\c\n: <%s>");
+    else
+      strcpy(format, ".BI \"%s\"\\c\n.RI \": <\" %s \">\"");
+      
+    config_man_add_param(section, &arguments->params[i], format);
+  }
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_options(config_man_page_p page,
+    const char* title, const char* preface, config_p options, const char*
+    prefix) {
+  config_man_page_section_p section = config_man_add_config(page, title,
+    preface, 0, 0);
+  
+  size_t prefix_length = prefix ? strlen(prefix) : 0;
+  char format[prefix_length+32];
+  int i;
+
+  for (i = 0; i < options->num_params; ++i) {
+    if (options->params[i].type == config_param_type_enum)
+      sprintf(format, ".BI \"--%s%%s\"\\c\n=<%%s>", prefix ? prefix : "");
+    else if (options->params[i].type == config_param_type_bool)
+      sprintf(format, ".BI \"--%s%%s\"%%.0s", prefix ? prefix : "");
+    else
+      sprintf(format, ".BI \"--%s%%s\"\\c\n.RI \"=<\" %%s \">\"",
+        prefix ? prefix : "");
+    
+    config_man_add_param(section, &options->params[i], format);
+  }
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_authors(config_man_page_p page,
+    const char* authors) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_AUTHORS);
+  config_man_printf(section, "Written by %s.", authors);
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_bugs(config_man_page_p page,
+    const char* contact) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_BUGS);
+  config_man_printf(section, "Report bugs to <%s>.", contact);
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_copyright(config_man_page_p page,
+    const char* project, const char* license) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_COPYRIGHT);
+  config_man_printf(section, "%s is published under the %s.", project,
+    license);
+  
+  return section;
+}
+
+config_man_page_section_p config_man_add_colophon(config_man_page_p page,
+    const char* project, const char* version, const char* home) {
+  config_man_page_section_p section = config_man_add_section(page,
+    CONFIG_MAN_SECTION_COLOPHON);
+  config_man_printf(section, "This page is part%s%s of the %s project.",
+    (version && version[0]) ? " of version " : "",
+    (version && version[0]) ? version : "", project);
+  if (home && home[0])
+    config_man_printf(section, "A description of the project, and information "
+      "about reporting bugs, can be found at %s.", home);
+  
+  return section;
+}
+
+void config_man_add_project_sections(config_man_page_p page, config_project_p
+    project) {
+  if (project->authors[0])
+    config_man_add_authors(page, project->authors);
+  if (project->contact[0])
+    config_man_add_bugs(page, project->contact);
+  if (project->name[0] && project->license[0])
+    config_man_add_copyright(page, project->name, project->license);
+  if (project->name[0])
+    config_man_add_colophon(page, project->name, project->version,
+      project->home);
+}
+
+const char* config_man_printf(config_man_page_section_p section, const char*
+    format, ...) {
+  char* paragraph = 0;
+  
+  va_list vargs;
+  va_start(vargs, format);
+  if (vasprintf(&paragraph, format, vargs) < 0)
+    paragraph = 0;
+  va_end(vargs);
+  
+  if (paragraph) {
+    section->paragraphs = realloc(section->paragraphs,
+      (section->num_paragraphs+1)*sizeof(char*));
+    section->paragraphs[section->num_paragraphs] = paragraph;
+    ++section->num_paragraphs;
+    
+    return section->paragraphs[section->num_paragraphs-1];
+  }
+  else
+    return 0;
+}
+
+int config_man_write(const char* filename, config_man_page_p page) {
+  file_t file;
+  
+  file_init_name(&file, filename);
+  if (strcmp(filename, "-"))
+    file_open(&file, file_mode_write);
+  else
+    file_open_stream(&file, stdout, file_mode_write);
+
+  if (!file.handle)
+    return CONFIG_MAN_ERROR_WRITE;
+  
+  int result = config_man_write_page(&file, page);
+  
+  file_close(&file);
+  return result;
+}
+
+int config_man_write_page(file_p file, config_man_page_p page) {
+  int result, i;
+  
+  if ((result = config_man_write_header(file, &page->header)))
+    return result;
+  for (i = 0; i < page->num_sections; ++i)
+    if ((result = config_man_write_section(file, &page->sections[i])))
+      return result;
+
+  return CONFIG_MAN_ERROR_NONE;
+}
+
+int config_man_write_header(file_p file, config_man_page_header_p header) {
   struct timeval time;
   struct tm local_time;
   
   gettimeofday(&time, 0);
   localtime_r(&time.tv_sec, &local_time);
   
-  file_printf(file,
-    ".TH \"%s\" %d \"%d-%02d-%02d\" Linux \"%s\"\n", page_name,
-    (int)page_section, 1900+local_time.tm_year, local_time.tm_mon,
-    local_time.tm_mday, page_title);
-  file_printf(file,
-    ".SH NAME\n"
-    "%s - %s\n",command, summary);
+  if (file_printf(file,
+      ".TH \"%s\" %d \"%d-%02d-%02d\" Linux \"%s\"\n", header->name,
+      (int)header->section, 1900+local_time.tm_year, local_time.tm_mon,
+      local_time.tm_mday, header->title) < 0)
+    return CONFIG_MAN_ERROR_WRITE;
   
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
+  return CONFIG_MAN_ERROR_NONE;
 }
 
-int config_man_write_synopsis(file_p file, const char* usage) {
-  file_printf(file,
-    ".SH SYNOPSIS\n"
-    "%s\n", usage);
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_description(file_p file, const char* text) {
-  file_printf(file,
-    ".SH DESCRIPTION\n"
-    "%s\n", text);
+int config_man_write_section(file_p file, config_man_page_section_p section) {
+  int i;
   
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_arguments(file_p file, const char* section_title,
-    const char* section_preface, config_p arguments) {
-  int i;    
-   
-  if (arguments->num_params) {
-    char title[strlen(section_title)+1];
-    for (i = 0; i < sizeof(title); ++i)
-      title[i] = toupper(section_title[i]);
-    file_printf(file, ".SH %s\n", title);
-    
-    if (section_preface && section_preface[0])
-      file_printf(file, ".PP\n%s\n", section_preface);
-  }
+  if (file_printf(file, ".SH %s\n", section->title) < 0)
+    return CONFIG_MAN_ERROR_WRITE;
+  for (i = 0; i < section->num_paragraphs; ++i)
+    if (file_printf(file, ".P\n%s\n", section->paragraphs[i]) < 0)
+      return CONFIG_MAN_ERROR_WRITE;
   
-  for (i = 0; i < arguments->num_params; ++i)
-    config_man_write_argument(file, &arguments->params[i]);
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_argument(file_p file, config_param_p param) {
-  file_printf(file,
-    ".PP\n"
-    ".BI \"%s\"\\c\n", param->key);
-      
-  if ((param->type == config_param_type_enum) ||
-      (param->type == config_param_type_bool))
-    file_printf(file, ": <%s>\n", param->range);
-  else
-    file_printf(file, ".RI \": <\" %s \">\"\n",
-      config_param_types[param->type]);
-
-  file_printf(file,
-    ".RS\n"
-    "%s\n", param->description[0] ? param->description :
-      "This argument requires documentation.");
-  if ((param->type != config_param_type_enum) &&
-      (param->type != config_param_type_bool) &&
-      param->range[0])
-    file_printf(file,
-      ".PP\n"
-      "The permissible range of this argument is '%s'%s%s%s.\n",
-      param->range,
-      param->value[0] ? ", and its value defaults to '" : "",
-      param->value[0] ? param->value : "",
-      param->value[0] ? "'" : "");
-  else if (param->value[0])
-    file_printf(file,
-      ".PP\n"
-      "The default value of this argument is '%s'.\n", param->value);
-  file_printf(file, ".RE\n");
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_options(file_p file, const char* section_title,
-    const char* section_preface, config_p options, const char* prefix) {
-  int i;    
-   
-  if (options->num_params) {
-    char title[strlen(section_title)+1];
-    for (i = 0; i < sizeof(title); ++i)
-      title[i] = toupper(section_title[i]);
-    file_printf(file, ".SH %s\n", title);
-
-    if (section_preface && section_preface[0])
-      file_printf(file, ".PP\n%s\n", section_preface);    
-  }
-  
-  for (i = 0; i < options->num_params; ++i)
-    config_man_write_option(file, &options->params[i], prefix);
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;  
-}
-
-int config_man_write_option(file_p file, config_param_p param,
-    const char* prefix) {
-  file_printf(file,
-    ".PP\n"
-    ".BI \"--%s%s\"\\c\n", prefix ? prefix : "", param->key);
-      
-  if (param->type == config_param_type_enum)
-    file_printf(file, "=<%s>\n", param->range);
-  else if (param->type != config_param_type_bool)
-    file_printf(file, ".RI \"=<\" %s \">\"\n",
-      config_param_types[param->type]);
-
-  file_printf(file,
-    ".RS\n"
-    "%s\n", param->description[0] ? param->description :
-      "This option requires documentation.");
-  if ((param->type != config_param_type_enum) &&
-      (param->type != config_param_type_bool) &&
-      param->range[0])
-    file_printf(file,
-      ".PP\n"
-      "The permissible range of this argument is '%s'%s%s%s.\n",
-      param->range,
-      param->value[0] ? ", and its value defaults to '" : "",
-      param->value[0] ? param->value : "",
-      param->value[0] ? "'" : "");
-  else if (param->value[0] && (param->type != config_param_type_bool))
-    file_printf(file,
-      ".PP\n"
-      "The default value of this argument is '%s'.\n", param->value);
-  file_printf(file, ".RE\n");
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_authors(file_p file, const char* project_authors) {
-  file_printf(file,
-    ".SH AUTHORS\n"
-    "Written by %s.\n", project_authors);
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_bugs(file_p file, const char* project_contact) {
-  file_printf(file,
-    ".SH REPORTING BUGS\n"
-    "Report bugs to <%s>.\n", project_contact);
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_copyright(file_p file, const char* project_name,
-    const char* project_license) {
-  file_printf(file,
-    ".SH COPYRIGHT\n"
-    "%s is published under the %s.\n", project_name, project_license);
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
-}
-
-int config_man_write_colophon(file_p file, const char* project_name,
-    const char* project_version, const char* project_home) {
-  file_printf(file,
-    ".SH COLOPHON\n"
-    "This page is part");
-  if (project_version && project_version[0])
-    file_printf(file, " of version %s", project_version);
-  file_printf(file, " of the %s project.\n", project_name);
-  
-  if (project_home && project_home[0])
-    file_printf(file,
-      ".PP\n"
-      "A description of the project, and information about reporting bugs, "
-      "can be found at %s.", project_home);
-
-  return file_error(file) ? CONFIG_MAN_ERROR_WRITE : CONFIG_MAN_ERROR_NONE;
+  return CONFIG_MAN_ERROR_NONE;
 }

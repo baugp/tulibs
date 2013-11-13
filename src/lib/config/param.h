@@ -21,7 +21,7 @@
 #ifndef CONFIG_PARAM_H
 #define CONFIG_PARAM_H
 
-/** \file param.h
+/** \file config/param.h
   * \ingroup config
   * \brief Simple parameter implementation
   * \author Ralf Kaestner
