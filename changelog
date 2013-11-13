@@ -1,3 +1,9 @@
+tulibs (0.4-70) lucid; urgency=low
+
+  * Added license page to Doxygen documentation 
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Wed, 13 Nov 2013 08:14:00 +0100
+ 
 tulibs (0.4-69) lucid; urgency=low
 
   * Renamed spline evaluation functions and executable
