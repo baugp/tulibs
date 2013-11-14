@@ -1,3 +1,9 @@
+tulibs (0.4-71) lucid; urgency=low
+
+  * Minor documentation tweaks
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 14 Nov 2013 08:03:00 +0100
+ 
 tulibs (0.4-70) lucid; urgency=low
 
   * Added license page to Doxygen documentation 

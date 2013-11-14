@@ -162,9 +162,9 @@ void config_parser_destroy(
   * \param[in] parser The configuration parser to which the option group
   *   will be added.
   * \param[in] name The unique name of the parser option group. The name
-  *   will for instance be used to generated a prefix for the command line
+  *   will for instance be used to generate a prefix for the command line
   *   options associated with the option group.
-  * \param[in] options The options to be assigned to the option group, can
+  * \param[in] options The options to be assigned to the option group, may
   *   be null in which case the added option group will be empty.
   * \param[in] summary An optional, short summary of the parser option group.
   * \param[in] description An optional, long description of the parser option
