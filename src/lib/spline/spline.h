@@ -247,7 +247,7 @@ size_t spline_add_knot(
   * \param[in] num_points The number of spline data points.
   * \param[in] e_0 The first boundary element of the tridiagonal system's
   *   upper sub-diagonal.
-  * \param[in] c_0 The last boundary element of the tridiagonal system's
+  * \param[in] c_n The last boundary element of the tridiagonal system's
   *   lower sub-diagonal.
   * \param[in] b_0 The first boundary element of the right-hand side vector.
   * \param[in] b_n The last boundary element of the right-hand side vector.
