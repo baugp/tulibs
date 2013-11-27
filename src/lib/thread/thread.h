@@ -50,9 +50,13 @@
   */
 //@{
 #define THREAD_ERROR_NONE              0
+//!< Success
 #define THREAD_ERROR_CREATE            1
+//!< Error creating thread
 #define THREAD_ERROR_WAIT_TIMEOUT      2
+//!< Wait operation timed out
 #define THREAD_ERROR_STATE             3
+//!< State error
 //@}
 
 /** \brief Predefined thread handling error descriptions
@@ -81,7 +85,7 @@ typedef struct thread_t {
   thread_state_t state;           //!< The state of the thread.
 
   int exit_request;               //!< Flag signaling a pending exit request.
-} thread_t, *thread_p;
+} thread_t;
 
 /** \brief Start a thread
   * \param[in] thread The thread to be started.
@@ -97,7 +101,7 @@ typedef struct thread_t {
   * \return The resulting error code.
   */
 int thread_start(
-  thread_p thread,
+  thread_t* thread,
   void* (*thread_routine)(void*),
   void (*thread_cleanup)(void*),
   void* thread_arg,
@@ -110,7 +114,7 @@ int thread_start(
   * \return The resulting error code.
   */
 int thread_exit(
-  thread_p thread,
+  thread_t* thread,
   int wait);
 
 /** \brief Exit the calling thread
@@ -118,7 +122,7 @@ int thread_exit(
 void thread_self_exit();
 
 /** \brief Run the thread
-  * This function is run within the thread and should never be called
+  * \note This function is run within the thread and should never be called
   * directly.
   * \param[in] arg The arguments passed to the thread.
   * \return The result of the thread.
@@ -130,7 +134,7 @@ void* thread_run(void* arg);
   * \return 1 if an exit request is pending, 0 otherwise.
   */
 int thread_test_exit(
-  thread_p thread);
+  thread_t* thread);
 
 /** \brief Test the calling thread for a pending cancellation request
   */
@@ -140,7 +144,7 @@ void thread_self_test_exit();
   * \param[in] thread The running thread to exit and wait for.
   */
 void thread_wait_exit(
-  thread_p thread);
+  thread_t* thread);
 
 /** \brief Wait for thread termination
   * \param[in] thread The running thread to wait for.
@@ -148,7 +152,7 @@ void thread_wait_exit(
   * \return The resulting error code.
   */
 int thread_wait(
-  thread_p thread,
+  thread_t* thread,
   double timeout);
 
 #endif

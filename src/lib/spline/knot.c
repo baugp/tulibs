@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Ralf Kaestner                                   *
- *   ralf.kaestner@gmail.com                                               *
+ *   Copyright (C) 2013 by Ralf Kaestner                                   *
+ *   stfritz@ethz.ch, ralf.kaestner@gmail.com                              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,32 +18,42 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "mutex.h"
+#include "knot.h"
 
-const char* thread_mutex_errors[] = {
-  "Success",
-  "Failed to acquire mutex lock",
-};
+#define sqr(a) ((a)*(a))
+#define cub(a) ((a)*(a)*(a))
 
-void thread_mutex_init(thread_mutex_t* mutex) {
-  pthread_mutex_init(&mutex->handle, 0);
+void spline_knot_init(spline_knot_t* knot, double x, double y, double y2) {
+  knot->x = x;
+  knot->y = y;
+  knot->y2 = y2;
 }
 
-void thread_mutex_destroy(thread_mutex_t* mutex) {
-  pthread_mutex_destroy(&mutex->handle);
+void spline_knot_copy(spline_knot_t* dst, const spline_knot_t* src) {
+  dst->x = src->x;
+  dst->y = src->y;
+  dst->y2 = src->y2;
 }
 
-void thread_mutex_lock(thread_mutex_t* mutex) {
-  pthread_mutex_lock(&mutex->handle);
+void spline_knot_print(FILE* stream, const spline_knot_t* knot) {
+  fprintf(stream, "%10lg %10lg %10lg",
+    knot->x,
+    knot->y,
+    knot->y2);
 }
 
-void thread_mutex_unlock(thread_mutex_t* mutex) {
-  pthread_mutex_unlock(&mutex->handle);
-}
+double spline_knot_eval(const spline_knot_t* knot_min, const spline_knot_t*
+    knot_max, spline_eval_type_t eval_type, double x) {
+  double h_i = knot_max->x-knot_min->x;
+  double a = (knot_max->x-x)/h_i;
+  double b = (x-knot_min->x)/h_i;
 
-int thread_mutex_try_lock(thread_mutex_t* mutex) {
-  if (!pthread_mutex_trylock(&mutex->handle))
-    return THREAD_MUTEX_ERROR_NONE;
+  if (eval_type == spline_eval_type_first_derivative)
+    return (knot_max->y-knot_min->y)/h_i-0.5*sqr(a)*knot_min->y2+
+      0.5*sqr(b)*knot_max->y2-(knot_max->y2-knot_min->y2)*h_i/6.0;
+  else if (eval_type == spline_eval_type_second_derivative)
+    return a*knot_min->y2+b*knot_max->y2;
   else
-    return THREAD_MUTEX_ERROR_LOCK;
+    return a*knot_min->y+b*knot_max->y+((cub(a)-a)*knot_min->y2+
+      (cub(b)-b)*knot_max->y2)*sqr(h_i)/6.0;
 }

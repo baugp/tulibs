@@ -1,5 +1,5 @@
 remake_add_documentation(
-  TARGETS lsusb lsftdi spline_eval
+  TARGETS lsusb lsftdi spline_eval spline_int
   ARGS --man-output=%OUTPUT%
     --man-title="${REMAKE_PROJECT_NAME} Utilities Documentation"
     --project-name="${REMAKE_PROJECT_NAME}"

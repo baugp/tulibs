@@ -19,12 +19,13 @@
  ***************************************************************************/
 
 #include <stdio.h>
-#include <string.h>
 
 #include <ftdi.h>
 #include <libudev.h>
 
 #include "ftdi.h"
+
+#include "string/string.h"
 
 #include "timer/timer.h"
 
@@ -34,7 +35,7 @@ ftdi_context_t _ftdi_default_context = {
   0
 };
 
-ftdi_context_p ftdi_default_context = &_ftdi_default_context;
+ftdi_context_t* ftdi_default_context = &_ftdi_default_context;
 
 const char* ftdi_errors[] = {
   "Success",
@@ -69,7 +70,11 @@ const char* ftdi_chips[] = {
   "Unknown FTDI chip",
 };
 
-int ftdi_context_init(ftdi_context_p context) {
+void ftdi_device_init(ftdi_device_t* dev, struct ftdi_context* libftdi_context,
+  struct usb_bus* libusb_bus, struct usb_device* libusb_device);
+void ftdi_device_destroy(ftdi_device_t* dev);
+
+int ftdi_context_init(ftdi_context_t* context) {
   if (context != ftdi_default_context) {
     context->num_devices = 0;
     context->devices = 0;
@@ -79,53 +84,57 @@ int ftdi_context_init(ftdi_context_p context) {
   else
     context->num_references++;          
   
+  error_init(&context->error, ftdi_errors);
+  
   return ftdi_context_refresh(context);
 }
 
-int ftdi_context_release(ftdi_context_p context) {
+int ftdi_context_release(ftdi_context_t* context) {
   int i;
+
+  error_clear(&context->error);
   
   if (context == ftdi_default_context) {
     if (context->num_references)
       context->num_references--;
-    else
-      return FTDI_ERROR_CONTEXT_RELEASE;
+    else {
+      error_set(&context->error, FTDI_ERROR_CONTEXT_RELEASE);
+      return error_get(&context->error);
+    }
   }
   else
     context->num_references = 0;
 
   if (!context->num_references && context->num_devices) {
-    for (i = 0; i < context->num_devices; ++i) {
-      ftdi_deinit(context->devices[i].libftdi_context);
-      ftdi_free(context->devices[i].libftdi_context);
-    }
+    for (i = 0; i < context->num_devices; ++i)
+      ftdi_device_destroy(&context->devices[i]);
     
     free(context->devices);
     context->devices = 0;
     context->num_devices = 0;
   }
   
-  return FTDI_ERROR_NONE;
+  return error_get(&context->error);
 }
 
-int ftdi_context_refresh(ftdi_context_p context) {
+int ftdi_context_refresh(ftdi_context_t* context) {
   struct usb_bus* libusb_bus;
   struct usb_device* libusb_device;
   struct ftdi_context* libftdi_context;
   int i = 0;
-    
+
+  error_clear(&context->error);
+  
   if (context->num_references) {
     if (context->num_devices) {
-      for (i = 0; i < context->num_devices; ++i) {
-        ftdi_deinit(context->devices[i].libftdi_context);
-        ftdi_free(context->devices[i].libftdi_context);
-      }
+      for (i = 0; i < context->num_devices; ++i)
+        ftdi_device_destroy(&context->devices[i]);
+      
       free(context->devices);
+      context->devices = 0;
+      context->num_devices = 0;
     }
 
-    context->num_devices = 0;
-    context->devices = 0;
-    
     usb_init();
     if ((usb_find_busses() > 0) && (usb_find_devices() > 0)) {
       for (libusb_bus = usb_get_busses(); libusb_bus;
@@ -148,48 +157,20 @@ int ftdi_context_refresh(ftdi_context_p context) {
         libftdi_context = ftdi_new();
         ftdi_init(libftdi_context);
       
-        context->devices[i].libftdi_context = libftdi_context;
-        context->devices[i].libusb_device = libusb_device;
-
-        context->devices[i].bus = libusb_bus->location;
-        sscanf(libusb_device->filename, "%d", &context->devices[i].address);
-
-        context->devices[i].product_id = libusb_device->descriptor.idProduct;
-        
-        switch (libusb_device->descriptor.bcdDevice) {
-          case 0x0400: context->devices[i].chip = ftdi_chip_bm;
-                       break;
-          case 0x0200: if (!libusb_device->descriptor.iSerialNumber)
-                         context->devices[i].chip = ftdi_chip_bm;
-                       else
-                         context->devices[i].chip = ftdi_chip_am;
-                       break;
-          case 0x0500: context->devices[i].chip = ftdi_chip_2232c;
-                       break;
-          case 0x0600: context->devices[i].chip = ftdi_chip_r;
-                       break;
-          case 0x0700: context->devices[i].chip = ftdi_chip_2232h;
-                       break;
-          case 0x0800: context->devices[i].chip = ftdi_chip_4232h;
-                       break;
-          case 0x0900: context->devices[i].chip = ftdi_chip_232h;
-                       break;
-          default    : context->devices[i].chip = ftdi_chip_unkown;
-        }
-        context->devices[i].num_read = 0;
-        context->devices[i].num_written = 0;
-      
+        ftdi_device_init(&context->devices[i], libftdi_context, libusb_bus,
+          libusb_device);
         i++;
       }
     }
   }
   else
-    return FTDI_ERROR_INVALID_CONTEXT;
+    error_set(&context->error, FTDI_ERROR_INVALID_CONTEXT);
   
-  return FTDI_ERROR_NONE;
+  return error_get(&context->error);
 }
 
-ftdi_device_p ftdi_match_name(ftdi_context_p context, const char* name) {
+ftdi_device_t* ftdi_context_match_name(const ftdi_context_t* context,
+    const char* name) {
   struct stat stat_buffer;
   struct udev* udev = 0;
   struct udev_device* dev = 0;
@@ -202,8 +183,10 @@ ftdi_device_p ftdi_match_name(ftdi_context_p context, const char* name) {
     dev = udev_device_new_from_devnum(udev, 'c', stat_buffer.st_rdev);
 
     if (dev) {
-      sscanf(udev_device_get_sysattr_value(dev, "busnum"), "%d", &bus);
-      sscanf(udev_device_get_sysattr_value(dev, "devnum"), "%d", &address);
+      string_scanf(udev_device_get_sysattr_value(dev, "busnum"),
+        "%d", &bus);
+      string_scanf(udev_device_get_sysattr_value(dev, "devnum"),
+        "%d", &address);
     }
 
     udev_unref(udev);
@@ -218,7 +201,8 @@ ftdi_device_p ftdi_match_name(ftdi_context_p context, const char* name) {
   return 0;
 }
 
-ftdi_device_p ftdi_match_product(ftdi_context_p context, int product_id) {
+ftdi_device_t* ftdi_context_match_product(const ftdi_context_t* context,
+    int product_id) {
   int i;
   
   for (i = 0; i < context->num_devices; ++i) {
@@ -229,7 +213,8 @@ ftdi_device_p ftdi_match_product(ftdi_context_p context, int product_id) {
   return 0;
 }
 
-ftdi_device_p ftdi_match_chip(ftdi_context_p context, ftdi_chip_t chip) {
+ftdi_device_t* ftdi_context_match_chip(const ftdi_context_t* context,
+    ftdi_chip_t chip) {
   int i;
   
   for (i = 0; i < context->num_devices; ++i) {
@@ -240,30 +225,97 @@ ftdi_device_p ftdi_match_chip(ftdi_context_p context, ftdi_chip_t chip) {
   return 0;
 }
 
-int ftdi_open(ftdi_device_p dev, const char* name, ftdi_interface_t
-    interface) {
+void ftdi_device_init(ftdi_device_t* dev, struct ftdi_context* libftdi_context,
+    struct usb_bus* libusb_bus, struct usb_device* libusb_device) {
+  dev->libftdi_context = libftdi_context;
+  dev->libusb_device = libusb_device;
+
+  dev->bus = libusb_bus->location;
+  string_scanf(libusb_device->filename, "%d", &dev->address);
+
+  dev->product_id = libusb_device->descriptor.idProduct;
+  
+  switch (libusb_device->descriptor.bcdDevice) {
+    case 0x0400:
+      dev->chip = ftdi_chip_bm;
+      break;
+    case 0x0200:
+      if (!libusb_device->descriptor.iSerialNumber)
+        dev->chip = ftdi_chip_bm;
+      else
+        dev->chip = ftdi_chip_am;
+      break;
+    case 0x0500:
+      dev->chip = ftdi_chip_2232c;
+      break;
+    case 0x0600:
+      dev->chip = ftdi_chip_r;
+      break;
+    case 0x0700:
+      dev->chip = ftdi_chip_2232h;
+      break;
+    case 0x0800:
+      dev->chip = ftdi_chip_4232h;
+      break;
+    case 0x0900:
+      dev->chip = ftdi_chip_232h;
+      break;
+    default:
+      dev->chip = ftdi_chip_unkown;
+  }
+  dev->interface = ftdi_interface_any;
+  
+  dev->baud_rate = 0;
+  dev->data_bits = 0;
+  dev->stop_bits = 0;
+  dev->parity= ftdi_parity_none;
+  dev->flow_ctrl = ftdi_flow_ctrl_off;
+  dev->break_type = ftdi_break_off;
+
+  dev->timeout = 0.0;
+  dev->latency = 0.0;
+  
+  dev->num_read = 0;
+  dev->num_written = 0;
+  
+  error_init(&dev->error, ftdi_errors);
+}
+
+void ftdi_device_destroy(ftdi_device_t* dev) {
+  ftdi_deinit(dev->libftdi_context);
+  ftdi_free(dev->libftdi_context);
+  
+  error_destroy(&dev->error);
+}
+
+int ftdi_device_open(ftdi_device_t* dev, ftdi_interface_t interface) {
+  error_clear(&dev->error);
+  
   if (ftdi_set_interface(dev->libftdi_context, interface))
-    return FTDI_ERROR_INVALID_INTERFACE;
-  
-  if (ftdi_usb_open_dev(dev->libftdi_context, dev->libusb_device))
-    return FTDI_ERROR_OPEN;
+    error_set(&dev->error, FTDI_ERROR_INVALID_INTERFACE);
+  else if (ftdi_usb_open_dev(dev->libftdi_context, dev->libusb_device))
+    error_setf(&dev->error, FTDI_ERROR_OPEN, "%03:%03", dev->bus,
+      dev->address);
     
-  return FTDI_ERROR_NONE;
+  return error_get(&dev->error);
 }
 
-int ftdi_close(ftdi_device_p dev) {
+int ftdi_device_close(ftdi_device_t* dev) {
+  error_clear(&dev->error);
+  
   if (ftdi_usb_purge_buffers(dev->libftdi_context))
-    return FTDI_ERROR_PURGE;
+    error_setf(&dev->error, FTDI_ERROR_PURGE, "%03:%03", dev->bus,
+      dev->address);
+  else if (ftdi_usb_close(dev->libftdi_context))
+    error_setf(&dev->error, FTDI_ERROR_CLOSE, "%03:%03", dev->bus,
+      dev->address);
   
-  if (ftdi_usb_close(dev->libftdi_context))
-    return FTDI_ERROR_CLOSE;
-  
-  return FTDI_ERROR_NONE;
+  return error_get(&dev->error);
 }
 
-int ftdi_setup(ftdi_device_p dev, int baud_rate, int data_bits, int stop_bits,
-    ftdi_parity_t parity, ftdi_flow_ctrl_t flow_ctrl, ftdi_break_t break_type,
-    double timeout, double latency) {
+int ftdi_device_setup(ftdi_device_t* dev, int baud_rate, int data_bits, int
+    stop_bits, ftdi_parity_t parity, ftdi_flow_ctrl_t flow_ctrl, ftdi_break_t
+    break_type, double timeout, double latency) {
   struct ftdi_context* libftdi_context = dev->libftdi_context;
   enum ftdi_bits_type libftdi_data_bits;
   enum ftdi_stopbits_type libftdi_stop_bits;
@@ -272,93 +324,140 @@ int ftdi_setup(ftdi_device_p dev, int baud_rate, int data_bits, int stop_bits,
   enum ftdi_break_type libftdi_break;
   int error;
   
+  error_clear(&dev->error);
+  
   switch (data_bits) {
-    case 7 : libftdi_data_bits = BITS_7;
-             break;
-    case 8 : libftdi_data_bits = BITS_8;
-             break;
-    default: return FTDI_ERROR_INVALID_DATA_BITS;
+    case 7:
+      libftdi_data_bits = BITS_7;
+      break;
+    case 8:
+      libftdi_data_bits = BITS_8;
+      break;
+    default:
+      error_setf(&dev->error, FTDI_ERROR_INVALID_DATA_BITS, "%d", data_bits);
+      return error_get(&dev->error);
   }
   dev->data_bits = data_bits;
 
   switch (stop_bits) {
-    case 1 : libftdi_stop_bits = STOP_BIT_1;
-             break;
-    case 2 : libftdi_stop_bits = STOP_BIT_2;
-             break;
-    case 15: libftdi_stop_bits = STOP_BIT_15;
-             break;
-    default: return FTDI_ERROR_INVALID_STOP_BITS;
+    case 1:
+      libftdi_stop_bits = STOP_BIT_1;
+      break;
+    case 2 :
+      libftdi_stop_bits = STOP_BIT_2;
+      break;
+    case 15:
+      libftdi_stop_bits = STOP_BIT_15;
+      break;
+    default:
+      error_setf(&dev->error, FTDI_ERROR_INVALID_STOP_BITS, "%d", stop_bits);
+      return error_get(&dev->error);
   }
   dev->stop_bits = stop_bits;
 
   switch (parity) {
-    case ftdi_parity_none : libftdi_parity = NONE;
-                            break;
-    case ftdi_parity_odd  : libftdi_parity = ODD;
-                            break;
-    case ftdi_parity_even : libftdi_parity = EVEN;
-                            break;
-    case ftdi_parity_mark : libftdi_parity = MARK;
-                            break;
-    case ftdi_parity_space: libftdi_parity = SPACE;
-                            break;
-    default               : return FTDI_ERROR_INVALID_PARITY;
+    case ftdi_parity_none:
+      libftdi_parity = NONE;
+      break;
+    case ftdi_parity_odd:
+      libftdi_parity = ODD;
+      break;
+    case ftdi_parity_even:
+      libftdi_parity = EVEN;
+      break;
+    case ftdi_parity_mark:
+      libftdi_parity = MARK;
+      break;
+    case ftdi_parity_space:
+      libftdi_parity = SPACE;
+      break;
+    default:
+      error_set(&dev->error, FTDI_ERROR_INVALID_PARITY);
+      return error_get(&dev->error);
   }
   dev->parity = parity;
 
   switch (flow_ctrl) {
-    case ftdi_flow_ctrl_off     : libftdi_flow_ctrl = SIO_DISABLE_FLOW_CTRL;
-                                  break;
-    case ftdi_flow_ctrl_xon_xoff: libftdi_flow_ctrl = SIO_XON_XOFF_HS;
-                                  break;
-    case ftdi_flow_ctrl_rts_cts : libftdi_flow_ctrl = SIO_RTS_CTS_HS;
-                                  break;
-    case ftdi_flow_ctrl_dtr_dsr : libftdi_flow_ctrl = SIO_DTR_DSR_HS;
-                                  break;
-    default                     : return FTDI_ERROR_INVALID_FLOW_CTRL;
+    case ftdi_flow_ctrl_off:
+      libftdi_flow_ctrl = SIO_DISABLE_FLOW_CTRL;
+      break;
+    case ftdi_flow_ctrl_xon_xoff:
+      libftdi_flow_ctrl = SIO_XON_XOFF_HS;
+      break;
+    case ftdi_flow_ctrl_rts_cts:
+      libftdi_flow_ctrl = SIO_RTS_CTS_HS;
+      break;
+    case ftdi_flow_ctrl_dtr_dsr:
+      libftdi_flow_ctrl = SIO_DTR_DSR_HS;
+      break;
+    default:
+      error_set(&dev->error, FTDI_ERROR_INVALID_FLOW_CTRL);
+      return error_get(&dev->error);
   }
   dev->flow_ctrl = flow_ctrl;
   
   switch (break_type) {
-    case ftdi_break_off: libftdi_break = BREAK_OFF;
-                         break;
-    case ftdi_break_on : libftdi_break = BREAK_ON;
-                         break;
-    default            : return FTDI_ERROR_INVALID_BREAK;
+    case ftdi_break_off:
+      libftdi_break = BREAK_OFF;
+      break;
+    case ftdi_break_on:
+      libftdi_break = BREAK_ON;
+      break;
+    default:
+      error_set(&dev->error, FTDI_ERROR_INVALID_BREAK);
+      return error_get(&dev->error);
   }
   dev->break_type = break_type;
 
   if (ftdi_set_line_property2(libftdi_context, libftdi_data_bits,
-      libftdi_stop_bits, libftdi_parity, libftdi_break))
-    return FTDI_ERROR_SETUP;
-  if (ftdi_setflowctrl(libftdi_context, libftdi_flow_ctrl))
-    return FTDI_ERROR_SETUP;
+      libftdi_stop_bits, libftdi_parity, libftdi_break)) {
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+      dev->address);
+    return error_get(&dev->error);
+  }
+  
+  if (ftdi_setflowctrl(libftdi_context, libftdi_flow_ctrl)) {
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+      dev->address);
+    return error_get(&dev->error);
+  }
   
   error = ftdi_set_baudrate(libftdi_context, baud_rate);
-  if (error == -1)
-    return FTDI_ERROR_INVALID_BAUD_RATE;
+  if (error == -1) {
+    error_setf(&dev->error, FTDI_ERROR_INVALID_BAUD_RATE, "%d", baud_rate);
+    return error_get(&dev->error);
+  }
   dev->baud_rate = baud_rate;
-  if (error)
-    return FTDI_ERROR_SETUP;
+  if (error) {
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+      dev->address);
+    return error_get(&dev->error);
+  }
 
   libftdi_context->usb_read_timeout = timeout*1e6;
   libftdi_context->usb_write_timeout = timeout*1e6;
   dev->timeout = timeout;
   
   error = ftdi_set_latency_timer(libftdi_context, latency*1e3);
-  if (error == -1)
-    return FTDI_ERROR_INVALID_LATENCY;
+  if (error == -1) {
+    error_setf(&dev->error, FTDI_ERROR_INVALID_LATENCY, "%f", latency);
+    return error_get(&dev->error);
+  }
   dev->latency = latency;
-  if (error)
-    return FTDI_ERROR_SETUP;
+  if (error) {
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+      dev->address);
+    return error_get(&dev->error);
+  }
   
-  return FTDI_ERROR_NONE;
+  return error_get(&dev->error);
 }
 
-int ftdi_read(ftdi_device_p dev, unsigned char* data, size_t num) {
+int ftdi_device_read(ftdi_device_t* dev, unsigned char* data, size_t num) {
   ssize_t result = 0, num_read = 0;
   double time, period = 0.0;
+
+  error_clear(&dev->error);
   
   timer_start(&time);
   while ((num_read < num) &&
@@ -371,28 +470,39 @@ int ftdi_read(ftdi_device_p dev, unsigned char* data, size_t num) {
   }
   dev->num_read += num_read;
     
-  if (result < 0)
-    return -FTDI_ERROR_READ;
-  else if (!num_read && (period > dev->timeout))
-    return -FTDI_ERROR_TIMEOUT;
-  else
-    return num_read;
+  if (result < 0) {
+    error_setf(&dev->error, FTDI_ERROR_READ, "%03:%03", dev->bus,
+      dev->address);
+    return -error_get(&dev->error);
+  }
+  else if (!num_read && (period > dev->timeout)) {
+    error_setf(&dev->error, FTDI_ERROR_TIMEOUT, "%03:%03", dev->bus,
+      dev->address);
+    return -error_get(&dev->error);
+  }
+
+  return num_read;
 }
 
-int ftdi_write(ftdi_device_p dev, unsigned char* data, size_t num) {
+int ftdi_device_write(ftdi_device_t* dev, unsigned char* data, size_t num) {
   ssize_t result;
+  
+  error_clear(&dev->error);
   
   result = ftdi_write_data(dev->libftdi_context, data, num);
   if (result >= 0)
     dev->num_written += result;
-  else
-    return -FTDI_ERROR_WRITE;
+  else {
+    error_setf(&dev->error, FTDI_ERROR_WRITE, "%03:%03", dev->bus,
+      dev->address);
+    return -error_get(&dev->error);
+  }
   
   return result;
 }
 
-void ftdi_print(FILE* stream, ftdi_device_p dev) {
-  fprintf(stream, "Bus %03d Device %03d: ID %04x:%04x %s\n",
+void ftdi_device_print(FILE* stream, const ftdi_device_t* dev) {
+  fprintf(stream, "Bus %03d Device %03d: ID %04x:%04x %s",
     dev->bus, dev->address, FTDI_VENDOR_ID, dev->product_id,
     ftdi_chips[dev->chip]);
 }

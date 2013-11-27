@@ -23,77 +23,97 @@
 
 #include "config.h"
 
+#include "string/string.h"
+
 const char* config_errors[] = {
   "Success",
   "Parameter key error",
-  "Parameter value error"
+  "Parameter value error",
 };
 
-void config_init(config_p config) {
+void config_init(config_t* config) {
   config->params = 0;
   config->num_params = 0;
 }
 
-void config_init_copy(config_p config, config_p src_config) {
+void config_init_copy(config_t* config, const config_t* src_config) {
   config_init(config);
   config_copy(config, src_config);
 }
 
-void config_destroy(config_p config) {
-  if (config->params)
-    free(config->params);
-
-  config->params = 0;
-  config->num_params = 0;
+void config_destroy(config_t* config) {
+  config_clear(config);
 }
 
-void config_copy(config_p dst_config, config_p src_config) {
-  if (src_config->num_params) {
-    dst_config->params = realloc(dst_config->params,
-      src_config->num_params*sizeof(config_param_t));
-    memcpy(dst_config->params, src_config->params,
-      src_config->num_params*sizeof(config_param_t));
+void config_copy(config_t* dst, const config_t* src) {
+  if (src->num_params) {
+    size_t i;
+    
+    for (i = src->num_params; i < dst->num_params; ++i)
+      config_param_destroy(&dst->params[i]);
+    dst->params = realloc(dst->params,
+      src->num_params*sizeof(config_param_t));
+    for (i = 0; i < src->num_params; ++i) {
+      if (i < dst->num_params)
+        config_param_copy(&dst->params[i], &src->params[i]);
+      else
+        config_param_init_copy(&dst->params[i], &src->params[i]);
+    }
+    
+    dst->num_params = src->num_params;
   }
-  else if (dst_config->num_params)
-    free(dst_config->params);
-  
-  dst_config->num_params = src_config->num_params;
+  else if (dst->num_params)
+    config_clear(dst);
 }
 
-void config_merge(config_p dst_config, config_p src_config) {
-  int i;
-  
-  for (i = 0; i < src_config->num_params; ++i)
-    config_set_param(dst_config, &src_config->params[i]);
+void config_clear(config_t* config) {
+  if (config->num_params) {
+    size_t i;
+
+    for (i = 0; i < config->num_params; ++i)
+      config_param_destroy(&config->params[i]);
+    
+    free(config->params);
+    config->params = 0;
+    config->num_params = 0;
+  }
 }
 
-void config_print(FILE* stream, config_p config) {
-  int i;
+void config_merge(config_t* dst, const config_t* src) {
+  size_t i;
+  
+  for (i = 0; i < src->num_params; ++i)
+    config_set_param(dst, &src->params[i]);
+}
+
+void config_print(FILE* stream, const config_t* config) {
+  size_t i;
 
   for (i = 0; i < config->num_params; ++i)
     config_param_print(stream, &config->params[i]);
 }
 
-int config_set(config_p dst_config, config_p src_config) {
-  int i, result;
+int config_set(config_t* dst, const config_t* src) {
+  size_t i;
+  int result;
 
-  for (i = 0; i < src_config->num_params; ++i) {
-    config_param_p src_param = &src_config->params[i];
-    if ((result = config_set_value(dst_config, src_param->key,
-        src_param->value)))
+  for (i = 0; i < src->num_params; ++i) {
+    const config_param_t* src_param = &src->params[i];
+    if ((result = config_set_value(dst, src_param->key, src_param->value)))
       return result;
   }
   
   return CONFIG_ERROR_NONE;
 }
 
-config_param_p config_set_param(config_p config, config_param_p param) {
-  config_param_p config_param = config_get_param(config, param->key);
+config_param_t* config_set_param(config_t* config, const config_param_t*
+    param) {
+  config_param_t* config_param = config_get_param(config, param->key);
 
   if (!config_param) {
     config->params = realloc(config->params, (config->num_params+1)*
       sizeof(config_param_t));
-    
+
     config_param = &config->params[config->num_params];
     config_param_init_copy(config_param, param);
   
@@ -105,7 +125,7 @@ config_param_p config_set_param(config_p config, config_param_p param) {
   return config_param;
 }
 
-config_param_p config_set_param_value_range(config_p config, const char*
+config_param_t* config_set_param_value_range(config_t* config, const char*
     key, config_param_type_t type, const char* value, const char* range,
     const char* description) {
   config_param_t param;  
@@ -115,18 +135,18 @@ config_param_p config_set_param_value_range(config_p config, const char*
   return config_set_param(config, &param);
 }
 
-config_param_p config_get_param(config_p config, const char* key) {
-  int i;
+config_param_t* config_get_param(const config_t* config, const char* key) {
+  size_t i;
 
   for (i = 0; i < config->num_params; ++i)
-    if (!strcmp(config->params[i].key, key))
+    if (string_equal(config->params[i].key, key))
       return &config->params[i];
 
   return 0;
 }
 
-int config_set_value(config_p config, const char* key, const char* value) {
-  config_param_p param = config_get_param(config, key);
+int config_set_value(config_t* config, const char* key, const char* value) {
+  config_param_t* param = config_get_param(config, key);
 
   if (param) {
     if (config_param_set_value(param, value))
@@ -138,8 +158,8 @@ int config_set_value(config_p config, const char* key, const char* value) {
   return CONFIG_ERROR_NONE;
 }
 
-int config_set_string(config_p config, const char* key, const char* value) {
-  config_param_p param = config_get_param(config, key);
+int config_set_string(config_t* config, const char* key, const char* value) {
+  config_param_t* param = config_get_param(config, key);
 
   if (param) {
     if (config_param_set_string(param, value))
@@ -151,8 +171,8 @@ int config_set_string(config_p config, const char* key, const char* value) {
   return CONFIG_ERROR_NONE;
 }
 
-const char* config_get_string(config_p config, const char* key) {
-  config_param_p param = config_get_param(config, key);
+const char* config_get_string(const config_t* config, const char* key) {
+  const config_param_t* param = config_get_param(config, key);
 
   if (param)
     return config_param_get_string(param);
@@ -160,8 +180,8 @@ const char* config_get_string(config_p config, const char* key) {
     return 0;
 }
 
-int config_set_int(config_p config, const char* key, int value) {
-  config_param_p param = config_get_param(config, key);
+int config_set_int(config_t* config, const char* key, int value) {
+  config_param_t* param = config_get_param(config, key);
 
   if (param) {
     if (config_param_set_int(param, value))
@@ -173,8 +193,8 @@ int config_set_int(config_p config, const char* key, int value) {
   return CONFIG_ERROR_NONE;
 }
 
-int config_get_int(config_p config, const char* key) {
-  config_param_p param = config_get_param(config, key);
+int config_get_int(const config_t* config, const char* key) {
+  const config_param_t* param = config_get_param(config, key);
 
   if (param)
     return config_param_get_int(param);
@@ -182,8 +202,8 @@ int config_get_int(config_p config, const char* key) {
     return 0;
 }
 
-int config_set_float(config_p config, const char* key, double value) {
-  config_param_p param = config_get_param(config, key);
+int config_set_float(config_t* config, const char* key, double value) {
+  config_param_t* param = config_get_param(config, key);
 
   if (param) {
     if (config_param_set_float(param, value))
@@ -195,8 +215,8 @@ int config_set_float(config_p config, const char* key, double value) {
   return CONFIG_ERROR_NONE;
 }
 
-double config_get_float(config_p config, const char* key) {
-  config_param_p param = config_get_param(config, key);
+double config_get_float(const config_t* config, const char* key) {
+  const config_param_t* param = config_get_param(config, key);
 
   if (param)
     return config_param_get_float(param);
@@ -204,8 +224,8 @@ double config_get_float(config_p config, const char* key) {
     return NAN;
 }
 
-int config_set_enum(config_p config, const char* key, int value) {
-  config_param_p param = config_get_param(config, key);
+int config_set_enum(config_t* config, const char* key, int value) {
+  config_param_t* param = config_get_param(config, key);
 
   if (param) {
     if (config_param_set_enum(param, value))
@@ -217,8 +237,8 @@ int config_set_enum(config_p config, const char* key, int value) {
   return CONFIG_ERROR_NONE;
 }
 
-int config_get_enum(config_p config, const char* key) {
-  config_param_p param = config_get_param(config, key);
+int config_get_enum(const config_t* config, const char* key) {
+  const config_param_t* param = config_get_param(config, key);
 
   if (param)
     return config_param_get_enum(param);
@@ -226,9 +246,9 @@ int config_get_enum(config_p config, const char* key) {
     return -1;
 }
 
-int config_set_bool(config_p config, const char* key, config_param_bool_t
+int config_set_bool(config_t* config, const char* key, config_param_bool_t
     value) {
-  config_param_p param = config_get_param(config, key);
+  config_param_t* param = config_get_param(config, key);
 
   if (param) {
     if (config_param_set_bool(param, value))
@@ -240,8 +260,8 @@ int config_set_bool(config_p config, const char* key, config_param_bool_t
   return CONFIG_ERROR_NONE;
 }
 
-config_param_bool_t config_get_bool(config_p config, const char* key) {
-  config_param_p param = config_get_param(config, key);
+config_param_bool_t config_get_bool(const config_t* config, const char* key) {
+  const config_param_t* param = config_get_param(config, key);
 
   if (param)
     return config_param_get_bool(param);

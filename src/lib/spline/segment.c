@@ -18,35 +18,58 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "pose.h"
+#include "segment.h"
 
-void transform_pose_init(transform_pose_t* pose, double x, double y,
-    double z, double yaw, double pitch, double roll) {
-  pose->x = x;
-  pose->y = y;
-  pose->z = z;
+#include "spline/spline.h"
 
-  pose->yaw = yaw;
-  pose->pitch = pitch;
-  pose->roll = roll;
+#define sqr(a) ((a)*(a))
+#define cub(a) ((a)*(a)*(a))
+
+void spline_segment_init(spline_segment_t* segment, double a, double b,
+    double c, double d, double x_0) {
+  segment->a = a;
+  segment->b = b;
+  segment->c = c;
+  segment->d = d;
+
+  segment->x_0 = x_0;
 }
 
-void transform_pose_copy(transform_pose_t* dst, const transform_pose_t* src) {
-  dst->x = src->x;
-  dst->y = src->y;
-  dst->z = src->z;
+void spline_segment_init_zero(spline_segment_t* segment) {
+  segment->a = 0.0;
+  segment->b = 0.0;
+  segment->c = 0.0;
+  segment->d = 0.0;
 
-  dst->yaw = src->yaw;
-  dst->pitch = src->pitch;
-  dst->roll = src->roll;
+  segment->x_0 = 0.0;
 }
 
-void transform_pose_print(FILE* stream, const transform_pose_t* pose) {
-  fprintf(stream, "%10lg %10lg %10lg %10lg %10lg %10lg",
-    pose->x,
-    pose->y,
-    pose->z,
-    pose->yaw,
-    pose->pitch,
-    pose->roll);
+void spline_segment_copy(spline_segment_t* dst, const spline_segment_t* src) {
+  dst->a = src->a;
+  dst->b = src->b;
+  dst->c = src->c;
+  dst->d = src->d;
+
+  dst->x_0 = src->x_0;
+}
+
+void spline_segment_print(FILE* stream, const spline_segment_t* segment) {
+  fprintf(stream, "%10lg %10lg %10lg %10lg %10lg",
+    segment->a,
+    segment->b,
+    segment->c,
+    segment->d,
+    segment->x_0);
+}
+
+double spline_segment_eval(const spline_segment_t* segment, spline_eval_type_t
+    eval_type, double x) {
+  x -= segment->x_0;
+
+  if (eval_type == spline_eval_type_first_derivative)
+    return 3.0*segment->a*sqr(x)+2.0*segment->b*x+segment->c;
+  else if (eval_type == spline_eval_type_second_derivative)
+    return 6.0*segment->a*x+2.0*segment->b;
+  else
+    return segment->a*cub(x)+segment->b*sqr(x)+segment->c*x+segment->d;
 }

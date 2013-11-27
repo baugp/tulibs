@@ -18,9 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <string.h>
-
 #include "project.h"
+
+#include "string/string.h"
 
 config_param_t config_project_default_params[] = {
   {CONFIG_PROJECT_PARAMETER_NAME,
@@ -55,24 +55,25 @@ config_param_t config_project_default_params[] = {
     "The project licensing information"},
 };
 
-config_t config_project_default_options = {
+const config_t config_project_default_options = {
   config_project_default_params,
   sizeof(config_project_default_params)/sizeof(config_param_t),
 };
 
-void config_project_init(config_project_p project, const char* name,
+void config_project_init(config_project_t* project, const char* name,
     const char* version, const char* authors, const char* contact,
     const char* home, const char* license) {
-  strcpy(project->name, name);
-  strcpy(project->version, version);
+  string_init_copy(&project->name, name);
+  string_init_copy(&project->version, version);
 
-  strcpy(project->authors, authors);
-  strcpy(project->contact, contact);
-  strcpy(project->home, home);
-  strcpy(project->license, license);
+  string_init_copy(&project->authors, authors);
+  string_init_copy(&project->contact, contact);
+  string_init_copy(&project->home, home);
+  string_init_copy(&project->license, license);
 }
 
-void config_project_init_config(config_project_p project, config_p config) {
+void config_project_init_config(config_project_t* project, const config_t*
+    config) {
   config_project_init(project,
     config_get_string(config, CONFIG_PROJECT_PARAMETER_NAME),
     config_get_string(config, CONFIG_PROJECT_PARAMETER_VERSION),
@@ -82,13 +83,19 @@ void config_project_init_config(config_project_p project, config_p config) {
     config_get_string(config, CONFIG_PROJECT_PARAMETER_LICENSE));
 }
 
-void config_project_init_copy(config_project_p project, config_project_p
-    src_project) {
-  strcpy(project->name, src_project->name);
-  strcpy(project->version, src_project->version);
+void config_project_init_copy(config_project_t* project, const
+    config_project_t* src_project) {
+  config_project_init(project, src_project->name, src_project->version,
+    src_project->authors, src_project->contact, src_project->home,
+    src_project->license);
+}
 
-  strcpy(project->version, src_project->authors);
-  strcpy(project->version, src_project->contact);
-  strcpy(project->version, src_project->home);
-  strcpy(project->version, src_project->license);
+void config_project_destroy(config_project_t* project) {
+  string_destroy(&project->name);
+  string_destroy(&project->version);
+
+  string_destroy(&project->authors);
+  string_destroy(&project->contact);
+  string_destroy(&project->home);
+  string_destroy(&project->license);
 }

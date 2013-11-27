@@ -18,17 +18,17 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
 
 #include "param.h"
 
+#include "string/string.h"
+#include "string/list.h"
+
 const char* config_param_errors[] = {
   "Success",
-  "Parameter value type mismatch"
-  "Parameter value out of range"
+  "Parameter value type mismatch",
+  "Parameter value out of range",
 };
 
 const char* config_param_types[] = {
@@ -36,127 +36,130 @@ const char* config_param_types[] = {
   "int",
   "float",
   "enum",
-  "bool"
+  "bool",
 };
 
-void config_param_init(config_param_p param, const char* key,
+void config_param_init(config_param_t* param, const char* key,
     config_param_type_t type, const char* description) {
-  strcpy(param->key, key);
+  string_init_copy(&param->key, key);
   param->type = type;
-  param->value[0] = 0;
+  param->value = 0;
     
-  param->range[0] = 0;
-  if (description)
-    strcpy(param->description, description);
-  else
-    param->description[0] = 0;
+  param->range = 0;
+  string_init_copy(&param->description, description);
 }
 
-int config_param_init_value_range(config_param_p param, const char* key,
+int config_param_init_value_range(config_param_t* param, const char* key,
     config_param_type_t type, const char* value, const char* range,
     const char* description) {
   config_param_init(param, key, type, description);
-  strcpy(param->range, range);
+  string_init_copy(&param->range, range);
   
   return config_param_set_value(param, value);
 }
 
-int config_param_init_string(config_param_p param, const char* key,
+int config_param_init_string(config_param_t* param, const char* key,
     const char* value, const char* description) {
   config_param_init(param, key, config_param_type_string, description);
   return config_param_set_string(param, value);
 }
 
-int config_param_init_string_range(config_param_p param, const char* key,
+int config_param_init_string_range(config_param_t* param, const char* key,
     const char* value, const char* range, const char* description) {
   config_param_init(param, key, config_param_type_string, description);
-  if (range)
-    strcpy(param->range, range);
+  string_init_copy(&param->range, range);
   
   return config_param_set_string(param, value);
 }
 
-void config_param_init_int(config_param_p param, const char* key, int value,
+void config_param_init_int(config_param_t* param, const char* key, int value,
     const char* description) {
   config_param_init(param, key, config_param_type_int, description);
   config_param_set_int(param, value);
 }
 
-int config_param_init_int_range(config_param_p param, const char* key,
+int config_param_init_int_range(config_param_t* param, const char* key,
     int value, int min_value, int max_value, const char* description) {
   config_param_init(param, key, config_param_type_int, description);
-  sprintf(param->range, "[%d, %d]", min_value, max_value);
+  string_printf(&param->range, "[%d, %d]", min_value, max_value);
   
   return config_param_set_int(param, value);
 }
 
-void config_param_init_float(config_param_p param, const char* key,
+void config_param_init_float(config_param_t* param, const char* key,
     double value, const char* description) {
   config_param_init(param, key, config_param_type_float, description);
   config_param_set_float(param, value);
 }
 
-int config_param_init_float_range(config_param_p param, const char* key,
+int config_param_init_float_range(config_param_t* param, const char* key,
     double value, double min_value, double max_value, const char*
     description) {
   config_param_init(param, key, config_param_type_float, description);
-  sprintf(param->range, "[%lf, %lf]", min_value, max_value);
+  string_printf(&param->range, "[%lf, %lf]", min_value, max_value);
   
   return config_param_set_float(param, value);
 }
 
-int config_param_init_enum_range(config_param_p param, const char* key,
-    int value, const char** values, size_t num_values, const char*
-    description) {
+int config_param_init_enum_range(config_param_t* param, const char* key,
+    int value, const char** values, const char* description) {
   config_param_init(param, key, config_param_type_enum, description);
-  
-  strcpy(param->range, "{");
-  int i;
-  for (i = 0; i < num_values; i++) {
-    if (i)
-      strcat(param->range, ", ");
-    strcat(param->range, values[i]);
-  }
-  strcat(param->range, "}");
-  
+  string_list_join(values, &param->range, "|");
+
   return config_param_set_enum(param, value);
 }
 
-void config_param_init_bool(config_param_p param, const char* key,
+void config_param_init_bool(config_param_t* param, const char* key,
     config_param_bool_t value, const char* description) {
   config_param_init(param, key, config_param_type_bool, description);
-  strcpy(param->range, "false|true");
+  string_init_copy(&param->range, "false|true");
   
   config_param_set_bool(param, value);
 }
 
-void config_param_init_bool_range(config_param_p param, const char* key,
+void config_param_init_bool_range(config_param_t* param, const char* key,
     config_param_bool_t value, const char* false_value, const char*
     true_value, const char* description) {
   config_param_init(param, key, config_param_type_bool, description);
-  sprintf(param->range, "%s|%s", false_value, true_value);
+  string_printf(&param->range, "%s|%s", false_value, true_value);
   
   config_param_set_bool(param, value);
 }
 
-void config_param_init_copy(config_param_p param, config_param_p src_param) {
-  config_param_copy(param, src_param);
+void config_param_init_copy(config_param_t* param, const config_param_t*
+    src_param) {
+  string_init_copy(&param->key, src_param->key);
+  param->type = src_param->type;
+  string_init_copy(&param->value, src_param->value);
+
+  string_init_copy(&param->range, src_param->range);
+  string_init_copy(&param->description, src_param->description);
 }
 
-void config_param_copy(config_param_p dst_param, config_param_p src_param) {
-  dst_param->type = src_param->type;
-  strcpy(dst_param->key, src_param->key);
-  strcpy(dst_param->value, src_param->value);
+void config_param_destroy(config_param_t* param) {
+  string_destroy(&param->key);
+  string_destroy(&param->value);
 
-  strcpy(dst_param->range, src_param->range);
-  strcpy(dst_param->description, src_param->description);
+  string_destroy(&param->range);
+  string_destroy(&param->description);  
 }
 
-void config_param_print(FILE* stream, config_param_p param) {
-  fprintf(stream, "%s = %s\n", param->key, param->value);
+void config_param_copy(config_param_t* dst, const config_param_t* src) {
+  string_copy(&dst->key, src->key);
+  dst->type = src->type;
+  string_copy(&dst->value, src->value);
+
+  string_copy(&dst->range, src->range);
+  string_copy(&dst->description, src->description);
 }
 
-int config_param_set_value(config_param_p param, const char* value) {
+void config_param_print(FILE* stream, const config_param_t* param) {
+  fprintf(stream, "%s = %s\n",
+    param->key,
+    param->value ? param->value : "<undefined>");
+}
+
+int config_param_set_value(config_param_t* param, const char* value) {
   int int_value;
   double float_value;
   
@@ -164,164 +167,143 @@ int config_param_set_value(config_param_p param, const char* value) {
     case config_param_type_string:
       return config_param_set_string(param, value);
     case config_param_type_int:
-      if (sscanf(value, "%d", &int_value) == 1)
+      if (string_scanf(value, "%d", &int_value) == 1)
         return config_param_set_int(param, int_value);
       else
         break;
     case config_param_type_float:
-      if (sscanf(value, "%lf", &float_value) == 1)
+      if (string_scanf(value, "%lf", &float_value) == 1)
         return config_param_set_float(param, float_value);
       else
         break;
-    case config_param_type_enum:
-      if (param->range[0]) {
-        const char* value_start = param->range;
-        const char* value_end;
-        int i = 0;
+    default:
+      if (!string_empty(param->range)) {
+        char** values = 0;
         
-        while ((value_end = strchr(value_start, '|'))) {
-          if ((value_end-value_start == strlen(value)) &&
-              !strncmp(value, value_start, value_end-value_start))
-            return config_param_set_enum(param, i);
-          
-          value_start = value_end+1;
-          i++;
-        }
+        string_split(param->range, &values, "|");
+        int i = string_list_find((const char**)values, value);
+        string_list_destroy(&values);
         
-        if (!strcmp(value, value_start))
+        if (param->type == config_param_type_enum)
           return config_param_set_enum(param, i);
+        else if (param->type == config_param_type_bool)
+          return config_param_set_bool(param, i);
       }
-      break;
-    case config_param_type_bool:
-      if (param->range[0]) {
-        const char* value_split = strchr(param->range, '|');
-        if ((value_split > param->range) && value_split[1]) {
-          if ((value_split-param->range == strlen(value)) &&
-              !strncmp(value, param->range, value_split-param->range))
-            return config_param_set_bool(param, config_param_false);
-          else if (!strcmp(value, value_split+1))
-            return config_param_set_bool(param, config_param_true);
-        }
-      }
-      break;
   };
   
   return CONFIG_PARAM_ERROR_TYPE;
 }
 
-int config_param_set_string(config_param_p param, const char* value) {
+int config_param_set_string(config_param_t* param, const char* value) {
   if (param->type != config_param_type_string)
     return CONFIG_PARAM_ERROR_TYPE;
   
-  if (param->range[0]) {
-    char format[strlen(param->range)+2];
-    sprintf(format, "%%%s", param->range);
-    if (sscanf(value, format, param->value) != 1)
+  if (!string_empty(param->range)) {
+    char* format = 0;
+    char* legal_value = 0;
+    
+    string_printf(&format, "%%%a", param->range);
+    size_t result = string_scanf(value, format, &legal_value);
+    string_destroy(&format);
+    
+    if (result == 1) {
+      string_destroy(&param->value);
+      param->value = legal_value;
+    }
+    else
       return CONFIG_PARAM_ERROR_RANGE;
   }
   else
-    strcpy(param->value, value);
-  
+    string_copy(&param->value, value);
+    
   return CONFIG_PARAM_ERROR_NONE;
 }
 
-const char* config_param_get_string(config_param_p param) {
+const char* config_param_get_string(const config_param_t* param) {
   if (param->type != config_param_type_string)
     return 0;
   
   return param->value;
 }
 
-int config_param_set_int(config_param_p param, int value) {
+int config_param_set_int(config_param_t* param, int value) {
   if (param->type != config_param_type_int)
     return CONFIG_PARAM_ERROR_TYPE;
     
-  if (param->range[0]) {
+  if (!string_empty(param->range)) {
     int min_value, max_value;
     unsigned char min_bound, max_bound;
     
-    if ((sscanf(param->range, "%c%d,%d%c", &min_bound, &min_value,
-        &max_value, &max_bound) != 4) ||
+    if ((string_scanf(param->range, "%c%d,%d%c", &min_bound,
+        &min_value, &max_value, &max_bound) != 4) ||
       ((min_bound == '[') && (value < min_value)) ||
         ((min_bound == '(') && (value <= min_value)) ||
       ((max_bound == ']') && (value > max_value)) ||
         ((min_bound == ')') && (value >= max_value)))
       return CONFIG_PARAM_ERROR_RANGE;    
   }
-  sprintf(param->value, "%d", value);
+  string_printf(&param->value, "%d", value);
   
   return CONFIG_PARAM_ERROR_NONE;  
 }
 
-int config_param_get_int(config_param_p param) {
+int config_param_get_int(const config_param_t* param) {
   if (param->type != config_param_type_int)
     return 0;
   
   int value;
-  if (sscanf(param->value, "%d", &value) != 1)
+  if (string_scanf(param->value, "%d", &value) != 1)
     return 0;
 
   return value;
 }
 
-int config_param_set_float(config_param_p param, double value) {
+int config_param_set_float(config_param_t* param, double value) {
   if (param->type != config_param_type_float)
     return CONFIG_PARAM_ERROR_TYPE;
     
-  if (param->range[0]) {
+  if (!string_empty(param->range)) {
     double min_value, max_value;
     unsigned char min_bound, max_bound;
     
-    if ((sscanf(param->range, "%c%lf,%lf%c", &min_bound, &min_value,
-        &max_value, &max_bound) != 4) ||
+    if ((string_scanf(param->range, "%c%lf,%lf%c", &min_bound,
+        &min_value, &max_value, &max_bound) != 4) ||
       ((min_bound == '[') && (value < min_value)) ||
         ((min_bound == '(') && (value <= min_value)) ||
       ((max_bound == ']') && (value > max_value)) ||
         ((min_bound == ')') && (value >= max_value)))
       return CONFIG_PARAM_ERROR_RANGE;    
   }
-  sprintf(param->value, "%lf", value);
+  string_printf(&param->value, "%lf", value);
   
   return CONFIG_PARAM_ERROR_NONE;  
 }
 
-double config_param_get_float(config_param_p param) {
+double config_param_get_float(const config_param_t* param) {
   if (param->type != config_param_type_float)
     return NAN;
 
   double value;
-  if (sscanf(param->value, "%lf", &value) != 1)
+  if (string_scanf(param->value, "%lf", &value) != 1)
     return NAN;
 
   return value;
 }
 
-int config_param_set_enum(config_param_p param, int value) {
+int config_param_set_enum(config_param_t* param, int value) {
   if (param->type != config_param_type_enum)
     return CONFIG_PARAM_ERROR_TYPE;
     
-  if (param->range[0]) {
-    const char* value_start = param->range;
-    const char* value_end;
-    int i = 0;
+  if ((value >= 0) && !string_empty(param->range)) {
+    char** values = 0;
     
-    while ((value_end = strchr(value_start, '|'))) {
-      if (i == value)
-        break;
-      
-      value_start = value_end+1;
-      i++;
-    }
-
-    if (i != value)
+    size_t num_values = string_split(param->range, &values, "|");
+    if (value < num_values)
+      string_copy(&param->value, values[value]);
+    string_list_destroy(&values);
+    
+    if (value >= num_values)
       return CONFIG_PARAM_ERROR_RANGE;
-
-    if (value_end) {
-      strncpy(param->value, value_start, value_end-value_start);
-      param->value[value_end-value_start] = 0;
-    }
-    else
-      strcpy(param->value, value_start);
   }
   else
     return CONFIG_PARAM_ERROR_RANGE;
@@ -329,48 +311,37 @@ int config_param_set_enum(config_param_p param, int value) {
   return CONFIG_PARAM_ERROR_NONE;
 }
 
-int config_param_get_enum(config_param_p param) {
+int config_param_get_enum(const config_param_t* param) {
   if (param->type != config_param_type_enum)
     return -1;
   
-  if (param->range[0]) {
-    const char* value_start = param->range;
-    const char* value_end;
-    int i = 0;
+  if (!string_empty(param->range)) {
+    char** values = 0;
     
-    while ((value_end = strchr(value_start, '|'))) {
-      if ((value_end-value_start == strlen(param->value)) &&
-          !strncmp(param->value, value_start, value_end-value_start))
-        return i;
-      
-      value_start = value_end+1;
-      i++;
-    }
+    string_split(param->range, &values, "|");
+    ssize_t value = string_list_find((const char**)values, param->value);
+    string_list_destroy(&values);
 
-    if (!strcmp(param->value, value_start))
-      return i;
+    return value;
   }
 
   return -1;
 }
 
-int config_param_set_bool(config_param_p param, config_param_bool_t
+int config_param_set_bool(config_param_t* param, config_param_bool_t
     value) {
   if (param->type != config_param_type_bool)
     return CONFIG_PARAM_ERROR_TYPE;
 
-  if (param->range[0]) {
-    const char* value_split = strchr(param->range, '|');
+  if ((value >= 0) && !string_empty(param->range)) {
+    char** values = 0;
     
-    if ((value_split > param->range) && value_split[1]) {
-      if (value == config_param_false)
-        strncpy(param->value, param->range, value_split-param->range);
-      else if (value == config_param_true)
-        strcpy(param->value, value_split+1);
-      else
-        return CONFIG_PARAM_ERROR_RANGE;
-    }
-    else
+    size_t num_values = string_split(param->range, &values, "|");
+    if (value < num_values)
+      string_copy(&param->value, values[value]);
+    string_list_destroy(&values);
+    
+    if (value >= num_values)
       return CONFIG_PARAM_ERROR_RANGE;
   }
   else
@@ -379,20 +350,19 @@ int config_param_set_bool(config_param_p param, config_param_bool_t
   return CONFIG_PARAM_ERROR_NONE;
 }
 
-config_param_bool_t config_param_get_bool(config_param_p param) {
+config_param_bool_t config_param_get_bool(const config_param_t* param) {
   if (param->type != config_param_type_bool)
     return config_param_false;
   
-  if (param->range[0]) {
-    const char* value_split = strchr(param->range, '|');
+  if (!string_empty(param->range)) {
+    char** values = 0;
     
-    if ((value_split > param->range) && value_split[1]) {
-      if ((value_split-param->range == strlen(param->value)) &&
-          !strncmp(param->value, param->range, value_split-param->range))
-        return config_param_false;
-      else if (!strcmp(param->value, value_split+1))
-        return config_param_true;
-    }
+    string_split(param->range, &values, "|");
+    ssize_t value = string_list_find((const char**)values, param->value);
+    string_list_destroy(&values);
+
+    if (value == config_param_true)
+      return value;
   }
   
   return config_param_false;

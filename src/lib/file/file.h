@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "error/error.h"
+
 /** \defgroup file File Input/Output Module
   * \brief Library functions for managing file input/output
   * 
@@ -46,13 +48,21 @@
   */
 //@{
 #define FILE_ERROR_NONE                         0
+//!< Success
 #define FILE_ERROR_NOT_FOUND                    1
+//!< No such file
 #define FILE_ERROR_SEEK                         2
-#define FILE_ERROR_TELL                         3
-#define FILE_ERROR_OPEN                         4
-#define FILE_ERROR_READ                         5
-#define FILE_ERROR_WRITE                        6
+//!< Failed to attain file position
+#define FILE_ERROR_OPEN                         3
+//!< Failed to open file
+#define FILE_ERROR_READ                         4
+//!< Failed to read from file
+#define FILE_ERROR_WRITE                        5
+//!< Failed to write to file
+#define FILE_ERROR_FLUSH                        6
+//!< Failed to flush file
 #define FILE_ERROR_OPERATION                    7
+//!< Illegal file operation
 //@}
 
 /** \brief Predefined file error descriptions
@@ -90,13 +100,15 @@ typedef enum {
 /** \brief File structure
   */
 typedef struct file_t {
-  char name[512];                   //!< The name of the file.
+  char* name;                       //!< The name of the file.
   void* handle;                     //!< The opaque handle of the file.
 
   file_compression_t compression;   //!< The compression of the file.
 
   ssize_t pos;                      //!< The bzip2-file position indicator.
-} file_t, *file_p;
+  
+  error_t error;                    //!< The most recent file error.
+} file_t;
 
 /** \brief Initialize file
   * \param[in] file The file to be initialized.
@@ -104,107 +116,120 @@ typedef struct file_t {
   * \param[in] compression The compression type of the file.
   */
 void file_init(
-  file_p file,
+  file_t* file,
   const char* filename,
   file_compression_t compression);
 
 /** \brief Initialize file using its name only
-  * \note This initializer will infer the file's compression type from
-  *   the presented filename.
   * \param[in] file The file to be initialized.
   * \param[in] filename The name of the file to be initialized.
+  * 
+  * This initializer will infer the file's compression type from the
+  * presented filename.
   */
 void file_init_name(
-  file_p file,
+  file_t* file,
   const char* filename);
+
+/** \brief Destroy file
+  * \param[in] file The file to be destroyed.
+  * 
+  * An open file will be closed before destruction.
+  */
+void file_destroy(
+  file_t* file);
 
 /** \brief Check if file exists
   * \param[in] file The initialized file to be checked for existence.
   * \return One if the file exists and zero otherwise.
   */
 int file_exists(
-  file_p file);
+  const file_t* file);
 
 /** \brief Retrieve the file extension
   * \param[in] file The initialized file to retrieve the extension for.
-  * \return The extension of the file.
+  * \return The extension of the file or null for a file without extension.
   */
 const char* file_get_extension(
-  file_p file);
+  const file_t* file);
 
 /** \brief Retrieve the file size
-  * \note If the file is compressed, this function returns the size
-  *   of the uncompressed data stream. Depending on the type of compression,
-  *   it may therefore be necessary to uncompress the entire file.
+  * \note Depending on the type of compression, it may be necessary to
+  *   first uncompress the entire file.
   * \param[in] file The initialized file to retrieve the size for.
-  * \return The file size or the negative error code.
+  * \return The file size or zero if the file could not be accessed.
+  * 
+  * If the file is compressed, this function returns the size of the
+  * uncompressed data stream.
   */
 ssize_t file_get_size(
-  file_p file);
+  const file_t* file);
 
 /** \brief Retrieve the actual file size
-  * \note If the file is compressed, this function returns the size
-  *   of the actual file as reported by the file system.
   * \param[in] file The initialized file to retrieve the actual size for.
-  * \return The actual file size or the negative error code.
+  * \return The actual file size or zero if the file could not be accessed.
+  * 
+  * If the file is compressed, this function returns the size of the actual
+  * file as reported by the file system.
   */
 ssize_t file_get_actual_size(
-  file_p file);
+  const file_t* file);
 
 /** \brief Open file
-  * \note If the file is already open, it will be closed and re-opened.
-  *   Further, a compressed file may not support the requested mode in
-  *   which case the function will return with an error.
+  * \note A compressed file may not support the requested mode in which
+  * case the function will return with an error.
   * \param[in] file The initialized file to be opened.
   * \param[in] mode The mode for opening the file.
   * \return The resulting error code.
+  * 
+  * If the file is already open, it will be closed and re-opened.
   */
 int file_open(
-  file_p file,
+  file_t* file,
   file_mode_t mode);
 
 /** \brief Open a file by duplication of an open stream
-  * \note This function opens the file after duplicating the stream's
-  *   associated file descriptor.
   * \param[in] file The initialized file to be opened.
   * \param[in] stream The open stream to be duplicated.
   * \param[in] mode The mode for opening the file. Note that the mode
   *   must generally be compatible with the mode of the open stream.
   * \return The resulting error code.
   * 
+  * This function opens the file after duplicating the stream's associated
+  * file descriptor.
+  * 
   */
 int file_open_stream(
-  file_p file,
+  file_t* file,
   FILE* stream,
   file_mode_t mode);
 
 /** \brief Close file
-  * \note If the file is already closed, this function does nothing.
   * \param[in] file The initialized file to be closed.
+  * 
+  * If the file is already closed, this function does nothing.
   */
 void file_close(
-  file_p file);
+  file_t* file);
 
 /** \brief Retrieve the end-of-file indicator
   * \param[in] file The open file to retrieve the end-of-file indicator for.
-  * \return One if the end-of-file indicator is set and the negative error
-  *   code otherwise.
+  * \return One if the end-of-file indicator is set and zero otherwise.
   */
 int file_eof(
-  file_p file);
+  const file_t* file);
 
 /** \brief Retrieve the file error indicator
   * \param[in] file The open file to retrieve the error indicator for.
-  * \return One if the file error indicator is set and the negative error
-  *   code otherwise.
+  * \return One if the file error indicator is set and zero otherwise.
   */
 int file_error(
-  file_p file);
+  const file_t* file);
 
 /** \brief Set file position indicator
   * \note Depending on the file compression and the relative requested
-  *   file position, the function may uncompress all data up to this
-  *   position. Seeking reversely from the current file position is
+  *   file position, the function may have to uncompress all data up to
+  *   this position. Seeking reversely from the current file position is
   *   further unsupported for bzip2-compressed files.
   * \param[in] file The open file to set the file position indicator for.
   * \param[in] offset The offset of the file position pointer in bytes.
@@ -213,17 +238,17 @@ int file_error(
   *   file start or the negative error code.
   */
 ssize_t file_seek(
-  file_p file,
+  file_t* file,
   ssize_t offset,
   file_whence_t whence);
 
 /** \brief Retrieve file position indicator
   * \param[in] file The open file to retrieve the file position indicator for.
   * \return The current offset of the file position indicator relative to the
-  *   file start or the negative error code.
+  *   file start or -1 if the file position indicator could not be retrieved.
   */
 ssize_t file_tell(
-  file_p file);
+  const file_t* file);
 
 /** \brief Read binary data from file
   * \param[in] file The open file to read the binary data from.
@@ -233,7 +258,7 @@ ssize_t file_tell(
   *   error code.
   */
 ssize_t file_read(
-  file_p file,
+  file_t* file,
   unsigned char* data,
   size_t size);
 
@@ -245,7 +270,7 @@ ssize_t file_read(
   *   error code.
   */
 ssize_t file_write(
-  file_p file,
+  file_t* file,
   const unsigned char* data,
   size_t size);
 
@@ -263,7 +288,7 @@ ssize_t file_write(
   * \return The number of line characters read or the negative error code.
   */
 ssize_t file_read_line(
-  file_p file,
+  file_t* file,
   char** line,
   size_t block_size);
 
@@ -271,13 +296,13 @@ ssize_t file_read_line(
   * \param[in] file The open file to write the formatted data to.
   * \param[in] format A string defining the expected format and conversion
   *   specififiers of the data to be written. This string must be followed by
-  *   a variadic list of variables, where each variable is of appropriate
+  *   a variadic list of arguments, where each argument is of appropriate
   *   type.
   * \return The number of characters written to the file or the negative
   *   error code.
   */
 ssize_t file_printf(
-  file_p file,
+  file_t* file,
   const char* format,
   ...);
 
@@ -286,6 +311,6 @@ ssize_t file_printf(
   * \return The resulting error code.
   */
 int file_flush(
-  file_p file);
+  file_t* file);
 
 #endif

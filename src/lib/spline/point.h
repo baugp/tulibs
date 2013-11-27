@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Ralf Kaestner                                   *
+ *   Copyright (C) 2013 by Ralf Kaestner                                   *
  *   ralf.kaestner@gmail.com                                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,58 +18,55 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#ifndef TRANSFORM_POINT_H
-#define TRANSFORM_POINT_H
+#ifndef SPLINE_POINT_H
+#define SPLINE_POINT_H
+
+/** \file spline/point.h
+  * \ingroup spline
+  * \brief Spline point definition
+  * \author Ralf Kaestner
+  * 
+  * A spline point represents a point on a spline and consists in two
+  * components describing its location.
+  */
 
 #include <stdlib.h>
 #include <stdio.h>
 
-/** \file transform/point.h
-  * \ingroup transform
-  * \brief Point definition for the linear transformation module
-  * \author Ralf Kaestner
+/** \brief Structure defining a spline point
   * 
-  * A point in 3-dimensional space consists in three components
-  * describing location.
+  * A spline point is defined by an x- and a y-component.
   */
+typedef struct spline_point_t {
+  double x;                    //!< The x-component of the spline point.
+  double y;                    //!< The y-component of the spline point.
+} spline_point_t;
 
-/** \brief Structure defining a point
-  * 
-  * A point is defined by an x, y, and z-component.
+/** \brief Initialize spline point
+  * \param[in] point The spline point to be initialized.
+  * \param[in] x The initial x-component of the spline point.
+  * \param[in] y The initial y-component of the spline point.
   */
-typedef struct transform_point_t {
-  double x;                    //!< The x-component of the point.
-  double y;                    //!< The y-component of the point.
-  double z;                    //!< The z-component of the point.
-} transform_point_t;
-
-/** \brief Initialize point
-  * \param[in] point The point to be initialized.
-  * \param[in] x The initial x-component of the point.
-  * \param[in] y The initial y-component of the point.
-  * \param[in] z The initial z-component of the point.
-  */
-void transform_point_init(
-  transform_point_t* point,
+void spline_point_init(
+  spline_point_t* point,
   double x,
-  double y,
-  double z);
+  double y);
 
-/** \brief Copy point
-  * \param[in] dst The destination point to copy to.
-  * \param[in] src The source point to copy from.
+/** \brief Copy spline point
+  * \param[in] dst The destination spline point to copy to.
+  * \param[in] src The source spline point to copy from.
   */
-void transform_point_copy(
-  transform_point_t* dst,
-  const transform_point_t* src);
+void spline_point_copy(
+  spline_point_t* dst,
+  const spline_point_t* src);
 
-/** \brief Print point
+/** \brief Print spline point
   * \param[in] stream The output stream that will be used for printing the
-  *   point.
-  * \param[in] point The point that will be printed.
+  *   spline point.
+  * \param[in] point The spline point that will be printed.
   */
-void transform_point_print(
+void spline_point_print(
   FILE* stream,
-  const transform_point_t* point);
+  const spline_point_t* point);
 
 #endif

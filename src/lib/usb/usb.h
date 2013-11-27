@@ -40,24 +40,42 @@
 
 #include <unistd.h>
 
+#include "error/error.h"
+
 /** \name Error Codes
   * \brief Predefined USB error codes
   */
 //@{
 #define USB_ERROR_NONE                    0
+//!< Success
 #define USB_ERROR_IO                      1
+//!< Input/output error
 #define USB_ERROR_INVALID_PARAMETER       2
+//!< Invalid parameter
 #define USB_ERROR_ACCESS                  3
+//!< Access denied
 #define USB_ERROR_NO_DEVICE               4
+//!< No such device
 #define USB_ERROR_NOT_FOUND               5
+//!< Entity not found
 #define USB_ERROR_BUSY                    6
+//!< Resource busy
 #define USB_ERROR_TIMEOUT                 7
+//!< Operation timed out
 #define USB_ERROR_OVERFLOW                8
+//!< Overflow
 #define USB_ERROR_PIPE                    9
+//!< Pipe error
 #define USB_ERROR_INTERRUPTED             10
+//!< System call interrupted
 #define USB_ERROR_NO_MEMORY               11
+//!< Insufficient memory
 #define USB_ERROR_NOT_SUPPORTED           12
+//!< Operation not supported
 #define USB_ERROR_OTHER                   13
+//!< Other error
+#define USB_ERROR_INVALID_CONTEXT         14
+//!< Invalid FTDI context
 //@}
 
 /** \brief Predefined USB error descriptions
@@ -127,6 +145,7 @@ typedef enum {
 } usb_direction_t;
 
 /** \brief USB device structure
+  * \note The life-cycle of a USB device is managed by its context.
   */
 typedef struct usb_device_t {
   void* libusb_device;            //!< The libusb device.
@@ -143,7 +162,9 @@ typedef struct usb_device_t {
   
   size_t num_read;                //!< Number of bytes read from device.
   size_t num_written;             //!< Number of bytes written to device.
-} usb_device_t, *usb_device_p;
+  
+  error_t error;                  //!< The most recent device error.
+} usb_device_t;
 
 /** \brief USB context structure
   */
@@ -153,13 +174,16 @@ typedef struct usb_context_t {
   
   size_t num_devices;             //!< Number of devices in the context.
   usb_device_t* devices;          //!< List of devices in the context.
-} usb_context_t, *usb_context_p;
+  
+  error_t error;                  //!< The most recent context error.
+} usb_context_t;
 
 /** \brief USB default context
-  * \note The USB default context is a special context which will be
-  *   shared amongst its users.
+  * 
+  * The USB default context is a special context which will be shared
+  * amongst its users.
   */
-extern usb_context_p usb_default_context;
+extern usb_context_t* usb_default_context;
 
 /** \brief USB control transfer structure
   */
@@ -174,7 +198,7 @@ typedef struct usb_control_transfer_t {
   
   size_t num;                       //!< Number of control transfer data bytes. 
   unsigned char* data;              //!< Control transfer data field.
-} usb_control_transfer_t, *usb_control_transfer_p;
+} usb_control_transfer_t;
 
 /** \brief USB bulk transfer structure
   */
@@ -184,21 +208,21 @@ typedef struct usb_bulk_transfer_t {
   
   size_t num;                       //!< Number of bulk transfer data bytes. 
   unsigned char* data;              //!< Bulk transfer data field.
-} usb_bulk_transfer_t, *usb_bulk_transfer_p;
+} usb_bulk_transfer_t;
 
 /** \brief Initialize a USB context
   * \param[in] context The USB context to be initialized.
   * \return The resulting error code.
   */
 int usb_context_init(
-  usb_context_p context);
+  usb_context_t* context);
 
 /** \brief Release a USB context
   * \param[in] context The initialized USB context to be release.
   * \return The resulting error code.
   */
 int usb_context_release(
-  usb_context_p context);
+  usb_context_t* context);
 
 /** \brief Setup an already initialized USB context
   * \param[in] context The initialized USB context to be set up.
@@ -206,7 +230,7 @@ int usb_context_release(
   * \return The resulting error code.
   */
 int usb_context_setup(
-  usb_context_p context,
+  usb_context_t* context,
   usb_debug_level_t debug_level);
 
 /** \brief Refresh device list of the USB context
@@ -214,25 +238,25 @@ int usb_context_setup(
   * \return The resulting error code.
   */
 int usb_context_refresh(
-  usb_context_p context);
+  usb_context_t* context);
 
-/** \brief Match USB devices by device name
+/** \brief Match devices in USB context by device name
   * \param[in] context The initialized USB context to be searched.
   * \param[in] name The device's udev name.
   * \return The matching device or null.
   */
-usb_device_p usb_match_name(
-  usb_context_p context,
+usb_device_t* usb_context_match_name(
+  const usb_context_t* context,
   const char* name);
 
-/** \brief Match USB devices by vendor and product ID
+/** \brief Match devices in USB context by vendor and product ID
   * \param[in] context The initialized USB context to be searched.
   * \param[in] vendor_id The device's vendor ID to be matched.
   * \param[in] product_id The device's product ID to be matched.
   * \return The first matching device or null.
   */
-usb_device_p usb_match_vendor_product(
-  usb_context_p context,
+usb_device_t* usb_context_match_vendor_product(
+  const usb_context_t* context,
   int vendor_id,
   int product_id);
 
@@ -240,23 +264,23 @@ usb_device_p usb_match_vendor_product(
   * \param[in] dev The USB device to be opened.
   * \return The resulting error code.
   */
-int usb_open(
-  usb_device_p dev);
+int usb_device_open(
+  usb_device_t* dev);
 
 /** \brief Close an open USB device
   * \param[in] dev The open USB device to be closed.
   * \return The resulting error code.
   */
-int usb_close(
-  usb_device_p dev);
+int usb_device_close(
+  usb_device_t* dev);
 
 /** \brief Setup a USB device
   * \param[in] dev The USB device to be set up.
   * \param[in] timeout The device request timeout to be set in [s].
   * \return The resulting error code.
   */
-int usb_setup(
-  usb_device_p dev,
+int usb_device_setup(
+  usb_device_t* dev,
   double timeout);
 
 /** \brief Read control data from open USB device
@@ -272,8 +296,8 @@ int usb_setup(
   * \return The number of control data bytes read from the USB device or the
   *   negative error code.
   */
-int usb_control_read(
-  usb_device_p dev,
+int usb_device_control_read(
+  usb_device_t* dev,
   usb_request_type_t request_type,
   usb_recipient_t recipient,
   unsigned char request,
@@ -295,8 +319,8 @@ int usb_control_read(
   * \return The number of control data bytes written to the USB device or the
   *   negative error code.
   */
-int usb_control_write(
-  usb_device_p dev,
+int usb_device_control_write(
+  usb_device_t* dev,
   usb_request_type_t request_type,
   usb_recipient_t recipient,
   unsigned char request,
@@ -314,8 +338,8 @@ int usb_control_write(
   * \return The number of bulk data bytes read from the USB device or the
   *   negative error code.
   */
-int usb_bulk_read(
-  usb_device_p dev,
+int usb_device_bulk_read(
+  usb_device_t* dev,
   unsigned char endpoint_number,
   unsigned char* data,
   size_t num);
@@ -330,8 +354,8 @@ int usb_bulk_read(
   * \return The number of bulk data bytes written to the USB device or the
   *   negative error code.
   */
-int usb_bulk_write(
-  usb_device_p dev,
+int usb_device_bulk_write(
+  usb_device_t* dev,
   unsigned char endpoint_number,
   unsigned char* data,
   size_t num);
@@ -341,26 +365,26 @@ int usb_bulk_write(
   * \param[in,out] transfer The control transfer to be performed.
   * \return The resulting error code.
   */
-int usb_control_transfer(
-  usb_device_p dev,
-  usb_control_transfer_p transfer);
+int usb_device_control_transfer(
+  usb_device_t* dev,
+  usb_control_transfer_t* transfer);
 
 /** \brief Perform synchronous USB bulk transfer
   * \param[in] dev The open USB device to communicate with.
   * \param[in,out] transfer The bulk transfer to be performed.
   * \return The resulting error code.
   */
-int usb_bulk_transfer(
-  usb_device_p dev,
-  usb_bulk_transfer_p transfer);
+int usb_device_bulk_transfer(
+  usb_device_t* dev,
+  usb_bulk_transfer_t* transfer);
 
-/** \brief Print a USB device
+/** \brief Print USB device
   * \param[in] stream The output stream that will be used for printing the
   *   USB device.
   * \param[in] dev The USB device that will be printed.
   */
-void usb_print(
+void usb_device_print(
   FILE* stream,
-  usb_device_p dev);
+  const usb_device_t* dev);
 
 #endif

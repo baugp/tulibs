@@ -18,18 +18,16 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#define _GNU_SOURCE
-
-#include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 
 #include "file.h"
 
+#include "string/string.h"
+
 const char* config_file_errors[] = {
   "Success",
-  "Failed to read configuration file",
-  "Failed to write configuration file",
+  "Failed to read configuration from file",
+  "Failed to write configuration to file",
   "Invalid configuration file format",
 };
 
@@ -53,7 +51,7 @@ config_param_t config_file_default_params[] = {
     "'minimal' suppresses any section or variable comments"},
 };
 
-config_t config_file_default_options = {
+const config_t config_file_default_options = {
   config_file_default_params,
   sizeof(config_file_default_params)/sizeof(config_param_t),
 };
@@ -65,12 +63,28 @@ const char* config_file_description =
   "[SECTION]. Comment lines are indicated by a leading '"
   CONFIG_FILE_COMMENT_START "' and will be ignored during reading.";
 
-void config_file_init(config_file_p file, const char* title, size_t
+  
+int config_file_read_line(file_t* file, char** line);
+int config_file_write_header(file_t* file, const char* title,
+  size_t max_width);
+int config_file_write_comment(file_t* file, const char* comment,
+  size_t max_width);
+  
+void config_file_section_init(config_file_section_t* section, const char*
+  name, const char* title);
+void config_file_section_destroy(config_file_section_t* section);
+int config_file_section_write(file_t* file, const config_file_section_t*
+  section, size_t max_width, config_file_comment_level_t comment_level);
+
+void config_file_var_init(config_file_var_t* var, const char* name, const
+  char* value, const char* description);
+void config_file_var_destroy(config_file_var_t* var);
+int config_file_var_write(file_t* file, const config_file_var_t* var,
+  size_t max_width, config_file_comment_level_t comment_level);
+
+void config_file_init(config_file_t* file, const char* title, size_t
     max_width, config_file_comment_level_t comment_level) {
-  if (title)
-    strcpy(file->title, title);
-  else
-    file->title[0] = 0;
+  string_init_copy(&file->title, title);
   
   file->sections = 0;
   file->num_sections = 0;
@@ -78,64 +92,48 @@ void config_file_init(config_file_p file, const char* title, size_t
   file->max_width = max_width;
   file->comment_level = comment_level;
   
-  file->error = CONFIG_FILE_ERROR_NONE;
-  file->error_what[0] = 0;
+  error_init(&file->error, config_file_errors);
 }
 
-void config_file_init_config(config_file_p file, config_p config) {
+void config_file_init_config(config_file_t* file, const config_t* config) {
   config_file_init(file,
     config_get_string(config, CONFIG_FILE_PARAMETER_TITLE),
     config_get_int(config, CONFIG_FILE_PARAMETER_MAX_WIDTH),
     config_get_enum(config, CONFIG_FILE_PARAMETER_COMMENT_LEVEL));
 }
 
-void config_file_destroy(config_file_p file) {
-  int i, j;
+void config_file_destroy(config_file_t* file) {
+  int i;
   
-  for (i = 0; i < file->num_sections; ++i) {
-    config_file_section_p section = &file->sections[i];
-    
-    for (j = 0; j < section->num_vars; ++j)
-      if (section->vars[j].description)
-        free(section->vars[j].description);
-      
-    if (section->num_vars)
-      free(section->vars);
-  }
-
+  string_destroy(&file->title);
+  
   if (file->num_sections) {
+    for (i = 0; i < file->num_sections; ++i)
+      config_file_section_destroy(&file->sections[i]);
+
     free(file->sections);
-    
     file->sections = 0;
     file->num_sections = 0;
   }
+
+  error_destroy(&file->error);
 }
 
-config_file_section_p config_file_add_section(config_file_p file,
+config_file_section_t* config_file_add_section(config_file_t* file,
     const char* name, const char* title) {
   file->sections = realloc(file->sections, (file->num_sections+1)*
     sizeof(config_file_section_t));
-  config_file_section_p section = &file->sections[file->num_sections];
+  config_file_section_t* section = &file->sections[file->num_sections];
   ++file->num_sections;
   
-  if (name)
-    strcpy(section->name, name);
-  else
-    section->name[0] = 0;
-  if (title)
-    strcpy(section->title, title);
-  else
-    section->title[0] = 0;
-  
-  section->vars = 0;
-  section->num_vars = 0;
+  config_file_section_init(section, name, title);
   
   return section;
 }
 
-config_file_section_p config_file_add_config(config_file_p file, const char*
-    name, const char* title, config_p config) {
-  config_file_section_p section = config_file_add_section(file, name, title);
+config_file_section_t* config_file_add_config(config_file_t* file, const char*
+    name, const char* title, const config_t* config) {
+  config_file_section_t* section = config_file_add_section(file, name, title);
   
   int i;
   for (i = 0; i < config->num_params; ++i)
@@ -144,213 +142,151 @@ config_file_section_p config_file_add_config(config_file_p file, const char*
   return section;
 }
 
-config_file_section_p config_file_get_section(config_file_p file,
+config_file_section_t* config_file_get_section(const config_file_t* file,
     const char* name) {
   int i;
   
   for (i = 0; i < file->num_sections; ++i)
-    if (!strcmp(file->sections[i].name, name))
+    if (string_equal(file->sections[i].name, name))
       return &file->sections[i];
     
   return 0;
 }
 
-config_file_var_p config_file_add_var(config_file_section_p section,
+config_file_var_t* config_file_add_var(config_file_section_t* section,
     const char* name, const char* value, const char* description) {
   section->vars = realloc(section->vars, (section->num_vars+1)*
     sizeof(config_file_var_t));
-  config_file_var_p var = &section->vars[section->num_vars];
+  config_file_var_t* var = &section->vars[section->num_vars];
   ++section->num_vars;
   
-  strcpy(var->name, name);
-  strcpy(var->value, value);
-  if (description) {
-    var->description = malloc(strlen(description+1));
-    strcpy(var->description, description);
-  }
-  else
-    var->description = 0;
+  config_file_var_init(var, name, value, description);
   
   return var;
 }
 
-config_file_var_p config_file_add_param(config_file_section_p section,
-    config_param_p param) {
+config_file_var_t* config_file_add_param(config_file_section_t* section,
+    const config_param_t* param) {
   return config_file_add_var(section, param->key, param->value,
     param->description);
 }
 
-config_file_var_p config_file_get_var(config_file_section_p section,
+config_file_var_t* config_file_get_var(const config_file_section_t* section,
     const char* name) {
   int i;
   
   for (i = 0; i < section->num_vars; ++i)
-    if (!strcmp(section->vars[i].name, name))
+    if (string_equal(section->vars[i].name, name))
       return &section->vars[i];
     
   return 0;
 }
 
-int config_file_read(const char* filename, config_file_p file) {
+int config_file_read(const char* filename, config_file_t* file) {
   file_t _file;
 
-  file->error = CONFIG_FILE_ERROR_NONE;
-  file->error_what[0] = 0;
+  error_clear(&file->error);
   
   file_init_name(&_file, filename);
-  if (strcmp(filename, "-"))
-    file_open(&_file, file_mode_read);
-  else
+  if (string_equal(filename, "-"))
     file_open_stream(&_file, stdin, file_mode_read);
+  else
+    file_open(&_file, file_mode_read);
 
   if (!_file.handle) {
-    file->error = CONFIG_FILE_ERROR_READ;
-    strcpy(file->error_what, filename);
+    error_blame(&file->error, &_file.error, CONFIG_FILE_ERROR_READ);
+    file_destroy(&_file);
+    
+    return error_get(&file->error);
   }
 
-  if (!file->error) {
-    config_file_section_p section = 0;
-    char* line = 0;
-    int result;
-    
-    while ((result = config_file_read_line(&_file, &line)) > 0) {
-      char section_name[128], var_name[128], var_value[128], junk;
-      
-      if (sscanf(line, " [ %[^]] ] %1s", section_name, &junk) == 1) {
-        char* section_name_end = section_name+strlen(section_name)-1;
-        while ((section_name_end > section_name) && isspace(*section_name_end))
-          --section_name_end;
-        section_name_end[1] = 0;
-        
-        section = config_file_add_section(file, section_name, 0);
-      }
-      else if (sscanf(line, " %[^= ] = %[^ ] %1s", var_name, var_value,
-          &junk) == 2) {
-        if (!section)
-          section = config_file_add_section(file, 0, 0);
-        config_file_add_var(section, var_name, var_value, 0);
-      }
-      else {
-        file->error = CONFIG_FILE_ERROR_FORMAT;
-        strncpy(file->error_what, line, sizeof(file->error_what)-1);
-        file->error_what[sizeof(file->error_what)-1] = 0;
-        
-        break;
-      }
-    }
-    if (line)
-      free(line);
-    
-    if (result < 0) {
-      file->error = result;
-      strcpy(file->error_what, filename);
-    }
-    
-    file_close(&_file);
-  }
+  config_file_section_t* section = 0;
+  char* line = 0;
   
-  return file->error;
+  while (config_file_read_line(&_file, &line) > 0) {
+    char* section_name = 0;
+    char* var_name = 0;
+    char *var_value = 0;
+    char junk;
+    
+    if (string_scanf(line, " [ %a[^]] ] %1s", &section_name, &junk) == 1) {
+      char* section_name_end = section_name+string_length(section_name)-1;
+      while ((section_name_end > section_name) && isspace(*section_name_end))
+        --section_name_end;
+      section_name_end[1] = 0;
+      
+      section = config_file_add_section(file, section_name, 0);
+      string_destroy(&section_name);
+    }
+    else if (string_scanf(line, " %a[^= ] = %a[^ ] %1s", &var_name, 
+        &var_value, &junk) == 2) {
+      if (!section)
+        section = config_file_add_section(file, 0, 0);
+      config_file_add_var(section, var_name, var_value, 0);
+    
+      string_destroy(&var_name);
+      string_destroy(&var_value);
+    }
+    else {
+      error_setf(&file->error, CONFIG_FILE_ERROR_FORMAT, line);
+      break;
+    }
+  }
+  string_destroy(&line);
+  
+  if (_file.error.code)
+    error_blame(&file->error, &_file.error, CONFIG_FILE_ERROR_READ);
+  
+  file_destroy(&_file);
+  
+  return error_get(&file->error);
 }
 
-int config_file_write(const char* filename, config_file_p file) {
+int config_file_write(const char* filename, config_file_t* file) {
   file_t _file;
-  int i, result = CONFIG_FILE_ERROR_NONE;
+  int i;
+  
+  error_clear(&file->error);
   
   file_init_name(&_file, filename);
-  if (strcmp(filename, "-"))
-    file_open(&_file, file_mode_write);
-  else
+  if (string_equal(filename, "-"))
     file_open_stream(&_file, stdout, file_mode_write);
+  else
+    file_open(&_file, file_mode_write);
 
-  if (!_file.handle)
-    return CONFIG_FILE_ERROR_WRITE;
+  if (!_file.handle) {
+    error_blame(&file->error, &_file.error, CONFIG_FILE_ERROR_READ);
+    file_destroy(&_file);
+    
+    return error_get(&file->error);
+  }
   
-  if (!(result = config_file_write_header(&_file, file->title,
-      file->max_width))) {
+  if (!config_file_write_header(&_file, file->title, file->max_width)) {
     for (i = 0; i < file->num_sections; ++i)
         if (file->sections[i].num_vars) {
       if (file_printf(&_file, "\n") != 1) {
-        result = CONFIG_FILE_ERROR_WRITE;
+        error_blame(&file->error, &_file.error, CONFIG_FILE_ERROR_WRITE);
         break;
       }
       
-      if ((result = config_file_write_section(&_file, &file->sections[i],
-          file->max_width, file->comment_level)))
+      if (config_file_section_write(&_file, &file->sections[i],
+          file->max_width, file->comment_level)) {
+        error_blame(&file->error, &_file.error, CONFIG_FILE_ERROR_WRITE);
         break;
+      }
     }
   }
-      
-  file_close(&_file);
-  return result;
+  file_destroy(&_file);
+  
+  return error_get(&file->error);
 }
 
-int config_file_write_header(file_p file, const char* title, size_t
-    max_width) {
-  int result;
-  
-  if (title[0]) {
-    if ((result = config_file_write_comment(file, title, max_width)) ||
-        (result = config_file_write_comment(file, " ", max_width)))
-      return result;
-  }
-  
-  if ((result = config_file_write_comment(file, config_file_description,
-        max_width)))
-    return result;
-  
-  return CONFIG_FILE_ERROR_NONE;
-}
-
-int config_file_write_section(file_p file, config_file_section_p section,
-    size_t max_width, config_file_comment_level_t comment_level) {
-  int i, result;
-  
-  if (section->title[0] &&
-    (comment_level >= config_file_comment_level_sections) &&
-    (result = config_file_write_comment(file, section->title, max_width)))
-      return result;
-  
-  if (section->name[0] && (file_printf(file, "[%s]\n", section->name) < 0))
-    return CONFIG_FILE_ERROR_WRITE;
-
-  for (i = 0; i < section->num_vars; ++i) {
-    if (i && file_printf(file, "\n") != 1) {
-      result = CONFIG_FILE_ERROR_WRITE;
-      break;
-    }
-    
-    if ((result = config_file_write_var(file, &section->vars[i],
-      max_width, comment_level)))
-    return result;
-  }
-
-  return CONFIG_FILE_ERROR_NONE;
-}
-
-int config_file_write_var(file_p file, config_file_var_p var, size_t
-    max_width, config_file_comment_level_t comment_level) {
-  int result = CONFIG_FILE_ERROR_NONE;
-  
-  if (var->description && var->description[0] &&
-    (comment_level >= config_file_comment_level_verbose) &&
-    (result = config_file_write_comment(file, var->description,
-      max_width)))
-    return result;
-  
-  if (file_printf(file, "%s = %s\n", var->name, var->value) < 0)
-    result = CONFIG_FILE_ERROR_WRITE;
-
-  return result;
-}
-
-int config_file_read_line(file_p file, char** line) {
-  size_t comment_start_length = strlen(CONFIG_FILE_COMMENT_START);
+int config_file_read_line(file_t* file, char** line) {
   int result = 0;
   
   while (!file_eof(file) &&
       ((result = file_read_line(file, line, 128)) >= 0)) {
-    if ((result > 0) && strncmp(*line, CONFIG_FILE_COMMENT_START, 
-        comment_start_length)) {
+    if ((result > 0) && string_starts_with(*line, CONFIG_FILE_COMMENT_START)) {
       char* line_end = *line+result-1;
       while ((line_end > *line) && isspace(*line_end))
         --line_end;
@@ -368,9 +304,26 @@ int config_file_read_line(file_p file, char** line) {
     return CONFIG_FILE_ERROR_READ;
 }
 
-int config_file_write_comment(file_p file, const char* comment, size_t
+int config_file_write_header(file_t* file, const char* title, size_t
     max_width) {
-  size_t comment_start_length = strlen(CONFIG_FILE_COMMENT_START);
+  int result;
+  
+  if (!string_empty(title)) {
+    if ((result = config_file_write_comment(file, title, max_width)) ||
+        (result = config_file_write_comment(file, " ", max_width)))
+      return result;
+  }
+  
+  if ((result = config_file_write_comment(file, config_file_description,
+        max_width)))
+    return result;
+  
+  return CONFIG_FILE_ERROR_NONE;
+}
+
+int config_file_write_comment(file_t* file, const char* comment, size_t
+    max_width) {
+  size_t comment_start_length = string_length(CONFIG_FILE_COMMENT_START);
   size_t line_length = 0;
   const char* line = comment;
 
@@ -422,4 +375,84 @@ int config_file_write_comment(file_p file, const char* comment, size_t
   }
   
   return CONFIG_FILE_ERROR_NONE;
+}
+
+void config_file_section_init(config_file_section_t* section, const char*
+    name, const char* title) {
+  string_init_copy(&section->name, name);
+  string_init_copy(&section->title, title);
+
+  section->vars = 0;
+  section->num_vars = 0;
+}
+
+void config_file_section_destroy(config_file_section_t* section) {
+  int i;
+  
+  string_destroy(&section->name);
+  string_destroy(&section->title);
+  
+  if (section->num_vars) {
+    for (i = 0; i < section->num_vars; ++i)
+      config_file_var_destroy(&section->vars[i]);
+    free(section->vars);
+  }
+}
+
+int config_file_section_write(file_t* file, const config_file_section_t*
+    section, size_t max_width, config_file_comment_level_t comment_level) {
+  int i, result;
+  
+  if (!string_empty(section->title) &&
+    (comment_level >= config_file_comment_level_sections) &&
+    (result = config_file_write_comment(file, section->title, max_width)))
+      return result;
+  
+  if (!string_empty(section->name) &&
+    (file_printf(file, "[%s]\n", section->name) < 0))
+      return CONFIG_FILE_ERROR_WRITE;
+
+  for (i = 0; i < section->num_vars; ++i) {
+    if (i && file_printf(file, "\n") != 1) {
+      result = CONFIG_FILE_ERROR_WRITE;
+      break;
+    }
+    
+    if ((result = config_file_var_write(file, &section->vars[i],
+      max_width, comment_level)))
+    return result;
+  }
+
+  return CONFIG_FILE_ERROR_NONE;
+}
+
+void config_file_var_init(config_file_var_t* var, const char* name, const
+    char* value, const char* description) {
+  string_init_copy(&var->name, name);
+  string_init_copy(&var->value, value);
+  
+  string_init_copy(&var->description, description);
+}
+
+void config_file_var_destroy(config_file_var_t* var) {
+  string_destroy(&var->name);
+  string_destroy(&var->value);
+  
+  string_destroy(&var->description);
+}
+
+int config_file_var_write(file_t* file, const config_file_var_t* var, size_t
+    max_width, config_file_comment_level_t comment_level) {
+  int result = CONFIG_FILE_ERROR_NONE;
+  
+  if (!string_empty(var->description) &&
+    (comment_level >= config_file_comment_level_verbose) &&
+    (result = config_file_write_comment(file, var->description,
+        max_width)))
+      return result;
+  
+  if (file_printf(file, "%s = %s\n", var->name, var->value) < 0)
+    result = CONFIG_FILE_ERROR_WRITE;
+
+  return result;
 }

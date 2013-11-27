@@ -47,8 +47,11 @@
   */
 //@{
 #define THREAD_CONDITION_ERROR_NONE               0
+//!< Success
 #define THREAD_CONDITION_ERROR_MUTEX              1
+//!< Mutex operation error
 #define THREAD_CONDITION_ERROR_WAIT_TIMEOUT       2
+//!< Wait operation timed out
 //@}
 
 /** \brief Predefined condition handling error descriptions
@@ -60,39 +63,39 @@ extern const char* thread_condition_errors[];
 typedef struct thread_condition_t {
   pthread_cond_t handle;       //!< The condition handle.
   thread_mutex_t mutex;        //!< The condition mutex.
-} thread_condition_t, *thread_condition_p;
+} thread_condition_t;
 
 /** \brief Initialize a condition
   * \param[in] condition The condition to be initialized.
   */
 void thread_condition_init(
-  thread_condition_p condition);
+  thread_condition_t* condition);
 
 /** \brief Destroy a condition
   * \param[in] condition The initialized condition to be destroyed.
   */
 void thread_condition_destroy(
-  thread_condition_p condition);
+  thread_condition_t* condition);
 
 /** \brief Signal a condition
   * \param[in] condition The initialized condition to be signaled.
   */
 void thread_condition_signal(
-  thread_condition_p condition);
+  thread_condition_t* condition);
 
 /** \brief Lock a thread condition mutex
   * \param[in] condition The initialized thread condition to lock the
   *   mutex for.
   */
 void thread_condition_lock(
-  thread_condition_p condition);
+  thread_condition_t* condition);
 
 /** \brief Unlock a thread condition mutex
   * \param[in] condition The initialized thread condition to unlock the
   *   mutex for.
   */
 void thread_condition_unlock(
-  thread_condition_p condition);
+  thread_condition_t* condition);
 
 /** \brief Wait for a condition to be signaled
   * \param[in] condition The initialized condition to wait for.
@@ -100,7 +103,7 @@ void thread_condition_unlock(
   * \return The resulting error code.
   */
 int thread_condition_wait(
-  thread_condition_p condition,
+  thread_condition_t* condition,
   double timeout);
 
 #endif

@@ -7,6 +7,6 @@ remake_include(
 )
 remake_add_library(
   file
-  LINK ${ZLIB_LIBRARY} ${BZIP2_LIBRARIES}
+  LINK error ${ZLIB_LIBRARY} ${BZIP2_LIBRARIES}
 )
 remake_add_headers(INSTALL file)

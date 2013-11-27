@@ -38,7 +38,9 @@
   */
 //@{
 #define THREAD_MUTEX_ERROR_NONE        0
+//!< Success
 #define THREAD_MUTEX_ERROR_LOCK        1
+//!< Failed to acquire mutex lock
 //@}
 
 /** \brief Predefined thread handling error descriptions
@@ -49,37 +51,37 @@ extern const char* thread_mutex_errors[];
   */
 typedef struct thread_mutex_t {
   pthread_mutex_t handle;       //!< The mutex handle.
-} thread_mutex_t, *thread_mutex_p;
+} thread_mutex_t;
 
 /** \brief Initialize a thread mutex
   * \param[in] mutex The thread mutex to be initialized.
   */
 void thread_mutex_init(
-  thread_mutex_p mutex);
+  thread_mutex_t* mutex);
 
 /** \brief Destroy a thread mutex
   * \param[in] mutex The initialized thread mutex to be destroyed.
   */
 void thread_mutex_destroy(
-  thread_mutex_p mutex);
+  thread_mutex_t* mutex);
 
 /** \brief Lock a thread mutex
   * \param[in] mutex The initialized thread mutex to be locked.
   */
 void thread_mutex_lock(
-  thread_mutex_p mutex);
+  thread_mutex_t* mutex);
 
 /** \brief Unlock a thread mutex
   * \param[in] mutex The initialized thread mutex to be unlocked.
   */
 void thread_mutex_unlock(
-  thread_mutex_p mutex);
+  thread_mutex_t* mutex);
 
 /** \brief Try to lock a thread mutex
   * \param[in] mutex The initialized thread mutex to be locked.
   * \return The resulting error code.
   */
 int thread_mutex_try_lock(
-  thread_mutex_p mutex);
+  thread_mutex_t* mutex);
 
 #endif

@@ -18,7 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -27,17 +26,18 @@
 #include <bzlib.h>
 
 #include "file.h"
+#include "path.h"
 
-#include "file/path.h"
+#include "string/string.h"
 
 const char* file_errors[] = {
   "Success",
   "No such file",
   "Failed to attain file position",
-  "Failed to retrieve file position",
   "Failed to open file",
   "Failed to read from file",
   "Failed to write to file",
+  "Failed to flush file",
   "Illegal file operation",
 };
 
@@ -47,42 +47,50 @@ const char* file_modes[] = {
   "a",
 };
 
-void file_init(file_p file, const char* filename, file_compression_t
+void file_init(file_t* file, const char* filename, file_compression_t
     compression) {
-  strcpy(file->name, filename);
+  string_init_copy(&file->name, filename);
   file->handle = 0;
   
   file->compression = compression;
   file->pos = -1;
+  
+  error_init(&file->error, file_errors);
 }
 
-void file_init_name(file_p file, const char* filename) {
+void file_init_name(file_t* file, const char* filename) {
   file_init(file, filename, file_compression_none);
   
-  const char* extension = file_get_extension(file);
-  if (!strcmp(extension, "gz"))
+  if (string_ends_with(file->name, ".gz"))
     file->compression = file_compression_gzip;
-  else if (!strcmp(extension, "bz2"))
+  else if (string_ends_with(file->name, ".bz2"))
     file->compression = file_compression_bzip2;
 }
 
-int file_exists(file_p file) {
+void file_destroy(file_t* file) {
+  if (file->handle)
+    file_close(file);
+  
+  string_destroy(&file->name);
+  error_destroy(&file->error);
+}
+
+int file_exists(const file_t* file) {
   return file_path_is_file(file->name);
 }
 
-const char* file_get_extension(file_p file) {
-  const char* extension_start = strrchr(file->name, '.');
-  return extension_start ? extension_start+1 :
-    &file->name[strlen(file->name)];
+const char* file_get_extension(const file_t* file) {
+  const char* extension_start = string_rfind(file->name, ".");
+  return extension_start ? extension_start+1 : 0;
 }
 
-ssize_t file_get_size(file_p file) {  
+ssize_t file_get_size(const file_t* file) {  
   void* handle;
   
   switch (file->compression) {
     case file_compression_gzip:
       if (!file_exists(file))
-        return -FILE_ERROR_NOT_FOUND;
+        return 0;
       
       handle = fopen(file->name, file_modes[file_mode_read]);
       if (handle) {
@@ -90,7 +98,7 @@ ssize_t file_get_size(file_p file) {
         
         if (fseek(handle, -sizeof(size), SEEK_END) < 0) {
           fclose(handle);
-          return -FILE_ERROR_SEEK;
+          return 0;
         }
 
         if (fread(&size, sizeof(size), 1, handle) == sizeof(size)) {
@@ -99,14 +107,14 @@ ssize_t file_get_size(file_p file) {
         }
         else {
           fclose(handle);
-          return -FILE_ERROR_READ;
+          return 0;
         }
       }
       else
-        return -FILE_ERROR_OPEN;
+        return 0;
     case file_compression_bzip2:
       if (!file_exists(file))
-        return -FILE_ERROR_NOT_FOUND;
+        return 0;
 
       handle = BZ2_bzopen(file->name, file_modes[file_mode_read]);
       if (handle) {
@@ -122,16 +130,17 @@ ssize_t file_get_size(file_p file) {
 
           if ((result != sizeof(buffer)) && (error != BZ_STREAM_END)) {
             BZ2_bzclose(handle);
-            return -FILE_ERROR_READ;
+            return 0;
           }
         }
         while (error != BZ_STREAM_END);
         
         BZ2_bzclose(handle);
+
         return size;
       }
       else
-        return -FILE_ERROR_OPEN;
+        return 0;
     default:
       break;
   };
@@ -139,9 +148,9 @@ ssize_t file_get_size(file_p file) {
   return file_get_actual_size(file);
 }
 
-ssize_t file_get_actual_size(file_p file) {
+ssize_t file_get_actual_size(const file_t* file) {
   if (!file_exists(file))
-    return -FILE_ERROR_NOT_FOUND;
+    return 0;
   
   FILE* handle = fopen(file->name, file_modes[file_mode_read]);
   if (handle) {
@@ -149,7 +158,7 @@ ssize_t file_get_actual_size(file_p file) {
     
     if (fseek(handle, 0, SEEK_END)) {
       fclose(handle);
-      return -FILE_ERROR_SEEK;
+      return 0;
     }
 
     result = ftell(handle);
@@ -158,16 +167,18 @@ ssize_t file_get_actual_size(file_p file) {
     if (result >= 0)
       return result;
     else
-      return -FILE_ERROR_TELL;
+      return 0;
   }
   else
-    return -FILE_ERROR_OPEN;
+    return 0;
 }
 
-int file_open(file_p file, file_mode_t mode) {
+int file_open(file_t* file, file_mode_t mode) {
   if (file->handle)
     file_close(file);
 
+  error_clear(&file->error);
+  
   switch (file->compression) {
     case file_compression_gzip:
       file->handle = gzopen(file->name, file_modes[mode]);
@@ -183,13 +194,15 @@ int file_open(file_p file, file_mode_t mode) {
       file->handle = fopen(file->name, file_modes[mode]);
   }
 
-  if (file->handle)
-    return FILE_ERROR_NONE;
-  else
-    return FILE_ERROR_OPEN;
+  if (!file->handle)
+    error_setf(&file->error, FILE_ERROR_OPEN, file->name);
+  
+  return error_get(&file->error);
 }
 
-int file_open_stream(file_p file, FILE* stream, file_mode_t mode) {
+int file_open_stream(file_t* file, FILE* stream, file_mode_t mode) {
+  error_clear(&file->error);
+  
   int fd = dup(fileno(stream));
   
   switch (file->compression) {
@@ -207,13 +220,13 @@ int file_open_stream(file_p file, FILE* stream, file_mode_t mode) {
       file->handle = fdopen(fd, file_modes[mode]);
   }
 
-  if (file->handle)
-    return FILE_ERROR_NONE;
-  else
-    return FILE_ERROR_OPEN;
+  if (!file->handle)
+    error_setf(&file->error, FILE_ERROR_OPEN, file->name);
+
+  return error_get(&file->error);  
 }
 
-void file_close(file_p file) {
+void file_close(file_t* file) {
   if (!file->handle)
     return;
 
@@ -232,43 +245,51 @@ void file_close(file_p file) {
   file->pos = -1;
 }
 
-int file_eof(file_p file) {
-  if (!file->handle)
-    return -FILE_ERROR_OPERATION;
-
-  int error;
-  switch (file->compression) {
-    case file_compression_gzip:
-      return (gzeof(file->handle) == 1);
-    case file_compression_bzip2:
-      BZ2_bzerror(file->handle, &error);
-      return (error == BZ_STREAM_END);
-    default:
-      return (feof(file->handle) != 0);
+int file_eof(const file_t* file) {
+  if (file->handle) {
+    int error;
+    
+    switch (file->compression) {
+      case file_compression_gzip:
+        return (gzeof(file->handle) == 1);
+      case file_compression_bzip2:
+        BZ2_bzerror(file->handle, &error);
+        return (error == BZ_STREAM_END);
+      default:
+        return (feof(file->handle) != 0);
+    }
   }
+  
+  return 0;
 }
 
-int file_error(file_p file) {
-  if (!file->handle)
-    return -FILE_ERROR_OPERATION;
-
-  int error;
-  switch (file->compression) {
-    case file_compression_gzip:
-      gzerror(file->handle, &error);
-      return (error != Z_OK);
-    case file_compression_bzip2:
-      BZ2_bzerror(file->handle, &error);
-      return (error != BZ_OK);
-    default:
-      return (ferror(file->handle) != 0);
+int file_error(const file_t* file) {
+  if (file->handle) {
+    int error;
+    
+    switch (file->compression) {
+      case file_compression_gzip:
+        gzerror(file->handle, &error);
+        return (error != Z_OK);
+      case file_compression_bzip2:
+        BZ2_bzerror(file->handle, &error);
+        return (error != BZ_OK);
+      default:
+        return (ferror(file->handle) != 0);
+    }
   }
+  
+  return 0;
 }
 
-ssize_t file_seek(file_p file, ssize_t offset, file_whence_t whence) {
-  if (!file->handle)
-    return -FILE_ERROR_OPERATION;
+ssize_t file_seek(file_t* file, ssize_t offset, file_whence_t whence) {
+  if (!file->handle) {
+    error_set(&file->error, FILE_ERROR_OPERATION);
+    return -error_get(&file->error);
+  }
 
+  error_clear(&file->error);
+  
   int whence_int;
   switch (whence) {
     case file_whence_end:
@@ -284,8 +305,10 @@ ssize_t file_seek(file_p file, ssize_t offset, file_whence_t whence) {
   ssize_t pos, result;
   switch (file->compression) {
     case file_compression_gzip:
-      if ((result = gzseek(file->handle, offset, whence_int)) < 0)
-        result = -FILE_ERROR_SEEK;
+      if ((result = gzseek(file->handle, offset, whence_int)) < 0) {
+        error_set(&file->error, FILE_ERROR_SEEK);
+        return -error_get(&file->error);
+      }
       break;
     case file_compression_bzip2:
       switch (whence) {
@@ -311,97 +334,125 @@ ssize_t file_seek(file_p file, ssize_t offset, file_whence_t whence) {
             file->pos += num_read;
         }
           
-        if (error != BZ_OK)
-          result = -FILE_ERROR_READ;
+        if (error != BZ_OK) {
+          error_setf(&file->error, FILE_ERROR_READ, file->name);
+          return -error_get(&file->error);
+        }
         else
           result = file->pos;
       }
-      else
-        result = -FILE_ERROR_SEEK;
+      else {
+        error_set(&file->error, FILE_ERROR_SEEK);
+        return -error_get(&file->error);
+      }
         
       break;
     default:
       if (!fseek(file->handle, offset, whence_int)) {
-        if ((result = ftell(file->handle)) < 0)
-          result = -FILE_ERROR_TELL;
+        if ((result = ftell(file->handle)) < 0) {
+          error_set(&file->error, FILE_ERROR_SEEK);
+          return -error_get(&file->error);
+        }
+      }
+      else {
+        error_set(&file->error, FILE_ERROR_SEEK);
+        return -error_get(&file->error);
+      }
+  }
+
+  return result;
+}
+
+ssize_t file_tell(const file_t* file) {
+  if (file->handle) {
+    ssize_t result;
+    
+    switch (file->compression) {
+      case file_compression_gzip:
+        if ((result = gztell(file->handle)) >= 0)
+          return result;
+        break;
+      case file_compression_bzip2:
+        return file->pos;
+      default:
+        if ((result = ftell(file->handle)) >= 0)
+          return result;
+    }
+  }
+  
+  return -1;
+}
+
+ssize_t file_read(file_t* file, unsigned char* data, size_t size) {
+  if (!file->handle) {
+    error_set(&file->error, FILE_ERROR_OPERATION);
+    return -error_get(&file->error);
+  }
+
+  error_clear(&file->error);
+  
+  ssize_t result;
+  switch (file->compression) {
+    case file_compression_gzip:
+      if ((result = gzread(file->handle, data, size)) <= 0) {
+        error_setf(&file->error, FILE_ERROR_READ, file->name);
+        return -error_get(&file->error);
+      }
+      break;
+    case file_compression_bzip2:
+      if ((result = BZ2_bzread(file->handle, data, size)) <= 0) {
+        error_setf(&file->error, FILE_ERROR_READ, file->name);
+        return -error_get(&file->error);
       }
       else
-        result = -FILE_ERROR_SEEK;
-  }
-  
-  return result;
-}
-
-ssize_t file_tell(file_p file) {
-  if (!file->handle)
-    return -FILE_ERROR_OPERATION;
-  
-  ssize_t result;
-  switch (file->compression) {
-    case file_compression_gzip:
-      if ((result = gztell(file->handle)) < 0)
-        result = -FILE_ERROR_SEEK;
-      break;
-    case file_compression_bzip2:
-      result = file->pos;
+        file->pos += result;
       break;
     default:
-      if ((result = ftell(file->handle)) < 0)
-        result = -FILE_ERROR_TELL;
+      if (!(result = fread(data, size, 1, file->handle)) &&
+          ferror(file->handle)) {
+        error_setf(&file->error, FILE_ERROR_READ, file->name);
+        return -error_get(&file->error);
+      }
   }
   
   return result;
 }
 
-ssize_t file_read(file_p file, unsigned char* data, size_t size) {
-  if (!file->handle)
-    return -FILE_ERROR_OPERATION;
+ssize_t file_write(file_t* file, const unsigned char* data, size_t size) {
+  if (!file->handle) {
+    error_set(&file->error, FILE_ERROR_OPERATION);
+    return -error_get(&file->error);
+  }
 
+  error_clear(&file->error);
+  
   ssize_t result;
   switch (file->compression) {
     case file_compression_gzip:
-      if ((result = gzread(file->handle, data, size)) <= 0)
-        result = -FILE_ERROR_READ;
+      if (!(result = gzwrite(file->handle, data, size))) {
+        error_setf(&file->error, FILE_ERROR_WRITE, file->name);
+        return -error_get(&file->error);
+      }
       break;
     case file_compression_bzip2:
-      if ((result = BZ2_bzread(file->handle, data, size)) <= 0)
-        result = -FILE_ERROR_READ;
+      if (!(result = BZ2_bzwrite(file->handle, (unsigned char*)data, size))) {
+        error_setf(&file->error, FILE_ERROR_WRITE, file->name);
+        return -error_get(&file->error);
+      }
       else
         file->pos += result;
       break;
     default:
-      if (!(result = fread(data, size, 1, file->handle)))
-        result = -FILE_ERROR_READ;
+      if (!(result = fwrite(data, size, 1, file->handle))) {
+        error_setf(&file->error, FILE_ERROR_WRITE, file->name);
+        return -error_get(&file->error);
+      }
   }
   
   return result;
 }
 
-ssize_t file_write(file_p file, const unsigned char* data, size_t size) {
-  if (!file->handle)
-    return -FILE_ERROR_OPERATION;
-
-  ssize_t result;
-  switch (file->compression) {
-    case file_compression_gzip:
-      if (!(result = gzwrite(file->handle, data, size)))
-        result = -FILE_ERROR_WRITE;
-      break;
-    case file_compression_bzip2:
-      if (!(result = BZ2_bzwrite(file->handle, (unsigned char*)data, size)))
-        result = -FILE_ERROR_WRITE;
-      else
-        file->pos += result;
-      break;
-    default:
-      if (!(result = fwrite(data, size, 1, file->handle)))
-        result = -FILE_ERROR_WRITE;
-  }
-  
-  return result;
-}
-
-ssize_t file_read_line(file_p file, char** line, size_t block_size) {
+ssize_t file_read_line(file_t* file, char** line, size_t block_size) {
   ssize_t line_length = 0;
   unsigned char character;
   ssize_t result;
@@ -427,10 +478,14 @@ ssize_t file_read_line(file_p file, char** line, size_t block_size) {
     return result;
 }
 
-ssize_t file_printf(file_p file, const char* format, ...) {
-  if (!file->handle)
-    return -FILE_ERROR_OPERATION;
+ssize_t file_printf(file_t* file, const char* format, ...) {
+  if (!file->handle) {
+    error_set(&file->error, FILE_ERROR_OPERATION);
+    return -error_get(&file->error);
+  }
 
+  error_clear(&file->error);
+  
   va_list vargs;  
   ssize_t result;  
   if ((file->compression == file_compression_gzip) ||
@@ -444,7 +499,8 @@ ssize_t file_printf(file_p file, const char* format, ...) {
       va_end(vargs);
       
       if ((result > -1) && (result < size)) {
-        result = file_write(file, (unsigned char*)buffer, strlen(buffer));
+        result = file_write(file, (unsigned char*)buffer,
+          string_length(buffer));
         break;
       }
       
@@ -456,30 +512,37 @@ ssize_t file_printf(file_p file, const char* format, ...) {
   }
   else {
     va_start(vargs, format);
-    if ((result = vfprintf(file->handle, format, vargs)) <= 0)
-      result = -FILE_ERROR_WRITE;
+    if ((result = vfprintf(file->handle, format, vargs)) <= 0) {
+      error_setf(&file->error, FILE_ERROR_WRITE, file->name);
+      return -error_get(&file->error);
+    }
     va_end(vargs);
   }
   
   return result;
 }
 
-int file_flush(file_p file) {
- if (!file->handle)
-    return -FILE_ERROR_OPERATION;
+int file_flush(file_t* file) {
+ if (!file->handle) {
+    error_set(&file->error, FILE_ERROR_OPERATION);
+    return error_get(&file->error);
+ }
 
+  error_clear(&file->error);
+  
   switch (file->compression) {
     case file_compression_gzip:
       if (gzflush(file->handle, Z_SYNC_FLUSH) != Z_OK)
-        return FILE_ERROR_WRITE;
+        error_setf(&file->error, FILE_ERROR_FLUSH, file->name);
+      break;
     case file_compression_bzip2:
       if (BZ2_bzflush(file->handle))
-        return FILE_ERROR_WRITE;
+        error_setf(&file->error, FILE_ERROR_FLUSH, file->name);
       break;
     default:
       if (fflush(file->handle))
-        return FILE_ERROR_WRITE;
+        error_setf(&file->error, FILE_ERROR_FLUSH, file->name);
   }
   
-  return FILE_ERROR_NONE;
+  return error_get(&file->error);
 }

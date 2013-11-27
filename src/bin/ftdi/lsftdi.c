@@ -31,11 +31,16 @@ int main(int argc, char **argv) {
     "The command displays lsusb-like information about USB buses in "
     "the system and the FTDI devices connected to them.");
   config_parser_parse(&parser, argc, argv, config_parser_exit_error);
+  config_parser_destroy(&parser);
   
   ftdi_context_init(ftdi_default_context);
+  error_exit(&ftdi_default_context->error);
+    
   if (ftdi_default_context->num_devices) {
-    for (i = 0; i < ftdi_default_context->num_devices; ++i)
-      ftdi_print(stdout, &ftdi_default_context->devices[i]);
+    for (i = 0; i < ftdi_default_context->num_devices; ++i) {
+      ftdi_device_print(stdout, &ftdi_default_context->devices[i]);
+      fprintf(stdout, "\n");
+    }
   }
   else
     fprintf(stdout, "No devices found.\n");

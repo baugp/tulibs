@@ -44,7 +44,9 @@
   */
 //@{
 #define TIMER_ERROR_NONE              0
+//!< Success
 #define TIMER_ERROR_FAULT             1
+//!< Timer fault
 //@}
 
 /** \brief Predefined timer error descriptions

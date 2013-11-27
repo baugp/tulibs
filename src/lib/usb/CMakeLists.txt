@@ -7,6 +7,6 @@ remake_include(
 )
 remake_add_library(
   usb
-  LINK ${LIBUSB_1_0_LIBRARIES} ${LIBUDEV_LIBRARIES}
+  LINK error ${LIBUSB_1_0_LIBRARIES} ${LIBUDEV_LIBRARIES}
 )
 remake_add_headers(INSTALL usb)

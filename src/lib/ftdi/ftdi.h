@@ -40,6 +40,8 @@
 
 #include <unistd.h>
 
+#include "error/error.h"
+
 /** \brief Predefined FTDI vendor identifier
   */
 #define FTDI_VENDOR_ID                      0x0403
@@ -49,24 +51,43 @@
   */
 //@{
 #define FTDI_ERROR_NONE                     0
+//!< Success
 #define FTDI_ERROR_CONTEXT_INIT             1
+//!< Error initializing FTDI context
 #define FTDI_ERROR_CONTEXT_RELEASE          2
+//!< Error releasing FTDI context
 #define FTDI_ERROR_INVALID_CONTEXT          3
+//!< Invalid FTDI context
 #define FTDI_ERROR_OPEN                     4
+//!< Error opening FTDI device
 #define FTDI_ERROR_CLOSE                    5
+//!< Error closing FTDI device
 #define FTDI_ERROR_PURGE                    6
+//!< Error purging FTDI device
 #define FTDI_ERROR_INVALID_INTERFACE        7
+//!< Invalid interface
 #define FTDI_ERROR_INVALID_BAUD_RATE        8
+//!< Invalid baud rate
 #define FTDI_ERROR_INVALID_DATA_BITS        9
+//!< Invalid number of data bits
 #define FTDI_ERROR_INVALID_STOP_BITS        10
+//!< Invalid number of stop bits
 #define FTDI_ERROR_INVALID_PARITY           11
+//!< Invalid parity
 #define FTDI_ERROR_INVALID_FLOW_CTRL        12
+//!< Invalid flow control
 #define FTDI_ERROR_INVALID_BREAK            13
+//!< Invalid break
 #define FTDI_ERROR_INVALID_LATENCY          14
+//!< Invalid latency
 #define FTDI_ERROR_SETUP                    15
+//!< Error setting FTDI device parameters
 #define FTDI_ERROR_TIMEOUT                  16
+//!< FTDI device select timeout
 #define FTDI_ERROR_READ                     17
+//!< Error reading from FTDI device
 #define FTDI_ERROR_WRITE                    18
+//!< Error writing to FTDI device
 //@}
 
 /** \brief Predefined FTDI error descriptions
@@ -127,6 +148,7 @@ typedef enum {
 } ftdi_break_t;
 
 /** \brief FTDI device structure
+  * \note The life-cycle of an FTDI device is managed by its context.
   */
 typedef struct ftdi_device_t {
   void* libftdi_context;          //!< The libftdi context.
@@ -151,7 +173,9 @@ typedef struct ftdi_device_t {
 
   size_t num_read;                //!< Number of bytes read from device.
   size_t num_written;             //!< Number of bytes written to device.
-} ftdi_device_t, *ftdi_device_p;
+  
+  error_t error;                  //!< The most recent device error.
+} ftdi_device_t;
 
 /** \brief FTDI context structure
   */
@@ -160,79 +184,80 @@ typedef struct ftdi_context_t {
   ftdi_device_t* devices;         //!< List of devices in the context.
   
   size_t num_references;          //!< Number of references to the context.
-} ftdi_context_t, *ftdi_context_p;
+
+  error_t error;                  //!< The most recent context error.  
+} ftdi_context_t;
 
 /** \brief FTDI default context
-  * \note The FTDI default context is a special context which will be
-  *   shared amongst its users.
+  * 
+  * The FTDI default context is a special context which will be shared
+  * amongst its users.
   */
-extern ftdi_context_p ftdi_default_context;
+extern ftdi_context_t* ftdi_default_context;
 
 /** \brief Initialize an FTDI context
   * \param[in] context The FTDI context to be initialized.
   * \return The resulting error code.
   */
 int ftdi_context_init(
-  ftdi_context_p context);
+  ftdi_context_t* context);
 
 /** \brief Release an FTDI context
   * \param[in] context The initialized FTDI context to be released.
   * \return The resulting error code.
   */
 int ftdi_context_release(
-  ftdi_context_p context);
+  ftdi_context_t* context);
 
 /** \brief Refresh device list of the FTDI context
   * \param[in] context The initialized FTDI context to be refreshed.
   * \return The resulting error code.
   */
 int ftdi_context_refresh(
-  ftdi_context_p context);
+  ftdi_context_t* context);
 
-/** \brief Match FTDI devices by device name
+/** \brief Match devices in FTDI context by device name
   * \param[in] context The initialized FTDI context to be searched.
   * \param[in] name The device's udev name.
   * \return The matching device or null.
   */
-ftdi_device_p ftdi_match_name(
-  ftdi_context_p context,
+ftdi_device_t* ftdi_context_match_name(
+  const ftdi_context_t* context,
   const char* name);
 
-/** \brief Match FTDI devices by product ID
+/** \brief Match devices in FTDI context by product ID
   * \param[in] context The initialized FTDI context to be searched.
   * \param[in] product_id The device's product ID to be matched.
   * \return The first matching device or null.
   */
-ftdi_device_p ftdi_match_product(
-  ftdi_context_p context,
+ftdi_device_t* ftdi_context_match_product(
+  const ftdi_context_t* context,
   int product_id);
 
-/** \brief Match FTDI devices by chip
+/** \brief Match devices in FTDI context by chip
   * \param[in] context The initialized FTDI context to be searched.
   * \param[in] chip The device's chip to be matched.
   * \return The first matching device or null.
   */
-ftdi_device_p ftdi_match_chip(
-  ftdi_context_p context,
+ftdi_device_t* ftdi_context_match_chip(
+  const ftdi_context_t* context,
   ftdi_chip_t chip);
 
 /** \brief Open the FTDI device with the specified name
   * \param[in] dev The FTDI device to be opened.
-  * \param[in] name The name of the device to be opened.
   * \param[in] interface The device interface to be opened.
   * \return The resulting error code.
   */
-int ftdi_open(
-  ftdi_device_p dev,
-  const char* name,
+int ftdi_device_open(
+  ftdi_device_t* dev,
   ftdi_interface_t interface);
 
 /** \brief Close an open FTDI device
   * \param[in] dev The open FTDI device to be closed.
   * \return The resulting error code.
   */
-int ftdi_close(
-  ftdi_device_p dev);
+int ftdi_device_close(
+  ftdi_device_t* dev);
 
 /** \brief Setup an already opened FTDI device
   * \param[in] dev The open FTDI device to be set up.
@@ -246,8 +271,8 @@ int ftdi_close(
   * \param[in] latency The device latency to be set in [s].
   * \return The resulting error code.
   */
-int ftdi_setup(
-  ftdi_device_p dev,
+int ftdi_device_setup(
+  ftdi_device_t* dev,
   int baud_rate,
   int data_bits,
   int stop_bits,
@@ -264,8 +289,8 @@ int ftdi_setup(
   * \return The number of bytes read from the FTDI device or the
   *   negative error code.
   */
-int ftdi_read(
-  ftdi_device_p dev,
+int ftdi_device_read(
+  ftdi_device_t* dev,
   unsigned char* data,
   size_t num);
 
@@ -276,18 +301,18 @@ int ftdi_read(
   * \return The number of bytes written to the FTDI device or the
   *   negative error code.
   */
-int ftdi_write(
-  ftdi_device_p dev,
+int ftdi_device_write(
+  ftdi_device_t* dev,
   unsigned char* data,
   size_t num);
 
-/** \brief Print an FTDI device
+/** \brief Print FTDI device
   * \param[in] stream The output stream that will be used for printing the
   *   FTDI device.
   * \param[in] dev The FTDI device that will be printed.
   */
-void ftdi_print(
+void ftdi_device_print(
   FILE* stream,
-  ftdi_device_p dev);
+  const ftdi_device_t* dev);
 
 #endif

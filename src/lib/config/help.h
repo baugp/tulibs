@@ -41,7 +41,9 @@
   */
 //@{
 #define CONFIG_HELP_ERROR_NONE                0
+//!< Success
 #define CONFIG_HELP_ERROR_WIDTH               1
+//!< Maximum output width exceeded
 //@}
 
 /** \brief Predefined configuration help error descriptions
@@ -63,7 +65,7 @@ extern const char* config_help_errors[];
 int config_help_print_arguments(
   FILE* stream,
   const char* section_title,
-  config_p arguments,
+  const config_t* arguments,
   size_t max_width,
   size_t key_indent,
   size_t par_indent);
@@ -82,7 +84,7 @@ int config_help_print_arguments(
   */
 int config_help_print_argument(
   FILE* stream,
-  config_param_p param,
+  const config_param_t* param,
   size_t max_width,
   size_t key_indent,
   size_t par_indent);
@@ -104,7 +106,7 @@ int config_help_print_argument(
 int config_help_print_options(
   FILE* stream,
   const char* section_title,
-  config_p options,
+  const config_t* options,
   const char* prefix,
   size_t max_width,
   size_t key_indent,
@@ -126,7 +128,7 @@ int config_help_print_options(
   */
 int config_help_print_option(
   FILE* stream,
-  config_param_p param,
+  const config_param_t* param,
   const char* prefix,
   size_t max_width,
   size_t key_indent,
@@ -152,18 +154,5 @@ int config_help_print(
   size_t par_indent,
   size_t line_indent,
   size_t line_offset);
-
-/** \brief Justify help text to not exceed a specified character width
-  * \note This is a string formatting helper function to generate multi-line
-  *   help text suitable for limited character width stream output.
-  * \param[in,out] text The help text that will be justified in place by
-  *   substituting whitespace characters.
-  * \param[in] max_width The maximum character width of the justified
-  *   help text.
-  * \return The resulting error code.
-  */
-int config_help_justify(
-  char* text,
-  size_t max_width);
 
 #endif

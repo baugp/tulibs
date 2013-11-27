@@ -35,9 +35,9 @@
   * or by the build system.
   */
 
-/** \brief Predefined project argument prefix
+/** \brief Predefined project parser option group
   */
-#define CONFIG_PROJECT_ARG_PREFIX               "project"
+#define CONFIG_PROJECT_PARSER_OPTION_GROUP      "project"
 
 /** \name Parameters
   * \brief Predefined project parameters
@@ -53,21 +53,21 @@
 
 /** \brief Predefined project default options
   */
-extern config_t config_project_default_options;
+extern const config_t config_project_default_options;
 
 /** \brief Project configuration structure
   */
 typedef struct config_project_t {
-  char name[128];            //!< The name of the project.
-  char version[128];         //!< The version of the project.
+  char* name;                //!< The name of the project.
+  char* version;             //!< The version of the project.
   
-  char authors[256];         //!< The project authors.
-  char contact[128];         //!< The project's maintainer contact.
-  char home[128];            //!< The project's home page.
-  char license[128];         //!< The project's license.
-} config_project_t, *config_project_p;
+  char* authors;             //!< The project authors.
+  char* contact;             //!< The project's maintainer contact.
+  char* home;                //!< The project's home page.
+  char* license;             //!< The project's license.
+} config_project_t;
 
-/** \brief Initialize a project configuration
+/** \brief Initialize project configuration
   * \param[in] project The project configuration to be initialized.
   * \param[in] name The name of the project to initialize the
   *   configuration for.
@@ -83,7 +83,7 @@ typedef struct config_project_t {
   *   configuration for.
   */
 void config_project_init(
-  config_project_p project,
+  config_project_t* project,
   const char* name,
   const char* version,
   const char* authors,
@@ -91,22 +91,28 @@ void config_project_init(
   const char* home,
   const char* license);
 
-/** \brief Initialize a project configuration from configuration parameters
+/** \brief Initialize project configuration from configuration parameters
   * \param[in] project The project configuration to be initialized.
   * \param[in] config The project configuration parameters used to
   *   initialize the project configuration.
   */
 void config_project_init_config(
-  config_project_p project,
-  config_p config);
+  config_project_t* project,
+  const config_t* config);
 
-/** \brief Initialize a project configuration by copying
+/** \brief Initialize project configuration by copying
   * \param[in] project The project configuration to be initialized.
   * \param[in] src_project The source project configuration used to
   *   initialize the project configuration.
   */
 void config_project_init_copy(
-  config_project_p project,
-  config_project_p src_project);
+  config_project_t* project,
+  const config_project_t* src_project);
+
+/** \brief Destroy project configuration
+  * \param[in] project The project configuration to be destroyed.
+  */
+void config_project_destroy(
+  config_project_t* project);
 
 #endif

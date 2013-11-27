@@ -28,6 +28,8 @@
 #include "config/config.h"
 #include "config/project.h"
 
+#include "error/error.h"
+
 /** \file config/man.h
   * \ingroup config
   * \brief Configuration manual page output
@@ -39,9 +41,9 @@
   * configuration parser interface.
   */
 
-/** \brief Predefined manual page argument prefix
+/** \brief Predefined manual page parser option group
   */
-#define CONFIG_MAN_ARG_PREFIX                       "man"
+#define CONFIG_MAN_PARSER_OPTION_GROUP              "man"
 
 /** \name Parameters
   * \brief Predefined manual page parameters
@@ -69,7 +71,9 @@
   */
 //@{
 #define CONFIG_MAN_ERROR_NONE                       0
+//!< Success
 #define CONFIG_MAN_ERROR_WRITE                      1
+//!< Failed to write manual page to file
 //@}
 
 /** \brief Predefined manual page error descriptions
@@ -78,34 +82,38 @@ extern const char* config_man_errors[];
 
 /** \brief Predefined manual page default options
   */
-extern config_t config_man_default_options;
+extern const config_t config_man_default_options;
 
 /** \brief Manual page header structure
   */
 typedef struct config_man_page_header_t {
-  char name[128];            //!< The name of the manual page.
+  char *name;                //!< The name of the manual page.
   size_t section;            //!< The section of the manual page.
   
-  char title[128];           //!< The title of the manual page.
-} config_man_page_header_t, *config_man_page_header_p;
+  char* title;               //!< The title of the manual page.
+} config_man_page_header_t;
 
 /** \brief Manual page section structure
   */
 typedef struct config_man_page_section_t {
-  char title[128];           //!< The title of the manual page section.
+  char* title;               //!< The title of the manual page section.
 
   char** paragraphs;         //!< The section paragraphs.
   size_t num_paragraphs;     //!< The number of section paragraphs.
-} config_man_page_section_t, *config_man_page_section_p;
+} config_man_page_section_t;
 
 /** \brief Manual page structure
   */
 typedef struct config_man_page_t {
-  config_man_page_header_t header;     //!< The manual page header. 
+  config_man_page_header_t
+    header;                  //!< The manual page header. 
   
-  config_man_page_section_p sections;  //!< The manual page sections.
-  size_t num_sections;                 //!< The number of manual page sections.
-} config_man_page_t, *config_man_page_p;
+  config_man_page_section_t*
+    sections;                //!< The manual page sections.
+  size_t num_sections;       //!< The number of manual page sections.
+
+  error_t error;             //!< The most recent manual page error.  
+} config_man_page_t;
 
 /** \brief Initialize manual page
   * \param[in] page The manual page to be initialized.
@@ -114,7 +122,7 @@ typedef struct config_man_page_t {
   * \param[in] title The title of the manual page to be initialized.
   */
 void config_man_init(
-  config_man_page_p page,
+  config_man_page_t* page,
   const char* name,
   size_t section,
   const char* title);
@@ -125,78 +133,94 @@ void config_man_init(
   * \param[in] config The manual page configuration parameters.
   */
 void config_man_init_config(
-  config_man_page_p page,
+  config_man_page_t* page,
   const char* name,
-  config_p config);
+  const config_t* config);
 
 /** \brief Destroy manual page
   * \param[in] page The manual page to be destroyed.
   */
 void config_man_destroy(
-  config_man_page_p page);
+  config_man_page_t* page);
 
 /** \brief Add manual page section
-  * \note The section will be appended to the manual page.
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the section to.
   * \param[in] title The title of the manual page section to be added.
   *   Following the standards for Linux manual pages, this title will
   *   be capitalized.
   * \return The added manual page section.
+  * 
+  * The added section will be appended to the manual page. The manual
+  * page sections will be re-allocated to accommodate the added section.
   */
-config_man_page_section_p config_man_add_section(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_section(
+  config_man_page_t* page,
   const char* title);
 
 /** \brief Add manual page summary
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the summary to.
   * \param[in] summary The summary text to be added to the manual page.
   * \return The added manual page section containing the summary.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_summary(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_summary(
+  config_man_page_t* page,
   const char* summary);
 
 /** \brief Add manual page command summary
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the command summary to.
   * \param[in] command The command to appear in the manual page summary.
   * \param[in] summary A short summary of the command to appear in the
   *   manual page summary.
   * \return The added manual page section containing the command summary.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_command_summary(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_command_summary(
+  config_man_page_t* page,
   const char* command,
   const char* summary);
 
 /** \brief Add manual page synopsis
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the synopsis to.
   * \param[in] synopsis The synopsis text to be added to the manual page.
   * \return The added manual page section containing the synopsis.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_synopsis(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_synopsis(
+  config_man_page_t* page,
   const char* synopsis);
 
 /** \brief Add manual page description
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the description to.
   * \param[in] description The description text to be added to the manual page.
   * \return The added manual page section containing the description.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_description(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_description(
+  config_man_page_t* page,
   const char* description);
 
 /** \brief Add manual page section describing configuration parameters
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the section describing
   *   configuration parameters to.
   * \param[in] title The title of the manual page section.
@@ -207,17 +231,20 @@ config_man_page_section_p config_man_add_description(
   *   value. See config_man_add_param() for details.
   * \return The added manual page section describing the configuration
   *   parameters.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_config(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_config(
+  config_man_page_t* page,
   const char* title,
   const char* preface,
-  config_p config,
+  const config_t* config,
   const char* format);
 
 /** \brief Add manual page paragraph describing a configuration parameter
-  * \note This is a convenience function which adds a dedicated paragraph
-  *   to the manual page section by calling config_man_printf().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] section The manual page section to add the paragraph
   *   describing the configuration parameter to.
   * \param[in] param The configuration parameter described by the manual
@@ -227,15 +254,18 @@ config_man_page_section_p config_man_add_config(
   *   string values, the first being the key and the second being the value.
   * \return The added manual page paragraph describing the configuration
   *   parameter.
+  * 
+  * This is a convenience function which adds a dedicated paragraph to the
+  * manual page section by calling config_man_printf().
   */
 const char* config_man_add_param(
-  config_man_page_section_p section,
-  config_param_p param,
+  config_man_page_section_t* section,
+  const config_param_t* param,
   const char* format);
 
 /** \brief Add manual page section describing positional arguments
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_config().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the section describing positional
   *   arguments to.
   * \param[in] title The title of the manual page section.
@@ -244,16 +274,19 @@ const char* config_man_add_param(
   *   page section.
   * \return The added manual page section describing the positional
   *   arguments.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_config().
   */
-config_man_page_section_p config_man_add_arguments(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_arguments(
+  config_man_page_t* page,
   const char* title,
   const char* preface,
-  config_p arguments);
+  const config_t* arguments);
 
 /** \brief Add manual page section describing non-positional arguments
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_config().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the section describing
   *   non-positional arguments to.
   * \param[in] title The title of the manual page section.
@@ -264,54 +297,66 @@ config_man_page_section_p config_man_add_arguments(
   *   arguments.
   * \return The added manual page section describing the non-positional
   *   arguments.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_config().
   */
-config_man_page_section_p config_man_add_options(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_options(
+  config_man_page_t* page,
   const char* title,
   const char* preface,
-  config_p options,
+  const config_t* options,
   const char* prefix);
 
 /** \brief Add manual page section crediting the authors
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the authors section to.
   * \param[in] authors The authors to appear in the manual page section.
   * \return The added manual page section crediting the authors.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_authors(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_authors(
+  config_man_page_t* page,
   const char* authors);
 
 /** \brief Add manual page section about bug reporting
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the bug reporting section to.
   * \param[in] contact The contact of the maintainer responsible for
   *   taking bug reports.
   * \return The added manual page section about bug reporting.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_bugs(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_bugs(
+  config_man_page_t* page,
   const char* contact);
 
 /** \brief Add manual page section about copyright
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the copyright section to.
   * \param[in] project The name of the project to appear in the copyright
   *   section.
   * \param[in] license The license to appear in the copyright section.
   * \return The added manual page section about copyright.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_copyright(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_copyright(
+  config_man_page_t* page,
   const char* project,
   const char* license);
 
 /** \brief Add manual page colophon
-  * \note This is a convenience function which adds a dedicated section
-  *   to the manual page by calling config_man_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the colophon to.
   * \param[in] project The name of the project to appear in the manual
   *   page colophon.
@@ -320,36 +365,42 @@ config_man_page_section_p config_man_add_copyright(
   * \param[in] home The optional homepage to appear in the manual
   *   page colophon.
   * \return The added manual page section about copyright.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * manual page by calling config_man_add_section().
   */
-config_man_page_section_p config_man_add_colophon(
-  config_man_page_p page,
+config_man_page_section_t* config_man_add_colophon(
+  config_man_page_t* page,
   const char* project,
   const char* version,
   const char* home);
 
 /** \brief Add manual page sections about the project
-  * \note This is a convenience function which adds dedicated sections
-  *   to the manual page by calling config_man_add_authors(),
-  *   config_man_add_bugs(), config_man_add_copyright(), and
-  *   config_man_add_colophon().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] page The manual page to add the project sections to.
   * \param[in] project The project to appear in the manual page sections.
+  * 
+  * This is a convenience function which adds dedicated sections to the
+  * manual page by calling config_man_add_authors(), config_man_add_bugs(),
+  * config_man_add_copyright(), and config_man_add_colophon().
   */
 void config_man_add_project_sections(
-  config_man_page_p page,
-  config_project_p project);
+  config_man_page_t* page,
+  const config_project_t* project);
 
 /** \brief Print formatted text to manual page
-  * \note A paragraph will be appended to the specified manual page section.
   * \param[in] section The manual page section to add the paragraph to.
   * \param[in] format A string defining the expected format and conversion
   *   specififiers of the text to be written. This string must be followed by
-  *   a variadic list of variables, where each variable is of appropriate
+  *   a variadic list of arguments, where each argument is of appropriate
   *   type.
   * \return The added manual page paragraph.
+  * 
+  * A paragraph will be appended to the specified manual page section.
   */
 const char* config_man_printf(
-  config_man_page_section_p section,
+  config_man_page_section_t* section,
   const char* format,
   ...);
 
@@ -362,42 +413,6 @@ const char* config_man_printf(
   */
 int config_man_write(
   const char* filename,
-  config_man_page_p page);
-
-/** \brief Write manual page to file
-  * \note This is a helper function commonly called through
-  *   config_man_write().
-  * \param[in] file The open file that will be used for writing the
-  *   manual page.
-  * \param[in] page The manual page to be written.
-  * \return The resulting error code.
-  */
-int config_man_write_page(
-  file_p file,
-  config_man_page_p page);
-
-/** \brief Write manual page header to file
-  * \note This is a helper function commonly called through
-  *   config_man_write_page().
-  * \param[in] file The open file that will be used for writing the
-  *   manual page header.
-  * \param[in] header The manual page header to be written.
-  * \return The resulting error code.
-  */
-int config_man_write_header(
-  file_p file,
-  config_man_page_header_p header);
-
-/** \brief Write manual page section to file
-  * \note This is a helper function commonly called through
-  *   config_man_write_page().
-  * \param[in] file The open file that will be used for writing the
-  *   manual page section.
-  * \param[in] section The manual page section to be written.
-  * \return The resulting error code.
-  */
-int config_man_write_section(
-  file_p file,
-  config_man_page_section_p section);
+  config_man_page_t* page);
 
 #endif

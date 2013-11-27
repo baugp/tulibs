@@ -1,3 +1,14 @@
+tulibs (0.4-72) lucid; urgency=low
+
+  * Added string and error library
+  * Revised error handling
+  * Extended spline interpolation interface
+  * Added spline_int utility
+  * Documentation cleanups
+  * Increased minor version
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Wed, 27 Nov 2013 17:08:00 +0100
+ 
 tulibs (0.4-71) lucid; urgency=low
 
   * Minor documentation tweaks

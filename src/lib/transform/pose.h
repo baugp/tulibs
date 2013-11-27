@@ -34,8 +34,9 @@
   */
 
 /** \brief Structure defining a pose
-  * \note A pose is defined by its x, y, and z-component and the yaw,
-  *   pitch, and roll angles.
+  * 
+  * A pose is defined by its x, y, and z-component and the yaw, pitch,
+  * and roll angles.
   */
 typedef struct transform_pose_t {
   double x;                    //!< The x-component of the pose.
@@ -45,9 +46,9 @@ typedef struct transform_pose_t {
   double yaw;                  //!< The yaw angle of the pose.
   double pitch;                //!< The pitch angle of the pose.
   double roll;                 //!< The roll angle of the pose.
-} transform_pose_t, *transform_pose_p;
+} transform_pose_t;
 
-/** \brief Initialize a pose
+/** \brief Initialize pose
   * \param[in] pose The pose to be initialized.
   * \param[in] x The initial x-component of the pose.
   * \param[in] y The initial y-component of the pose.
@@ -57,7 +58,7 @@ typedef struct transform_pose_t {
   * \param[in] roll The initial roll angle of the pose.
   */
 void transform_pose_init(
-  transform_pose_p pose,
+  transform_pose_t* pose,
   double x,
   double y,
   double z,
@@ -65,21 +66,21 @@ void transform_pose_init(
   double pitch,
   double roll);
 
-/** \brief Copy a pose
+/** \brief Copy pose
   * \param[in] dst The destination pose to copy to.
   * \param[in] src The source pose to copy from.
   */
 void transform_pose_copy(
-  transform_pose_p dst,
-  transform_pose_p src);
+  transform_pose_t* dst,
+  const transform_pose_t* src);
 
-/** \brief Print a pose
+/** \brief Print pose
   * \param[in] stream The output stream that will be used for printing the
   *   pose.
   * \param[in] pose The pose that will be printed.
   */
 void transform_pose_print(
   FILE* stream,
-  transform_pose_p pose);
+  const transform_pose_t* pose);
 
 #endif

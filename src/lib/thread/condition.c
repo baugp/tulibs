@@ -32,29 +32,29 @@ const char* thread_condition_errors[] = {
   "Wait operation timed out",
 };
 
-void thread_condition_init(thread_condition_p condition) {
+void thread_condition_init(thread_condition_t* condition) {
   pthread_cond_init(&condition->handle, 0);
   thread_mutex_init(&condition->mutex);
 }
 
-void thread_condition_destroy(thread_condition_p condition) {
+void thread_condition_destroy(thread_condition_t* condition) {
   pthread_cond_destroy(&condition->handle);
   thread_mutex_destroy(&condition->mutex);
 }
 
-void thread_condition_signal(thread_condition_p condition) {
+void thread_condition_signal(thread_condition_t* condition) {
   pthread_cond_signal(&condition->handle);
 }
 
-void thread_condition_lock(thread_condition_p condition) {
+void thread_condition_lock(thread_condition_t* condition) {
   thread_mutex_lock(&condition->mutex);
 }
 
-void thread_condition_unlock(thread_condition_p condition) {
+void thread_condition_unlock(thread_condition_t* condition) {
   thread_mutex_unlock(&condition->mutex);
 }
 
-int thread_condition_wait(thread_condition_p condition, double timeout) {
+int thread_condition_wait(thread_condition_t* condition, double timeout) {
   int result = THREAD_CONDITION_ERROR_NONE;
 
   if (timeout < 0.0) {

@@ -73,7 +73,7 @@ void transform_init_rotation(transform_t transform, double yaw, double pitch,
   transform[2][2] = cos(pitch)*cos(roll);
 }
 
-void transform_init_pose(transform_t transform, transform_pose_p pose) {
+void transform_init_pose(transform_t transform, const transform_pose_t* pose) {
   transform_init_rotation(transform, pose->yaw, pose->pitch, pose->roll);
   transform_translate(transform, pose->x, pose->y, pose->z);
 }
@@ -90,7 +90,7 @@ void transform_print(FILE* stream, transform_t transform) {
   int i;
 
   for (i = 0; i < 4; ++i) {
-    fprintf(stream, "%10lg  %10lg  %10lg  %10lg\n",
+    fprintf(stream, "%10lg  %10lg  %10lg  %10lg",
       transform[i][0],
       transform[i][1],
       transform[i][2],
@@ -160,7 +160,7 @@ void transform_rotate(transform_t transform, double yaw, double pitch,
   transform_multiply_left(transform, rotation);
 }
 
-void transform_point(transform_t transform, transform_point_p point) {
+void transform_point(transform_t transform, transform_point_t* point) {
   int i, j;
 
   double point_a[3] = {point->x, point->y, point->z};
@@ -178,7 +178,7 @@ void transform_point(transform_t transform, transform_point_p point) {
   point->z = result[2];
 }
 
-void transform_points(transform_t transform, transform_point_p points,
+void transform_points(transform_t transform, transform_point_t* points,
     size_t num_points) {
   int i;
 

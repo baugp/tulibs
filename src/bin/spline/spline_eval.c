@@ -19,66 +19,113 @@
  ***************************************************************************/
 
 #include <stdio.h>
+#include <math.h>
 
 #include "config/parser.h"
 #include "spline/spline.h"
+#include "string/string.h"
+#include "file/file.h"
 
-int main(int argc, char **argv) {
-  config_parser_t parser;
+#define SPLINE_EVAL_PARAM_FILE              "FILE"
+#define SPLINE_EVAL_PARAM_STEP_SIZE         "STEP_SIZE"
 
-  config_parser_init_default(&parser,
-    "Evaluate a cubic spline for equidistant arguments",
-    "The command evaluates a cubic input spline for equidistant "
-    "arguments and prints the corresponding function values to stdout. "
-    "Depending on the options provided, these values may be generated "
-    "from the base function or its derivatives.");
-  config_param_p file_param = config_set_param_value_range(
-    &parser.arguments,
-    "FILE",
+#define SPLINE_EVAL_PARSER_OPTION_GROUP     "spline-eval"
+#define SPLINE_EVAL_PARAM_TYPE              "type"
+#define SPLINE_EVAL_PARAM_OUTPUT            "output"
+
+config_param_t spline_eval_default_arguments_params[] = {
+  {SPLINE_EVAL_PARAM_FILE,
     config_param_type_string,
     "",
     "",
-    "The name of the input file containing the spline");
-  config_param_p step_size_param = config_set_param_value_range(
-    &parser.arguments,
-    "STEP_SIZE",
+    "Read spline from the specified input file or '-' for stdin"},
+  {SPLINE_EVAL_PARAM_STEP_SIZE,
     config_param_type_float,
     "",
     "(0.0, inf)",
     "The step size used to generate equidistant arguments "
-    "of the spline function");
-  config_parser_option_group_p spline_option_group =
-    config_parser_add_option_group(&parser, "spline", 0, "Spline options",
-    "These options control the spline operations performed by the command.");
-  config_param_p eval_type_param = config_set_param_value_range(
-    &spline_option_group->options,
-    "eval-type",
+    "of the spline function"},
+};
+
+const config_t spline_eval_default_arguments = {
+  spline_eval_default_arguments_params,
+  sizeof(spline_eval_default_arguments_params)/sizeof(config_param_t),
+};
+
+config_param_t spline_eval_default_options_params[] = {
+  {SPLINE_EVAL_PARAM_TYPE,
     config_param_type_enum,
     "base",
     "base|first|second",
     "The type of spline evaluation requested, where 'base' refers to "
     "the base function, and 'first' or 'second' indicates the first or "
-    "second derivative, respectively");
+    "second derivative, respectively"},
+  {SPLINE_EVAL_PARAM_OUTPUT,
+    config_param_type_string,
+    "-",
+    "",
+    "Write values to the specified output file or '-' for stdout"},
+};
+
+const config_t spline_eval_default_options = {
+  spline_eval_default_options_params,
+  sizeof(spline_eval_default_options_params)/sizeof(config_param_t),
+};
+
+int main(int argc, char **argv) {
+  config_parser_t parser;
+  spline_t spline;
+  file_t output_file;
+
+  config_parser_init(&parser, &spline_eval_default_arguments, 0,
+    "Evaluate a cubic spline for equidistant arguments",
+    "The command evaluates a cubic input spline for equidistant "
+    "arguments and prints the corresponding function values to a file "
+    "or stdout. Depending on the options provided, these values may be "
+    "generated from the base function or its derivatives.");
+  config_parser_add_option_group(&parser, SPLINE_EVAL_PARSER_OPTION_GROUP,
+    &spline_eval_default_options, "Spline evaluation options",
+    "These options control the spline evaluation performed by the command.");
   config_parser_parse(&parser, argc, argv, config_parser_exit_error);
   
-  const char* file = config_param_get_string(file_param);
-  double step_size = config_param_get_float(step_size_param);
-  spline_eval_type_t eval_type = config_param_get_enum(eval_type_param);
+  const char* file = config_get_string(&parser.arguments,
+    SPLINE_EVAL_PARAM_FILE);
+  double step_size = config_get_float(&parser.arguments,
+    SPLINE_EVAL_PARAM_STEP_SIZE);
   
-  spline_t spline;
-  int result;
+  config_parser_option_group_t* spline_eval_option_group =
+    config_parser_get_option_group(&parser, SPLINE_EVAL_PARSER_OPTION_GROUP);
+  spline_eval_type_t eval_type = config_get_enum(
+    &spline_eval_option_group->options, SPLINE_EVAL_PARAM_TYPE);
+  const char* output = config_get_string(
+    &spline_eval_option_group->options, SPLINE_EVAL_PARAM_OUTPUT);
   
-  if ((result = spline_read(file, &spline)) < 0)
-    fprintf(stderr, "%s\n", spline_errors[-result]);
-  double x = 0.0, f_x;
+  spline_init(&spline);
   
-  int i = 0;
-  while ((i = spline_eval_linear_search(
-      &spline, eval_type, x, i, &f_x)) >= 0) {
-    fprintf(stdout, "%lf %lf\n", x, f_x);
-    x += step_size;
+  spline_read(file, &spline);
+  error_exit(&spline.error);
+
+  file_init_name(&output_file, output);
+  if (string_equal(output, "-"))
+    file_open_stream(&output_file, stdout, file_mode_write);
+  else
+    file_open(&output_file, file_mode_write);
+  error_exit(&output_file.error);
+  
+  double x = spline.num_knots ? spline.knots[0].x : 0.0;
+  double f_x;
+  size_t i = 0, j = 0;
+  
+  while (!isnan(f_x = spline_eval_linear(&spline, eval_type, x, &i))) {
+    file_printf(&output_file, "%10lg %10lg\n", x, f_x);
+    error_exit(&output_file.error);
+    
+    ++j;
+    x = step_size*j;
   }
 
   spline_destroy(&spline);
+  file_destroy(&output_file);
+    
   return 0;
 }

@@ -39,24 +39,40 @@
 
 #include <unistd.h>
 
+#include "error/error.h"
+
 /** \name Error Codes
   * \brief Predefined serial error codes
   */
 //@{
 #define SERIAL_ERROR_NONE                 0
+//!< Success
 #define SERIAL_ERROR_OPEN                 1
+//!< Error opening serial device
 #define SERIAL_ERROR_CLOSE                2
+//!< Error closing serial device
 #define SERIAL_ERROR_DRAIN                3
+//!< Error draining serial device
 #define SERIAL_ERROR_FLUSH                4
+//!< Error flushing serial device
 #define SERIAL_ERROR_INVALID_BAUD_RATE    5
+//!< Invalid baud rate
 #define SERIAL_ERROR_INVALID_DATA_BITS    6
+//!< Invalid number of data bits
 #define SERIAL_ERROR_INVALID_STOP_BITS    7
+//!< Invalid number of stop bits
 #define SERIAL_ERROR_INVALID_PARITY       8
+//!< Invalid parity
 #define SERIAL_ERROR_INVALID_FLOW_CTRL    9
+//!< Invalid flow control
 #define SERIAL_ERROR_SETUP                10
+//!< Error setting serial device parameters
 #define SERIAL_ERROR_TIMEOUT              11
+//!< Serial device select timeout
 #define SERIAL_ERROR_READ                 12
+//!< Error reading from serial device
 #define SERIAL_ERROR_WRITE                13
+//!< Error writing to serial device
 //@}
 
 /** \brief Predefined serial error descriptions
@@ -83,7 +99,7 @@ typedef enum {
   */
 typedef struct serial_device_t {
   int fd;                         //!< File descriptor.
-  char name[256];                 //!< Device name.
+  char* name;                     //!< Device name.
 
   int baud_rate;                  //!< Device baud rate in [baud].
   int data_bits;                  //!< Number of data bits.
@@ -95,25 +111,41 @@ typedef struct serial_device_t {
 
   size_t num_read;                //!< Number of bytes read from device.
   size_t num_written;             //!< Number of bytes written to device.
-} serial_device_t, *serial_device_p;
+  
+  error_t error;                  //!< The most recent device error.
+} serial_device_t;
 
-/** \brief Open the serial device with the specified name
-  * \param[in] dev The serial device to be opened.
-  * \param[in] name The name of the device to be opened.
-  * \return The resulting error code.
+/** \brief Initialize serial device
+  * \param[in] dev The serial device to be initialized.
+  * \param[in] name The name of the device to be initialized.
   */
-int serial_open(
-  serial_device_p dev,
+void serial_device_init(
+  serial_device_t* dev,
   const char* name);
 
-/** \brief Close an open serial device
+/** \brief Destroy serial device
+  * \param[in] dev The serial device to be destroyed.
+  * 
+  * An open device will be closed before destruction.
+  */
+void serial_device_destroy(
+  serial_device_t* dev);
+
+/** \brief Open serial device
+  * \param[in] dev The serial device to be opened.
+  * \return The resulting error code.
+  */
+int serial_device_open(
+  serial_device_t* dev);
+
+/** \brief Close serial device
   * \param[in] dev The open serial device to be closed.
   * \return The resulting error code.
   */
-int serial_close(
-  serial_device_p dev);
+int serial_device_close(
+  serial_device_t* dev);
 
-/** \brief Setup an already opened serial device
+/** \brief Setup serial device
   * \param[in] dev The open serial device to be set up.
   * \param[in] baud_rate The device baud rate to be set in [baud].
   * \param[in] data_bits The device's number of data bits to be set.
@@ -123,8 +155,8 @@ int serial_close(
   * \param[in] timeout The device select timeout to be set in [s].
   * \return The resulting error code.
   */
-int serial_setup(
-  serial_device_p dev,
+int serial_device_setup(
+  serial_device_t* dev,
   int baud_rate,
   int data_bits,
   int stop_bits,
@@ -139,8 +171,8 @@ int serial_setup(
   * \return The number of bytes read from the serial device or the
   *   negative error code.
   */
-int serial_read(
-  serial_device_p dev,
+int serial_device_read(
+  serial_device_t* dev,
   unsigned char* data,
   size_t num);
 
@@ -151,9 +183,18 @@ int serial_read(
   * \return The number of bytes written to the serial device or the
   *   negative error code.
   */
-int serial_write(
-  serial_device_p dev,
+int serial_device_write(
+  serial_device_t* dev,
   unsigned char* data,
   size_t num);
+
+/** \brief Print serial device
+  * \param[in] stream The output stream that will be used for printing the
+  *   serial device.
+  * \param[in] dev The serial device that will be printed.
+  */
+void serial_device_print(
+  FILE* stream,
+  const serial_device_t* dev);
 
 #endif

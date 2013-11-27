@@ -4,7 +4,7 @@ include(ReMake)
 
 remake_project(
   Tulibs
-  VERSION 0.4
+  VERSION 0.5
   RELEASE alpha
   SUMMARY "A collection of C-based Tool and Utility LIBrarieS."
   AUTHOR "Ralf Kaestner"

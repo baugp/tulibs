@@ -31,11 +31,16 @@ int main(int argc, char **argv) {
     "The command displays lsusb-like information about USB buses in "
     "the system and the devices connected to them.");
   config_parser_parse(&parser, argc, argv, config_parser_exit_error);
+  config_parser_destroy(&parser);
   
   usb_context_init(usb_default_context);
+  error_exit(&usb_default_context->error);
+    
   if (usb_default_context->num_devices) {
-    for (i = 0; i < usb_default_context->num_devices; ++i)
-      usb_print(stdout, &usb_default_context->devices[i]);
+    for (i = 0; i < usb_default_context->num_devices; ++i) {
+      usb_device_print(stdout, &usb_default_context->devices[i]);
+      fprintf(stdout, "\n");
+    }
   }
   else
     fprintf(stdout, "No devices found.\n");

@@ -41,8 +41,11 @@
   */
 //@{
 #define CONFIG_PARAM_ERROR_NONE                0
+//!< Success
 #define CONFIG_PARAM_ERROR_TYPE                1
+//!< Parameter value type mismatch
 #define CONFIG_PARAM_ERROR_RANGE               2
+//!< Parameter value out of range
 //@}
 
 /** \brief Predefined configuration parameter error descriptions
@@ -73,13 +76,13 @@ typedef enum {
 /** \brief Parameter structure
   */
 typedef struct config_param_t {
-  char key[128];                //!< The parameter's key.
+  char* key;                    //!< The parameter's key.
   config_param_type_t type;     //!< The parameter's value type.
-  char value[128];              //!< The parameter's value.
+  char* value    ;              //!< The parameter's value.
   
-  char range[512];              //!< The parameter's range.
-  char description[512];        //!< The parameter's description.
-} config_param_t, *config_param_p;
+  char* range;                  //!< The parameter's range.
+  char* description;            //!< The parameter's description.
+} config_param_t;
 
 /** \brief Initialize a parameter without value
   * \param[in] param The parameter to be initialized.
@@ -88,14 +91,12 @@ typedef struct config_param_t {
   * \param[in] description An optional description of the parameter.
   */
 void config_param_init(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   config_param_type_t type,
   const char* description);
 
 /** \brief Initialize a parameter by value and range
-  * \note This function generically constructs a parameter from string
-  *   representations for its value and range.
   * \param[in] param The parameter to be initialized.
   * \param[in] key The key of the parameter to be initialized.
   * \param[in] type The type of the parameter value to be initialized.
@@ -110,9 +111,12 @@ void config_param_init(
   *   (min_value, max_value), or combinations thereof.
   * \param[in] description An optional description of the parameter.
   * \return The resulting error code.
+  * 
+  * This function generically constructs a parameter from string
+  * representations for its value and range.
   */
 int config_param_init_value_range(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   config_param_type_t type,
   const char* value,
@@ -127,7 +131,7 @@ int config_param_init_value_range(
   * \return The resulting error code.
   */
 int config_param_init_string(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   const char* value,
   const char* description);
@@ -146,7 +150,7 @@ int config_param_init_string(
   * \return The resulting error code.
   */
 int config_param_init_string_range(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   const char* value,
   const char* range,
@@ -159,7 +163,7 @@ int config_param_init_string_range(
   * \param[in] description An optional description of the parameter.
   */
 void config_param_init_int(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   int value,
   const char* description);
@@ -176,7 +180,7 @@ void config_param_init_int(
   * \return The resulting error code.
   */
 int config_param_init_int_range(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   int value,
   int min_value,
@@ -190,7 +194,7 @@ int config_param_init_int_range(
   * \param[in] description An optional description of the parameter.
   */
 void config_param_init_float(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   double value,
   const char* description);
@@ -207,7 +211,7 @@ void config_param_init_float(
   * \return The resulting error code.
   */
 int config_param_init_float_range(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   double value,
   double min_value,
@@ -219,19 +223,17 @@ int config_param_init_float_range(
   * \param[in] key The key of the parameter to be initialized.
   * \param[in] value The enumerable value of the parameter to be
   *   initialized.
-  * \param[in] values An array of permissible string values for the
-  *   enumerable parameter. Note that the enumerable value will
-  *   be interpreted as an index into this array.
-  * \param[in] num_values The number of permissible enumerable value.
+  * \param[in] values A null pointer-terminated list of permissible string
+  *   values for the enumerable parameter. Note that the enumerable value
+  *   will be interpreted as an index into this list.
   * \param[in] description An optional description of the parameter.
   * \return The resulting error code.
   */
 int config_param_init_enum_range(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   int value,
   const char** values,
-  size_t num_values,
   const char* description);
 
 /** \brief Initialize a boolean parameter by value
@@ -241,7 +243,7 @@ int config_param_init_enum_range(
   * \param[in] description An optional description of the parameter.
   */
 void config_param_init_bool(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   config_param_bool_t value,
   const char* description);
@@ -257,7 +259,7 @@ void config_param_init_bool(
   * \param[in] description An optional description of the parameter.
   */
 void config_param_init_bool_range(
-  config_param_p param,
+  config_param_t* param,
   const char* key,
   config_param_bool_t value,
   const char* false_value,
@@ -270,16 +272,22 @@ void config_param_init_bool_range(
   *   initialize the configuration parameter.
   */
 void config_param_init_copy(
-  config_param_p param,
-  config_param_p src_param);
+  config_param_t* param,
+  const config_param_t* src_param);
+
+/** \brief Destroy a configuration parameter
+  * \param[in] param The parameter to be destroyed.
+  */
+void config_param_destroy(
+  config_param_t* param);
 
 /** \brief Copy a parameter
-  * \param[in] dst_param The destination parameter.
-  * \param[in] src_param The source parameter.
+  * \param[in] dst The destination parameter.
+  * \param[in] src The source parameter.
   */
 void config_param_copy(
-  config_param_p dst_param,
-  config_param_p src_param);
+  config_param_t* dst,
+  const config_param_t* src);
 
 /** \brief Print a parameter
   * \param[in] stream The output stream that will be used for printing the
@@ -288,29 +296,31 @@ void config_param_copy(
   */
 void config_param_print(
   FILE* stream,
-  config_param_p param);
+  const config_param_t* param);
 
 /** \brief Set a parameter's value
-  * \note This function generically attempts to convert a string
-  *   representation of the parameter's value into an equivalent
-  *   representation of the parameter's predefined type and verifies
-  *   its validity with respect to the parameter's range.
   * \param[in] param The parameter to set the value for.
   * \param[in] value The string representation of the value to be set.
   * \return The resulting error code.
+  * 
+  * This function generically attempts to convert a string representation
+  * of the parameter's value into an equivalent representation of the
+  * parameter's predefined type and verifies its validity with respect to
+  * the parameter's range.
   */
 int config_param_set_value(
-  config_param_p param,
+  config_param_t* param,
   const char* value);
 
 /** \brief Get a parameter's value
-  * \note This function generically returns a string representation of
-  *   the parameter's value.
   * \param[in] param The parameter to get the value for.
   * \return The string representation of the parameter's value.
+  * 
+  * This function generically returns a string representation of the
+  * parameter's value.
   */
 const char* config_param_get_value(
-  config_param_p param);
+  const config_param_t* param);
 
 /** \brief Set a parameter's string value
   * \param[in] param The parameter to set the string value for.
@@ -318,7 +328,7 @@ const char* config_param_get_value(
   * \return The resulting error code.
   */
 int config_param_set_string(
-  config_param_p param,
+  config_param_t* param,
   const char* value);
 
 /** \brief Retrieve a parameter's string value
@@ -327,7 +337,7 @@ int config_param_set_string(
   *   type mismatches.
   */
 const char* config_param_get_string(
-  config_param_p param);
+  const config_param_t* param);
 
 /** \brief Set a parameter's integer value
   * \param[in] param The parameter to set the integer value for.
@@ -335,7 +345,7 @@ const char* config_param_get_string(
   * \return The resulting error code.
   */
 int config_param_set_int(
-  config_param_p param,
+  config_param_t* param,
   int value);
 
 /** \brief Retrieve a parameter's integer value
@@ -345,7 +355,7 @@ int config_param_set_int(
   *   integer value.
   */
 int config_param_get_int(
-  config_param_p param);
+  const config_param_t* param);
 
 /** \brief Set a parameter's floating point value
   * \param[in] param The parameter to set the floating point value for.
@@ -353,7 +363,7 @@ int config_param_get_int(
   * \return The resulting error code.
   */
 int config_param_set_float(
-  config_param_p param,
+  config_param_t* param,
   double value);
 
 /** \brief Retrieve a parameter's floating point value
@@ -363,7 +373,7 @@ int config_param_set_float(
   *   point value.
   */
 double config_param_get_float(
-  config_param_p param);
+  const config_param_t* param);
 
 /** \brief Set a parameter's enumerable value
   * \param[in] param The parameter to set the enumerable value for.
@@ -371,7 +381,7 @@ double config_param_get_float(
   * \return The resulting error code.
   */
 int config_param_set_enum(
-  config_param_p param,
+  config_param_t* param,
   int value);
 
 /** \brief Retrieve a parameter's enumerable value
@@ -381,7 +391,7 @@ int config_param_set_enum(
   *   enumerable value.
   */
 int config_param_get_enum(
-  config_param_p param);
+  const config_param_t* param);
 
 /** \brief Set a parameter's boolean value
   * \param[in] param The parameter to set the boolean value for.
@@ -389,7 +399,7 @@ int config_param_get_enum(
   * \return The resulting error code.
   */
 int config_param_set_bool(
-  config_param_p param,
+  config_param_t* param,
   config_param_bool_t value);
 
 /** \brief Retrieve a parameter's boolean value
@@ -399,6 +409,6 @@ int config_param_set_bool(
   *   value.
   */
 config_param_bool_t config_param_get_bool(
-  config_param_p param);
+  const config_param_t* param);
 
 #endif

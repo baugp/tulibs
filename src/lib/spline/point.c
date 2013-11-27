@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Ralf Kaestner                                   *
- *   ralf.kaestner@gmail.com                                               *
+ *   Copyright (C) 2013 by Ralf Kaestner                                   *
+ *   stfritz@ethz.ch, ralf.kaestner@gmail.com                              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,32 +18,20 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "mutex.h"
+#include "point.h"
 
-const char* thread_mutex_errors[] = {
-  "Success",
-  "Failed to acquire mutex lock",
-};
-
-void thread_mutex_init(thread_mutex_t* mutex) {
-  pthread_mutex_init(&mutex->handle, 0);
+void spline_point_init(spline_point_t* point, double x, double y) {
+  point->x = x;
+  point->y = y;
 }
 
-void thread_mutex_destroy(thread_mutex_t* mutex) {
-  pthread_mutex_destroy(&mutex->handle);
+void spline_point_copy(spline_point_t* dst, const spline_point_t* src) {
+  dst->x = src->x;
+  dst->y = src->y;
 }
 
-void thread_mutex_lock(thread_mutex_t* mutex) {
-  pthread_mutex_lock(&mutex->handle);
-}
-
-void thread_mutex_unlock(thread_mutex_t* mutex) {
-  pthread_mutex_unlock(&mutex->handle);
-}
-
-int thread_mutex_try_lock(thread_mutex_t* mutex) {
-  if (!pthread_mutex_trylock(&mutex->handle))
-    return THREAD_MUTEX_ERROR_NONE;
-  else
-    return THREAD_MUTEX_ERROR_LOCK;
+void spline_point_print(FILE* stream, const spline_point_t* point) {
+  fprintf(stream, "%10lg %10lg",
+    point->x,
+    point->y);
 }

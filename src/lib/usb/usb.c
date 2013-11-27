@@ -20,7 +20,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <errno.h>
 
 #include <libudev.h>
@@ -28,7 +27,9 @@
 
 #include "usb.h"
 
-#define usb_error(e) (e < 0 ? (e > -13 ? -e : 13) : e)
+#include "string/string.h"
+
+#define libusb_error(e) (e < 0 ? (e > -13 ? -e : 13) : e)
 
 usb_context_t _usb_default_context = {
   0,
@@ -37,7 +38,7 @@ usb_context_t _usb_default_context = {
   0
 };
 
-usb_context_p usb_default_context = &_usb_default_context;
+usb_context_t* usb_default_context = &_usb_default_context;
 
 const char* usb_errors[] = {
   "Success",
@@ -52,8 +53,9 @@ const char* usb_errors[] = {
   "Pipe error",
   "System call interrupted",
   "Insufficient memory",
-  "Operation not supported"
-  "Other error"
+  "Operation not supported",
+  "Other error",
+  "Invalid FTDI context",
 };
 
 const char* usb_classes[] = {
@@ -78,13 +80,18 @@ const char* usb_classes[] = {
   "Unknown",
 };
 
-int usb_context_init(usb_context_p context) {
+void usb_device_init(usb_device_t* dev, libusb_device* libus_device);
+void usb_device_destroy(usb_device_t* dev);
+
+int usb_context_init(usb_context_t* context) {
   int error;
 
   context->libusb_context = 0;
   context->debug_level = usb_debug_level_minimal;
   context->num_devices = 0;
   context->devices = 0;
+  
+  error_init(&context->error, usb_errors);
   
   if (context != usb_default_context) {
     error = libusb_init((libusb_context**)&context->libusb_context);
@@ -95,52 +102,67 @@ int usb_context_init(usb_context_p context) {
     error = libusb_init(0);
   
   if (error)
-    return usb_error(error);
+    error_set(&context->error, libusb_error(error));
   else
-    return usb_context_refresh(context);
+    usb_context_refresh(context);
+
+  return error_get(&context->error);  
 }
 
-int usb_context_release(usb_context_p context) {
+int usb_context_release(usb_context_t* context) {
+  int i;
+  
+  error_clear(&context->error);
+  
   if (context != usb_default_context) {
     if (context->libusb_context) {
       libusb_exit(context->libusb_context);
       
       context->libusb_context = 0;
       
-      if (context->num_devices)
+      if (context->num_devices) {
+        for (i = 0; i < context->num_devices; ++i)
+          usb_device_destroy(&context->devices[i]);
         free(context->devices);
+      }
       
       context->num_devices = 0;
       context->devices = 0;
     }
     else
-      return USB_ERROR_INVALID_PARAMETER;
+      error_set(&context->error, USB_ERROR_INVALID_CONTEXT);
   }
   else
     libusb_exit(0);
       
-  return USB_ERROR_NONE;
+  return error_get(&context->error);
 }
 
-int usb_context_setup(usb_context_p context, usb_debug_level_t debug_level) {
+int usb_context_setup(usb_context_t* context, usb_debug_level_t debug_level) {
+  error_clear(&context->error);
+  
   if (context->libusb_context || (context == usb_default_context)) {
     libusb_set_debug(context->libusb_context, debug_level);
     context->debug_level = debug_level;
   }
   else
-    return USB_ERROR_INVALID_PARAMETER;
+    error_set(&context->error, USB_ERROR_INVALID_CONTEXT);
   
-  return USB_ERROR_NONE;
+  return error_get(&context->error);
 }
 
-int usb_context_refresh(usb_context_p context) {
+int usb_context_refresh(usb_context_t* context) {
   libusb_device** libusb_devices = 0;
-  struct libusb_device_descriptor descriptor;
   int i;
-    
+
+  error_clear(&context->error);
+  
   if (context->libusb_context || (context == usb_default_context)) {
-    if (context->num_devices)
+    if (context->num_devices) {
+      for (i = 0; i < context->num_devices; ++i)
+        usb_device_destroy(&context->devices[i]);
       free(context->devices);
+    }
 
     context->num_devices = 0;
     context->devices = 0;
@@ -148,109 +170,27 @@ int usb_context_refresh(usb_context_p context) {
     ssize_t n = libusb_get_device_list(context->libusb_context,
       &libusb_devices);
     if (n < 0)
-      return usb_error(n);
+      error_set(&context->error, libusb_error(n));
     else
       context->num_devices = n;
     
     if (context->num_devices) {
       context->devices = malloc(context->num_devices*sizeof(usb_device_t));
-      
-      for (i = 0; i < context->num_devices; ++i) {
-        context->devices[i].libusb_device = libusb_devices[i];
-        context->devices[i].libusb_handle = 0;
-       
-        context->devices[i].bus = libusb_get_bus_number(libusb_devices[i]);
-        context->devices[i].address = libusb_get_device_address(
-          libusb_devices[i]);
-        
-        if (!libusb_get_device_descriptor(libusb_devices[i], &descriptor)) {
-          context->devices[i].vendor_id = descriptor.idVendor;
-          context->devices[i].product_id = descriptor.idProduct;
-          
-          switch (descriptor.bDeviceClass) {
-            case LIBUSB_CLASS_PER_INTERFACE:
-              context->devices[i].class = usb_class_per_interface;
-              break;
-            case LIBUSB_CLASS_AUDIO:
-              context->devices[i].class = usb_class_audio;
-              break;
-            case LIBUSB_CLASS_COMM:
-              context->devices[i].class = usb_class_comm;
-              break;
-            case LIBUSB_CLASS_HID:
-              context->devices[i].class = usb_class_hid;
-              break;
-            case LIBUSB_CLASS_PHYSICAL:
-              context->devices[i].class = usb_class_physical;
-              break;
-            case LIBUSB_CLASS_IMAGE:
-              context->devices[i].class = usb_class_image;
-              break;
-            case LIBUSB_CLASS_PRINTER:
-              context->devices[i].class = usb_class_printer;
-              break;
-            case LIBUSB_CLASS_MASS_STORAGE:
-              context->devices[i].class = usb_class_mass_storage;
-              break;
-            case LIBUSB_CLASS_HUB:
-              context->devices[i].class = usb_class_hub;
-              break;
-            case LIBUSB_CLASS_DATA:
-              context->devices[i].class = usb_class_data;
-              break;
-            case LIBUSB_CLASS_SMART_CARD:
-              context->devices[i].class = usb_class_smart_card;
-              break;
-            case LIBUSB_CLASS_CONTENT_SECURITY:
-              context->devices[i].class = usb_class_content_security;
-              break;
-            case LIBUSB_CLASS_VIDEO:
-              context->devices[i].class = usb_class_video;
-              break;
-            case LIBUSB_CLASS_PERSONAL_HEALTHCARE:
-              context->devices[i].class = usb_class_healthcare;
-              break;
-            case LIBUSB_CLASS_DIAGNOSTIC_DEVICE:
-              context->devices[i].class = usb_class_diagnostic;
-              break;
-            case LIBUSB_CLASS_WIRELESS:
-              context->devices[i].class = usb_class_wireless;
-              break;
-            case LIBUSB_CLASS_APPLICATION:
-              context->devices[i].class = usb_class_application;
-              break;
-            case LIBUSB_CLASS_VENDOR_SPEC:
-              context->devices[i].class = usb_class_vendor;
-              break;
-            default:
-              context->devices[i].class = usb_class_unknown;
-          }
-          
-          context->devices[i].timeout = 1e-2;
-        }
-        else {
-          context->devices[i].vendor_id = 0;
-          context->devices[i].product_id = 0;
-          context->devices[i].class = usb_class_unknown;
-          
-          context->devices[i].timeout = 0.0;
-        }
-        
-        context->devices[i].num_read = 0;
-        context->devices[i].num_written = 0;
-      }
+      for (i = 0; i < context->num_devices; ++i)
+        usb_device_init(&context->devices[i], libusb_devices[i]);
     }
 
     if (libusb_devices)
       libusb_free_device_list(libusb_devices, 1);
   }
   else
-    return USB_ERROR_INVALID_PARAMETER;
+    error_set(&context->error, USB_ERROR_INVALID_CONTEXT);
   
-  return USB_ERROR_NONE;
+  return error_get(&context->error);
 }
 
-usb_device_p usb_match_name(usb_context_p context, const char* name) {
+usb_device_t* usb_context_match_name(const usb_context_t* context,
+    const char* name) {
   struct stat stat_buffer;
   struct udev* udev = 0;
   struct udev_device* dev = 0;
@@ -279,8 +219,8 @@ usb_device_p usb_match_name(usb_context_p context, const char* name) {
   return 0;
 }
 
-usb_device_p usb_match_vendor_product(usb_context_p context, int vendor_id,
-    int product_id) {
+usb_device_t* usb_context_match_vendor_product(const usb_context_t* context,
+    int vendor_id, int product_id) {
   int i;
   
   for (i = 0; i < context->num_devices; ++i) {
@@ -292,43 +232,138 @@ usb_device_p usb_match_vendor_product(usb_context_p context, int vendor_id,
   return 0;
 }
 
-int usb_open(usb_device_p dev) {
-  int error;
+void usb_device_init(usb_device_t* dev, libusb_device* libus_device) {
+  struct libusb_device_descriptor descriptor;
   
-  error = libusb_open(dev->libusb_device, (libusb_device_handle**)
+  dev->libusb_device = libus_device;
+  dev->libusb_handle = 0;
+
+  dev->bus = libusb_get_bus_number(libus_device);
+  dev->address = libusb_get_device_address(libus_device);
+
+  if (!libusb_get_device_descriptor(libus_device, &descriptor)) {
+    dev->vendor_id = descriptor.idVendor;
+    dev->product_id = descriptor.idProduct;
+    
+    switch (descriptor.bDeviceClass) {
+      case LIBUSB_CLASS_PER_INTERFACE:
+        dev->class = usb_class_per_interface;
+        break;
+      case LIBUSB_CLASS_AUDIO:
+        dev->class = usb_class_audio;
+        break;
+      case LIBUSB_CLASS_COMM:
+        dev->class = usb_class_comm;
+        break;
+      case LIBUSB_CLASS_HID:
+        dev->class = usb_class_hid;
+        break;
+      case LIBUSB_CLASS_PHYSICAL:
+        dev->class = usb_class_physical;
+        break;
+      case LIBUSB_CLASS_IMAGE:
+        dev->class = usb_class_image;
+        break;
+      case LIBUSB_CLASS_PRINTER:
+        dev->class = usb_class_printer;
+        break;
+      case LIBUSB_CLASS_MASS_STORAGE:
+        dev->class = usb_class_mass_storage;
+        break;
+      case LIBUSB_CLASS_HUB:
+        dev->class = usb_class_hub;
+        break;
+      case LIBUSB_CLASS_DATA:
+        dev->class = usb_class_data;
+        break;
+      case LIBUSB_CLASS_SMART_CARD:
+        dev->class = usb_class_smart_card;
+        break;
+      case LIBUSB_CLASS_CONTENT_SECURITY:
+        dev->class = usb_class_content_security;
+        break;
+      case LIBUSB_CLASS_VIDEO:
+        dev->class = usb_class_video;
+        break;
+      case LIBUSB_CLASS_PERSONAL_HEALTHCARE:
+        dev->class = usb_class_healthcare;
+        break;
+      case LIBUSB_CLASS_DIAGNOSTIC_DEVICE:
+        dev->class = usb_class_diagnostic;
+        break;
+      case LIBUSB_CLASS_WIRELESS:
+        dev->class = usb_class_wireless;
+        break;
+      case LIBUSB_CLASS_APPLICATION:
+        dev->class = usb_class_application;
+        break;
+      case LIBUSB_CLASS_VENDOR_SPEC:
+        dev->class = usb_class_vendor;
+        break;
+      default:
+        dev->class = usb_class_unknown;
+    }
+  }
+  else {
+    dev->vendor_id = 0;
+    dev->product_id = 0;
+    dev->class = usb_class_unknown;
+  }
+  
+  dev->timeout = 0.0;
+
+  dev->num_read = 0;
+  dev->num_written = 0;
+      
+  error_init(&dev->error, usb_errors);
+}
+
+void usb_device_destroy(usb_device_t* dev) {
+  error_destroy(&dev->error);
+}
+
+int usb_device_open(usb_device_t* dev) {
+  error_clear(&dev->error);
+
+  int error = libusb_open(dev->libusb_device, (libusb_device_handle**)
     &dev->libusb_handle);
 
   if (!error) {
     if (libusb_kernel_driver_active(dev->libusb_handle, 0) == 1)
       libusb_detach_kernel_driver(dev->libusb_handle, 0);
   }
-  else
+  else {
     dev->libusb_handle = 0;
+    error_setf(&dev->error, libusb_error(error), "%03d:%03d",
+      dev->bus, dev->address);
+  }
     
-  return usb_error(error);
+  return error_get(&dev->error);
 }
 
-int usb_close(usb_device_p dev) {
+int usb_device_close(usb_device_t* dev) {
+  error_clear(&dev->error);
+  
   if (dev->libusb_handle) {
     libusb_close(dev->libusb_handle);
     dev->libusb_handle = 0;
   }
   
-  return USB_ERROR_NONE;
+  return error_get(&dev->error);
 }
 
-int usb_setup(usb_device_p dev, double timeout) {
-  if (timeout >= 0.0)
-    dev->timeout = timeout;
-  else
-    return USB_ERROR_INVALID_PARAMETER;
+int usb_device_setup(usb_device_t* dev, double timeout) {
+  error_clear(&dev->error);
   
-  return USB_ERROR_NONE;
+  dev->timeout = timeout;
+  
+  return error_get(&dev->error);
 }
 
-int usb_control_read(usb_device_p dev, usb_request_type_t request_type,
-    usb_recipient_t recipient, unsigned char request, unsigned char value,
-    unsigned char index, unsigned char* data, size_t num) {
+int usb_device_control_read(usb_device_t* dev, usb_request_type_t
+    request_type, usb_recipient_t recipient, unsigned char request,
+    unsigned char value, unsigned char index, unsigned char* data,
+    size_t num) {
   usb_control_transfer_t transfer;
   
   transfer.request_type = request_type;
@@ -342,12 +377,13 @@ int usb_control_read(usb_device_p dev, usb_request_type_t request_type,
   transfer.num = num;
   transfer.data = data;
   
-  return usb_control_transfer(dev, &transfer);
+  return usb_device_control_transfer(dev, &transfer);
 }
 
-int usb_control_write(usb_device_p dev, usb_request_type_t request_type,
-    usb_recipient_t recipient, unsigned char request, unsigned char value,
-    unsigned char index, unsigned char* data, size_t num) {
+int usb_device_control_write(usb_device_t* dev, usb_request_type_t
+    request_type, usb_recipient_t recipient, unsigned char request,
+    unsigned char value, unsigned char index, unsigned char* data,
+    size_t num) {
   usb_control_transfer_t transfer;
   
   transfer.request_type = request_type;
@@ -361,10 +397,10 @@ int usb_control_write(usb_device_p dev, usb_request_type_t request_type,
   transfer.num = num;
   transfer.data = data;
   
-  return usb_control_transfer(dev, &transfer);
+  return usb_device_control_transfer(dev, &transfer);
 }
 
-int usb_bulk_read(usb_device_p dev, unsigned char endpoint_number,
+int usb_device_bulk_read(usb_device_t* dev, unsigned char endpoint_number,
     unsigned char* data, size_t num) {
   usb_bulk_transfer_t transfer;
 
@@ -374,10 +410,10 @@ int usb_bulk_read(usb_device_p dev, unsigned char endpoint_number,
   transfer.num = num;
   transfer.data = data;
   
-  return usb_bulk_transfer(dev, &transfer);
+  return usb_device_bulk_transfer(dev, &transfer);
 }
 
-int usb_bulk_write(usb_device_p dev, unsigned char endpoint_number,
+int usb_device_bulk_write(usb_device_t* dev, unsigned char endpoint_number,
     unsigned char* data, size_t num) {
   usb_bulk_transfer_t transfer;
 
@@ -387,14 +423,17 @@ int usb_bulk_write(usb_device_p dev, unsigned char endpoint_number,
   transfer.num = num;
   transfer.data = data;
   
-  return usb_bulk_transfer(dev, &transfer);
+  return usb_device_bulk_transfer(dev, &transfer);
 }
 
-int usb_control_transfer(usb_device_p dev, usb_control_transfer_p transfer) {
+int usb_device_control_transfer(usb_device_t* dev, usb_control_transfer_t*
+    transfer) {
   ssize_t result;
   unsigned char request_type = transfer->recipient |
     (transfer->request_type << 5) | (transfer->direction << 7);
   
+  error_clear(&dev->error);
+    
   result = libusb_control_transfer(dev->libusb_handle, request_type,
     transfer->request, transfer->value, transfer->index, transfer->data,
     transfer->num, dev->timeout*1e3);
@@ -404,19 +443,25 @@ int usb_control_transfer(usb_device_p dev, usb_control_transfer_p transfer) {
       dev->num_written += result;
     else
       dev->num_read += result;
-    
+  
     return result;
   }
   else
-    return -usb_error(result);
+    error_setf(&dev->error, libusb_error(result), "%03d:%03d",
+      dev->bus, dev->address);
+    
+  return -error_get(&dev->error);
 }
 
-int usb_bulk_transfer(usb_device_p dev, usb_bulk_transfer_p transfer) {
+int usb_device_bulk_transfer(usb_device_t* dev, usb_bulk_transfer_t*
+    transfer) {
   ssize_t result;
   int transferred = 0;
   unsigned char endpoint_address = transfer->endpoint_number |
     (transfer->direction << 7);
-  
+
+  error_clear(&dev->error);
+    
   result = libusb_bulk_transfer(dev->libusb_handle, endpoint_address,
     transfer->data, transfer->num, &transferred, dev->timeout*1e3);
   
@@ -429,11 +474,14 @@ int usb_bulk_transfer(usb_device_p dev, usb_bulk_transfer_p transfer) {
     return transferred;
   }
   else
-    return -usb_error(result);
+    error_setf(&dev->error, libusb_error(result), "%03d:%03d",
+      dev->bus, dev->address);
+
+  return -error_get(&dev->error);      
 }
 
-void usb_print(FILE* stream, usb_device_p dev) {
-  fprintf(stream, "Bus %03d Device %03d: ID %04x:%04x Class %s\n",
+void usb_device_print(FILE* stream, const usb_device_t* dev) {
+  fprintf(stream, "Bus %03d Device %03d: ID %04x:%04x Class %s",
     dev->bus, dev->address, dev->vendor_id, dev->product_id,
     usb_classes[dev->class]);
 }

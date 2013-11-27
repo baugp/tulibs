@@ -24,7 +24,10 @@
 #include <stdlib.h>
 
 #include "config/config.h"
+
 #include "file/file.h"
+
+#include "error/error.h"
 
 /** \file config/file.h
   * \ingroup config
@@ -42,9 +45,9 @@
   */
 #define CONFIG_FILE_COMMENT_START                    "#"
 
-/** \brief Predefined configuration file argument prefix
+/** \brief Predefined configuration file parser option group
   */
-#define CONFIG_FILE_ARG_PREFIX                       "config-file"
+#define CONFIG_FILE_PARSER_OPTION_GROUP              "config-file"
 
 /** \name Parameters
   * \brief Predefined manual page parameters
@@ -60,9 +63,13 @@
   */
 //@{
 #define CONFIG_FILE_ERROR_NONE                       0
+//!< Success
 #define CONFIG_FILE_ERROR_READ                       1
+//!< Failed to read configuration file
 #define CONFIG_FILE_ERROR_WRITE                      2
+//!< Failed to write configuration file
 #define CONFIG_FILE_ERROR_FORMAT                     3
+//!< Invalid configuration file format
 //@}
 
 /** \brief Predefined configuration file error descriptions
@@ -71,7 +78,7 @@ extern const char* config_file_errors[];
 
 /** \brief Predefined configuration file default options
   */
-extern config_t config_file_default_options;
+extern const config_t config_file_default_options;
 
 /** \brief Predefined configuration file description
   */
@@ -88,36 +95,37 @@ typedef enum {
 /** \brief Configuration file variable structure
   */
 typedef struct config_file_var_t {
-  char name[128];         //!< The name of the configuration file variable.
-  char value[128];        //!< The value of the configuration file variable.
+  char *name;               //!< The name of the variable.
+  char *value;              //!< The value of the variable.
   
-  char* description;      //!< A description of the configuration file variable.
-} config_file_var_t, *config_file_var_p;
+  char* description;        //!< A description of the variable.
+} config_file_var_t;
 
 /** \brief Configuration file section structure
   */
 typedef struct config_file_section_t {
-  char name[128];         //!< The name of the configuration file section.
-  char title[128];        //!< A title of the configuration file section.
+  char* name;               //!< The name of the configuration file section.
+  char* title;              //!< A title of the configuration file section.
 
-  config_file_var_p vars; //!< The file section's variables.
-  size_t num_vars;        //!< The file section's number of variables.
-} config_file_section_t, *config_file_section_p;
+  config_file_var_t* vars;  //!< The file section's variables.
+  size_t num_vars;          //!< The file section's number of variables.
+} config_file_section_t;
 
 /** \brief Configuration file structure
   */
 typedef struct config_file_t {
-  char title[128];              //!< The configuration file title.
+  char* title;              //!< The configuration file title.
   
-  config_file_section_p sections;   //!< The configuration file sections.
-  size_t num_sections;          //!< The number of configuration file sections.
+  config_file_section_t*
+    sections;               //!< The configuration file sections.
+  size_t num_sections;      //!< The number of configuration file sections.
   
-  size_t max_width;             //!< The maximum character width of the file.
-  config_file_comment_level_t comment_level; //!< The file comment level.
+  size_t max_width;         //!< The maximum character width of the file.
+  config_file_comment_level_t
+    comment_level;          //!< The file comment level.
 
-  int error;                    //!< The error produced during reading.
-  char error_what[256];         //!< What produced the reading error.  
-} config_file_t, *config_file_p;
+  error_t error;            //!< The most recent configuration file error.
+} config_file_t;
 
 /** \brief Initialize configuration file
   * \param[in] file The configuration file to be initialized.
@@ -132,7 +140,7 @@ typedef struct config_file_t {
   *   the configuration file.
   */
 void config_file_init(
-  config_file_p file,
+  config_file_t* file,
   const char* title,
   size_t max_width,
   config_file_comment_level_t comment_level);
@@ -142,31 +150,35 @@ void config_file_init(
   * \param[in] config The configuration file parameters. 
   */
 void config_file_init_config(
-  config_file_p file,
-  config_p config);
+  config_file_t* file,
+  const config_t* config);
 
 /** \brief Destroy configuration file
   * \param[in] file The configuration file to be destroyed.
   */
 void config_file_destroy(
-  config_file_p file);
+  config_file_t* file);
 
 /** \brief Add configuration file section
-  * \note The section will be appended to the file.
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] file The configuration file to add the section to.
   * \param[in] name An optional name of the configuration file section to
   *   be added.
   * \param[in] title An optional title of the configuration file section.
   * \return The added configuration file section.
+  * 
+  * The added section will be appended to the file. The configuration file
+  * sections will be re-allocated to accommodate the added section.
   */
-config_file_section_p config_file_add_section(
-  config_file_p file,
+config_file_section_t* config_file_add_section(
+  config_file_t* file,
   const char* name,
   const char* title);
 
 /** \brief Add configuration file section containing configuration parameters
-  * \note This is a convenience function which adds a dedicated section
-  *   to the configuration file by calling config_file_add_section().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] file The configuration file to add the section containing
   *   the configuration parameters to.
   * \param[in] name An optional name of the configuration file section to
@@ -176,12 +188,15 @@ config_file_section_p config_file_add_section(
   *   the section.
   * \return The added configuration file section containing the configuration
   *   parameters.
+  * 
+  * This is a convenience function which adds a dedicated section to the
+  * configuration file by calling config_file_add_section().
   */
-config_file_section_p config_file_add_config(
-  config_file_p file,
+config_file_section_t* config_file_add_config(
+  config_file_t* file,
   const char* name,
   const char* title,
-  config_p config);
+  const config_t* config);
 
 /** \brief Retrieve configuration file section
   * \param[in] file The configuration file to retrieve the section for.
@@ -190,12 +205,13 @@ config_file_section_p config_file_add_config(
   * \return The configuration file section with the given name or null
   *   if no such section exists in the configuration file.
   */
-config_file_section_p config_file_get_section(
-  config_file_p file,
+config_file_section_t* config_file_get_section(
+  const config_file_t* file,
   const char* name);
 
 /** \brief Add configuration variable
-  * \note The variable will be appended to the section.
+  * \note Calling this function may invalidate previously acquired variable
+  *   pointers.
   * \param[in] section The configuration file section to add the variable to.
   * \param[in] name The name of the configuration file variable to
   *   be added.
@@ -204,26 +220,33 @@ config_file_section_p config_file_get_section(
   * \param[in] description An optional description of the configuration
   *   file variable.
   * \return The added configuration file variable.
+  * 
+  * The added variable will be appended to the section. The configuration
+  * file section variables will be re-allocated to accommodate the added
+  * variable.
   */
-config_file_var_p config_file_add_var(
-  config_file_section_p section,
+config_file_var_t* config_file_add_var(
+  config_file_section_t* section,
   const char* name,
   const char* value,
   const char* description);
 
 /** \brief Add configuration file variable for a configuration parameter
-  * \note This is a convenience function which adds a dedicated variable
-  *   to the configuration file section by calling config_file_add_var().
+  * \note Calling this function may invalidate previously acquired section
+  *   pointers.
   * \param[in] section The configuration file section to add the variable
   *   corresponding to the configuration parameter to.
   * \param[in] param The configuration parameter for which to add the
   *   configuration file variable.
   * \return The added configuration file variable for the configuration
   *   parameter.
+  * 
+  * This is a convenience function which adds a dedicated variable to the
+  * configuration file section by calling config_file_add_var().
   */
-config_file_var_p config_file_add_param(
-  config_file_section_p section,
-  config_param_p param);
+config_file_var_t* config_file_add_param(
+  config_file_section_t* section,
+  const config_param_t* param);
 
 /** \brief Retrieve configuration variable
   * \param[in] section The configuration file section to retrieve the
@@ -233,8 +256,8 @@ config_file_var_p config_file_add_param(
   * \return The configuration file variable with the given name or null
   *   if no such variable exists in the configuration file section.
   */
-config_file_var_p config_file_get_var(
-  config_file_section_p section,
+config_file_var_t* config_file_get_var(
+  const config_file_section_t* section,
   const char* name);
 
 /** \brief Read configuration file
@@ -246,7 +269,7 @@ config_file_var_p config_file_get_var(
   */
 int config_file_read(
   const char* filename,
-  config_file_p file);
+  config_file_t* file);
 
 /** \brief Write configuration file
   * \param[in] filename The name of the configuration file to write.
@@ -257,103 +280,6 @@ int config_file_read(
   */
 int config_file_write(
   const char* filename,
-  config_file_p file);
-
-/** \brief Write configuration file header
-  * \note This is a helper function commonly called through
-  *   config_file_write().
-  * \param[in] file The open file that will be used for writing the
-  *   configuration file header.
-  * \param[in] title The configuration file title to be written.
-  * \param[in] max_width The maximum character width of the comments
-  *   in the configuration file header.
-  * \return The resulting error code.
-  */
-int config_file_write_header(
-  file_p file,
-  const char* title,
-  size_t max_width);
-
-/** \brief Read configuration file section
-  * \note This is a helper function commonly called through
-  *   config_file_read().
-  * \param[in] file The open file that will be used for reading the
-  *   configuration file section.
-  * \param[in] section The configuration file section to be read.
-  * \param[in] max_width The maximum character width of the comments
-  *   in the configuration file section.
-  * \return The resulting error code.
-  */
-config_file_section_p config_file_read_section(
-  file_p file,
-  config_file_section_p section,
-  size_t max_width);
-
-/** \brief Write configuration file section
-  * \note This is a helper function commonly called through
-  *   config_file_write().
-  * \param[in] file The open file that will be used for writing the
-  *   configuration file section.
-  * \param[in] section The configuration file section to be written.
-  * \param[in] max_width The maximum character width of the comments
-  *   in the configuration file section.
-  * \param[in] comment_level The comment level of the configuration
-  *   file section.
-  * \return The resulting error code.
-  */
-int config_file_write_section(
-  file_p file,
-  config_file_section_p section,
-  size_t max_width,
-  config_file_comment_level_t comment_level);
-
-/** \brief Write configuration file variable
-  * \note This is a helper function commonly called through
-  *   config_file_write_section().
-  * \param[in] file The open file that will be used for writing the
-  *   configuration file variable.
-  * \param[in] var The configuration file variable to be written.
-  * \param[in] max_width The maximum character width of the comment
-  *   associated with the configuration file variable.
-  * \param[in] comment_level The comment level of the configuration
-  *   file variable.
-  * \return The resulting error code.
-  */
-int config_file_write_var(
-  file_p file,
-  config_file_var_p var,
-  size_t max_width,
-  config_file_comment_level_t comment_level);
-
-/** \brief Read configuration file line
-  * \note This is a helper function commonly called through
-  *   config_file_read_section() and config_file_read_var(). It attempts
-  *   to read the next meaningful line in the file, skipping any comment
-  *   lines and empty lines.
-  * \param[in] file The open file that will be used for reading the
-  *   configuration file line.
-  * \param[in,out] line  The pointer to a string which will hold the read
-  *   configuration file line. It is the caller's duty to free the allocated
-  *   string.
-  * \return The length of the line or the negative error code.
-  */
-int config_file_read_line(
-  file_p file,
-  char** line);
-
-/** \brief Write configuration file comment
-  * \note This is a helper function commonly called through
-  *   config_file_write_header(), config_file_write_section(), and
-  *   config_file_write_var().
-  * \param[in] file The open file that will be used for writing the
-  *   configuration file comment.
-  * \param[in] comment The configuration file comment to be written.
-  * \param[in] max_width The maximum character width of the comment.
-  * \return The resulting error code.
-  */
-int config_file_write_comment(
-  file_p file,
-  const char* comment, 
-  size_t max_width);
+  config_file_t* file);
 
 #endif

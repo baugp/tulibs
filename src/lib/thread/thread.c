@@ -31,7 +31,7 @@ const char* thread_errors[] = {
   "State error",
 };
 
-int thread_start(thread_p thread, void* (*thread_routine)(void*),
+int thread_start(thread_t* thread, void* (*thread_routine)(void*),
   void (*thread_cleanup)(void*), void* thread_arg, double frequency) {
   int result = THREAD_ERROR_NONE;
   
@@ -61,7 +61,7 @@ int thread_start(thread_p thread, void* (*thread_routine)(void*),
   return result;
 }
 
-int thread_exit(thread_p thread, int wait) {
+int thread_exit(thread_t* thread, int wait) {
   int result = THREAD_ERROR_NONE;
   
   thread_condition_lock(&thread->condition);
@@ -86,7 +86,7 @@ void thread_self_exit() {
 }
 
 void thread_cleanup(void* arg) {
-  thread_p thread = arg;
+  thread_t* thread = arg;
 
   if (thread->cleanup)
     thread->cleanup(thread->arg);
@@ -100,7 +100,7 @@ void thread_cleanup(void* arg) {
 }
 
 void* thread_run(void* arg) {
-  thread_p thread = arg;
+  thread_t* thread = arg;
   void* result = 0;
 
   pthread_cleanup_push(thread_cleanup, thread);
@@ -137,7 +137,7 @@ void* thread_run(void* arg) {
   return result;
 }
 
-int thread_test_exit(thread_p thread) {
+int thread_test_exit(thread_t* thread) {
   int result;
 
   thread_condition_lock(&thread->condition);
@@ -151,11 +151,11 @@ void thread_self_test_exit() {
   pthread_testcancel();
 }
 
-void thread_wait_exit(thread_p thread) {
+void thread_wait_exit(thread_t* thread) {
   pthread_join(thread->thread, NULL);
 }
 
-int thread_wait(thread_p thread, double timeout) {
+int thread_wait(thread_t* thread, double timeout) {
   int result = THREAD_ERROR_NONE;
   
   thread_condition_lock(&thread->condition);

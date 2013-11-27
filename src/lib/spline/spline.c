@@ -19,181 +19,365 @@
  ***************************************************************************/
 
 #include <string.h>
+#include <math.h>
+
+#include <gsl/gsl_linalg.h>
 
 #include "spline.h"
+
+#include "spline/segment.h"
+
+#include "string/string.h"
+
+#include "file/file.h"
 
 #define sqr(a) ((a)*(a))
 #define cub(a) ((a)*(a)*(a))
 
 const char* spline_errors[] = {
   "Success",
-  "Error opening file",
-  "Invalid file format",
-  "Error creating file",
-  "Error writing file",
-  "Value undefined",
+  "Invalid spline segment",
+  "Failed to read spline from file",
+  "Invalid spline file format",
+  "Failed to write spline to file",
+  "Spline undefined at value",
+  "Spline interpolation failed",
 };
 
-void spline_init_segment(spline_segment_p segment) {
-  segment->a = 0.0;
-  segment->b = 0.0;
-  segment->c = 0.0;
-  segment->d = 0.0;
+ssize_t spline_int(spline_t* spline, const spline_point_t* points,
+  size_t num_points, double e_0, double c_n, double b_0, double b_n);
 
-  segment->arg_width = 1.0;
+void spline_init(spline_t* spline) {
+  spline->knots = 0;
+  spline->num_knots = 0;
+  
+  error_init(&spline->error, spline_errors);
 }
 
-void spline_init(spline_p spline) {
-  memset(spline, 0, sizeof(spline_t));
+void spline_destroy(spline_t* spline) {
+  spline_clear(spline);
+  
+  error_destroy(&spline->error);
 }
 
-void spline_destroy(spline_p spline) {
-  if (spline->num_segments) {
-    free(spline->segments);
-    free(spline->arg_start);
+void spline_clear(spline_t* spline) {
+  if (spline->num_knots) {
+    free(spline->knots);
 
-    spline->num_segments = 0;
-    spline->segments = 0;
-    spline->arg_start = 0;
-  }
-}
-
-void spline_print_segment(FILE* stream, spline_segment_p segment) {
-  fprintf(stream, "%5s: %lg\n", "a", segment->a);
-  fprintf(stream, "%5s: %lg\n", "b", segment->b);
-  fprintf(stream, "%5s: %lg\n", "c", segment->c);
-  fprintf(stream, "%5s: %lg\n", "d", segment->d);
-  fprintf(stream, "%5s: %lg\n", "width", segment->arg_width);
-}
-
-void spline_print(FILE* stream, spline_p spline) {
-  fprintf(stream, "%10s  %10s  %10s  %10s  %10s  %10s\n",
-    "a",
-    "b",
-    "c",
-    "d",
-    "width",
-    "start");
-
-  int i;
-  for (i = 0; i < spline->num_segments; i++) {
-    fprintf(stream,
-      "%10lg  %10lg  %10lg  %10lg  %10lg  %10lg\n",
-      spline->segments[i].a,
-      spline->segments[i].b,
-      spline->segments[i].c,
-      spline->segments[i].d,
-      spline->segments[i].arg_width,
-      spline->arg_start[i]);
-  }
-}
-
-int spline_read(const char* filename, spline_p spline) {
-  int result;
-  FILE* file;
-  char buffer[1024];
-
-  spline_segment_t segment;
-  spline_init(spline);
-
-  file = fopen(filename, "r");
-  if (file == NULL)
-    return -SPLINE_ERROR_FILE_OPEN;
-
-  while (fgets(buffer, sizeof(buffer), file) != NULL) {
-    if (buffer[0] != '#') {
-      result = sscanf(buffer, "%lg %lg %lg %lg %lg",
-        &segment.a,
-        &segment.b,
-        &segment.c,
-        &segment.d,
-        &segment.arg_width);
-
-      if (result < 5) {
-        fclose(file);
-        return -SPLINE_ERROR_FILE_FORMAT;
-      }
-
-      spline_add_segment(spline, &segment);
-    }
-  }
-
-  fclose(file);
-
-  return spline->num_segments;
-}
-
-int spline_write(const char* filename, spline_p spline) {
-  int i;
-  FILE* file;
-  char buffer[1024];
-
-  file = fopen(filename, "w");
-  if (file == NULL)
-    return -SPLINE_ERROR_FILE_CREATE;
-
-  for (i = 0; i < spline->num_segments; ++i) {
-    sprintf(buffer, "%lg %lg %lg %lg %lg\n",
-      spline->segments[i].a,
-      spline->segments[i].b,
-      spline->segments[i].c,
-      spline->segments[i].d,
-      spline->segments[i].arg_width);
-
-    if (fputs(buffer, file) <= 0) {
-      fclose(file);
-      return -SPLINE_ERROR_FILE_WRITE;
-    }
-  }
-
-  fclose(file);
-
-  return spline->num_segments;
-}
- 
-void spline_add_segment(spline_p spline, spline_segment_p segment) {
-  spline->segments = realloc(spline->segments,
-    (spline->num_segments+1)*sizeof(spline_segment_t));
-  spline->arg_start = realloc(spline->arg_start,
-    (spline->num_segments+1)*sizeof(double));
-
-  spline->segments[spline->num_segments] = *segment;
-  spline->arg_start[spline->num_segments] = (spline->num_segments) ?
-    spline->arg_start[spline->num_segments-1]+
-    spline->segments[spline->num_segments-1].arg_width : 0.0;
-
-  ++spline->num_segments;
-}
-
-double spline_eval_segment(spline_p spline, spline_eval_type_t eval_type, 
-    int seg_index, double argument) {
-  spline_segment_p segment = &spline->segments[seg_index];
-  double x = argument-spline->arg_start[seg_index];
-
-  if (eval_type == spline_eval_type_first_derivative)
-    return 3.0*segment->a*sqr(x)+2.0*segment->b*x+segment->c;
-  else if (eval_type == spline_eval_type_second_derivative)
-    return 6.0*segment->a*x+2.0*segment->b;
-  else
-    return segment->a*cub(x)+segment->b*sqr(x)+segment->c*x+segment->d;
-}
-
-int spline_eval_linear_search(spline_p spline, spline_eval_type_t
-    eval_type, double argument, int seg_index, double* value) {
-  int i = seg_index;
-
-  while ((i >= 0) && (i < spline->num_segments)) {
-    if (argument >= spline->arg_start[i]) {
-      if (argument <= spline->arg_start[i]+spline->segments[i].arg_width) {
-        *value = spline_eval_segment(spline, eval_type, i, argument);
-        return i;
-      }
-      else
-        ++i;
-    }
-    else
-      --i;
+    spline->knots = 0;
+    spline->num_knots = 0;
   }
   
-  return -SPLINE_ERROR_UNDEFINED;
+  error_clear(&spline->error);
+}
+
+size_t spline_get_num_segments(const spline_t* spline) {
+  return spline->num_knots ? spline->num_knots-1 : 0;
+}
+
+int spline_get_segment(spline_t* spline, size_t index, spline_segment_t*
+    segment) {
+  error_clear(&spline->error);
+  
+  if ((index >= 0) && (index+1 < spline->num_knots)) {
+    double x_1 = spline->knots[index+1].x-spline->knots[index].x;
+      
+    segment->a = (spline->knots[index+1].y2-spline->knots[index].y2)/(6.0*x_1);
+    segment->b = 0.5*spline->knots[index].y2;
+    segment->c = (spline->knots[index+1].y-segment->a*cub(x_1)-
+      segment->b*sqr(x_1)-spline->knots[index].y)/x_1;
+    segment->d = spline->knots[index].y;
+  }
+  else
+    error_setf(&spline->error, SPLINE_ERROR_SEGMENT, "%d", (int)index);
+  
+  return spline->error.code;
+}
+
+ssize_t spline_find_segment(spline_t* spline, double x) {
+  return spline_find_segment_bisect(spline, x, 0,
+    spline->num_knots > 1 ? spline->num_knots-2 : 0);
+}
+
+ssize_t spline_find_segment_bisect(spline_t* spline, double x, size_t
+    index_min, size_t index_max) {
+  error_clear(&spline->error);
+
+  if (spline->num_knots > 1) {
+    size_t i = (index_min < spline->num_knots-1) ? index_min : 
+      spline->num_knots-2;
+    size_t j = (index_max < spline->num_knots-1) ? index_max : 
+      spline->num_knots-2;
+      
+    if ((j > i) && (x >= spline->knots[i].x) && (x <= spline->knots[j].x)) {    
+      while (j-i > 1) {
+        size_t k = (i+j) >> 1;
+        if (spline->knots[k].x > x)
+          j = k;
+        else
+          i = k;
+      }
+      
+      return i;
+    }
+  }
+
+  error_setf(&spline->error, SPLINE_ERROR_UNDEFINED, "%lg", x);
+  return -spline->error.code;
+}
+
+ssize_t spline_find_segment_linear(spline_t* spline, double x, size_t
+    index_start) {
+  error_clear(&spline->error);
+  
+  if ((spline->num_knots > 1) && (x >= spline->knots[0].x) &&
+      (x <= spline->knots[spline->num_knots-1].x)) {
+    size_t i = (index_start < spline->num_knots-1) ? index_start : 
+      spline->num_knots-2;
+      
+    while (1) {
+      if (x >= spline->knots[i].x) {
+        if (x <= spline->knots[i+1].x)
+          return i;
+        else
+          ++i;
+      }
+      else
+        --i;
+    }
+  }
+  
+  error_setf(&spline->error, SPLINE_ERROR_UNDEFINED, "%lg", x);  
+  return -spline->error.code;
+}
+
+void spline_print(FILE* stream, const spline_t* spline) {
+  size_t i;
+  
+  for (i = 0; i < spline->num_knots; i++)
+    spline_knot_print(stream, &spline->knots[i]);
+}
+
+int spline_read(const char* filename, spline_t* spline) {
+  spline_knot_t knot;
+  file_t file;
+
+  spline_clear(spline);
+  
+  file_init_name(&file, filename);
+  if (string_equal(filename, "-"))
+    file_open_stream(&file, stdin, file_mode_read);
+  else
+    file_open(&file, file_mode_read);
+
+  if (!file.handle) {
+    error_blame(&spline->error, &file.error, SPLINE_ERROR_FILE_READ);
+    file_destroy(&file);
+    
+    return -error_get(&spline->error);
+  }
+  
+  char* line = 0;
+  while (!file_eof(&file) && (file_read_line(&file, &line, 128) >= 0)) {
+    if (string_empty(line) || string_starts_with(line, "#"))
+      continue;
+      
+    if (string_scanf(line, "%lg %lg %lg", &knot.x, &knot.y, &knot.y2) != 3) {
+      error_setf(&spline->error, SPLINE_ERROR_FILE_FORMAT, line);
+      break;
+    }
+
+    spline_add_knot(spline, &knot);
+  }
+  string_destroy(&line);
+  
+  if (file.error.code)
+    error_blame(&spline->error, &file.error, SPLINE_ERROR_FILE_READ);
+  file_destroy(&file);
+
+  return spline->error.code ? -spline->error.code : spline->num_knots;
+}
+
+int spline_write(const char* filename, spline_t* spline) {
+  file_t file;
+
+  error_clear(&spline->error);
+  
+  file_init_name(&file, filename);
+  if (string_equal(filename, "-"))
+    file_open_stream(&file, stdout, file_mode_write);
+  else
+    file_open(&file, file_mode_write);
+
+  size_t i;
+  for (i = 0; i < spline->num_knots; ++i)
+    if (file_printf(&file, "%10lg %10lg %10lg\n",
+      spline->knots[i].x,
+      spline->knots[i].y,
+      spline->knots[i].y2) < 0)
+    break;
+
+  if (file.error.code)
+    error_blame(&spline->error, &file.error, SPLINE_ERROR_FILE_WRITE);
+  file_destroy(&file);
+
+  return spline->error.code ? -spline->error.code : spline->num_knots;
+}
+ 
+size_t spline_add_knot(spline_t* spline, const spline_knot_t* knot) {
+  if (spline->num_knots &&
+      (spline->knots[spline->num_knots-1].x >= knot->x)) {
+    ssize_t i = spline_find_segment(spline, knot->x);
+  
+    if (i < 0) {
+      error_clear(&spline->error);
+      i = 0;
+    }
+    else
+      ++i;
+
+    if (i && (spline->knots[i].x == knot->x))
+      spline_knot_copy(&spline->knots[i], knot);
+    else if (spline->knots[i+1].x == knot->x)
+      spline_knot_copy(&spline->knots[i+1], knot);
+    else {
+      spline->knots = realloc(spline->knots,
+        (spline->num_knots+1)*sizeof(spline_knot_t));
+      memmove(&spline->knots[i+1], &spline->knots[i],
+        (spline->num_knots-i)*sizeof(spline_knot_t));
+        
+      spline_knot_copy(&spline->knots[i], knot);
+      ++spline->num_knots;
+    }
+  }
+  else {
+    spline->knots = realloc(spline->knots,
+      (spline->num_knots+1)*sizeof(spline_knot_t));
+    
+    spline_knot_copy(&spline->knots[spline->num_knots], knot);
+    ++spline->num_knots;
+  }
+  
+  return spline->num_knots;
+}
+
+ssize_t spline_int(spline_t* spline, const spline_point_t* points, size_t
+    num_points, double e_0, double c_n, double b_0, double b_n) {
+  error_clear(&spline->error);
+  
+  if (num_points > 2) {
+    gsl_vector* c = gsl_vector_alloc(num_points-1);
+    gsl_vector* d = gsl_vector_alloc(num_points);
+    gsl_vector* e = gsl_vector_alloc(num_points-1);
+    gsl_vector* x = gsl_vector_alloc(num_points);
+    gsl_vector* b = gsl_vector_alloc(num_points);
+    
+    gsl_vector_set_all(d, 2.0);
+    gsl_vector_set(e, 0, e_0);
+    gsl_vector_set(b, 0, b_0);
+    
+    size_t i;
+    for (i = 1; i < num_points-1; ++i) {
+      double h_i = points[i].x-points[i-1].x;
+      double h_j = points[i+1].x-points[i].x;
+      
+      double c_i = h_i/(h_i+h_j);
+      double e_i = 1.0-c_i;
+      double b_i = 6.0*((points[i+1].y-points[i].y)/h_j-
+        (points[i].y-points[i-1].y)/h_i)/(h_j+h_i);
+      
+      gsl_vector_set(c, i-1, c_i);
+      gsl_vector_set(e, i, e_i);
+      gsl_vector_set(b, i, b_i);
+    }
+
+    gsl_vector_set(c, num_points-2, c_n);
+    gsl_vector_set(b, num_points-1, b_n);
+
+    if (!gsl_linalg_solve_tridiag(d, e, c, b, x)) {        
+      spline->knots = realloc(spline->knots, num_points*
+        sizeof(spline_knot_t));
+      spline->num_knots = num_points;
+      
+      for (i = 0; i < spline->num_knots; ++i) {
+        spline_knot_t* knot = &spline->knots[i];
+
+        knot->x = points[i].x;
+        knot->y = points[i].y;
+        knot->y2 = gsl_vector_get(x, i);
+      }
+    }
+    else
+      error_set(&spline->error, SPLINE_ERROR_INTERPOLATION);
+    
+    gsl_vector_free(c);
+    gsl_vector_free(d);
+    gsl_vector_free(e);
+    gsl_vector_free(x);
+    gsl_vector_free(b);
+  }
+  else
+    error_set(&spline->error, SPLINE_ERROR_INTERPOLATION);
+  
+  return spline->error.code ? -spline->error.code : spline->num_knots;
+}
+
+ssize_t spline_int_y1(spline_t* spline, const spline_point_t* points,
+    size_t num_points, double y1_0, double y1_n) {
+  double b_0 = 0.0;
+  double b_n = 0.0;
+  
+  if (num_points > 2) {
+    double h_1 = points[1].x-points[0].x;
+    double h_n = points[num_points-1].x-points[num_points-2].x;
+    
+    b_0 = 6/h_1*((points[1].y-points[0].y)/h_1-y1_0);
+    b_n = 6/h_n*(y1_n-(points[num_points-1].y-points[num_points-2].y)/h_n);
+  }
+  
+  return spline_int(spline, points, num_points, 1.0, 1.0, b_0, b_n);
+}
+
+ssize_t spline_int_y2(spline_t* spline, const spline_point_t* points,
+    size_t num_points, double y2_0, double y2_n) {
+  return spline_int(spline, points, num_points, 0.0, 0.0, 2.0*y2_0, 2.0*y2_n);
+}
+
+ssize_t spline_int_natural(spline_t* spline, const spline_point_t*  points,
+    size_t num_points) {
+  return spline_int_y2(spline, points, num_points, 0.0, 0.0);
+}
+
+ssize_t spline_int_clamped(spline_t* spline, const spline_point_t* points,
+    size_t num_points) {
+  return spline_int_y1(spline, points, num_points, 0.0, 0.0);
+}
+
+double spline_eval(spline_t* spline, spline_eval_type_t eval_type, double x) {
+  return spline_eval_bisect(spline, eval_type, x, 0,
+    spline->num_knots > 1 ? spline->num_knots-2 : 0);
+}
+
+double spline_eval_bisect(spline_t* spline, spline_eval_type_t eval_type,
+    double x, size_t index_min, size_t index_max) {
+  ssize_t i;
+  
+  if ((i = spline_find_segment_bisect(spline, x, index_min, index_max)) >= 0)
+    return spline_knot_eval(&spline->knots[i], &spline->knots[i+1],
+      eval_type, x);
+  else
+    return NAN;
+}
+
+double spline_eval_linear(spline_t* spline, spline_eval_type_t eval_type,
+    double x, size_t* index) {
+  ssize_t i;
+  
+  if ((i = spline_find_segment_linear(spline, x, *index)) >= 0) {
+    *index = i;
+    return spline_knot_eval(&spline->knots[i], &spline->knots[i+1],
+      eval_type, x);
+  }
+  else
+    return NAN;
 }

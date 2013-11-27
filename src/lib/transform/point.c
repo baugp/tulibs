@@ -20,21 +20,22 @@
 
 #include "point.h"
 
-void transform_point_init(transform_point_p point, double x, double y,
+void transform_point_init(transform_point_t* point, double x, double y,
     double z) {
   point->x = x;
   point->y = y;
   point->z = z;
 }
 
-void transform_point_copy(transform_point_p dst, transform_point_p src) {
+void transform_point_copy(transform_point_t* dst, const transform_point_t*
+    src) {
   dst->x = src->x;
   dst->y = src->y;
   dst->z = src->z;
 }
 
-void transform_point_print(FILE* stream, transform_point_p point) {
-  fprintf(stream, "%10lg  %10lg  %10lg\n",
+void transform_point_print(FILE* stream, const transform_point_t* point) {
+  fprintf(stream, "%10lg %10lg %10lg",
     point->x,
     point->y,
     point->z);

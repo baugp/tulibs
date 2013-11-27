@@ -8,7 +8,7 @@ remake_include(
 remake_add_library(
   tulibs-ftdi
   PREFIX OFF
-  LINK timer ${LIBFTDI_LIBRARIES} ${LIBUDEV_LIBRARIES}
+  LINK timer error ${LIBFTDI_LIBRARIES} ${LIBUDEV_LIBRARIES}
   NO_INCLUDE
 )
 remake_add_headers(INSTALL ftdi)
