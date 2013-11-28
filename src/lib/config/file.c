@@ -51,7 +51,7 @@ config_param_t config_file_default_params[] = {
     "'minimal' suppresses any section or variable comments"},
 };
 
-const config_t config_file_default_options = {
+const config_default_t config_file_default_options = {
   config_file_default_params,
   sizeof(config_file_default_params)/sizeof(config_param_t),
 };

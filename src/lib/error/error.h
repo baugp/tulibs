@@ -81,6 +81,14 @@ void error_init_copy(
 void error_destroy(
   error_t* error);
 
+/** \brief Copy error
+  * \param[in] dst The destination error.
+  * \param[in] src The source error.
+  */
+void error_copy(
+  error_t* dst,
+  const error_t* src);
+
 /** \brief Set error
   * \param[in] error The error to be set.
   * \param[in] code The code to be set for the error.

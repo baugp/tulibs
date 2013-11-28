@@ -45,7 +45,7 @@ config_param_t config_man_default_params[] = {
     "The title of the manual page"},
 };
 
-const config_t config_man_default_options = {
+const config_default_t config_man_default_options = {
   config_man_default_params,
   sizeof(config_man_default_params)/sizeof(config_param_t),
 };
@@ -154,16 +154,16 @@ config_man_page_section_t* config_man_add_description(config_man_page_t* page,
 }
 
 config_man_page_section_t* config_man_add_config(config_man_page_t* page,
-    const char* title, const char* preface, const config_t* config, const
-    char* format) {
+    const char* title, const char* preface, const config_param_t* params,
+    size_t num_params, const char* format) {
   config_man_page_section_t*  section = config_man_add_section(page, title);
   int i;
 
   if (preface)
     config_man_printf(section, preface);
-  if (config) {
-    for (i = 0; i < config->num_params; ++i)
-      config_man_add_param(section, &config->params[i], format);
+  if (params && num_params) {
+    for (i = 0; i < num_params; ++i)
+      config_man_add_param(section, &params[i], format);
   }
   
   return section;
@@ -205,44 +205,45 @@ const char* config_man_add_param(config_man_page_section_t* section,
 }
 
 config_man_page_section_t* config_man_add_arguments(config_man_page_t* page,
-    const char* title, const char* preface, const config_t* arguments) {
+    const char* title, const char* preface, const config_param_t* params,
+    size_t num_params) {
   config_man_page_section_t* section = config_man_add_config(page, title,
-    preface, 0, 0);
+    preface, 0, 0, 0);
   
   int i;
-  for (i = 0; i < arguments->num_params; ++i) {
+  for (i = 0; i < num_params; ++i) {
     const char* format = 0;
-    if ((arguments->params[i].type == config_param_type_enum) ||
-        (arguments->params[i].type == config_param_type_bool))
+    if ((params[i].type == config_param_type_enum) ||
+        (params[i].type == config_param_type_bool))
       format = ".BI \"%s\"\\c\n: <%s>";
     else
       format = ".BI \"%s\"\\c\n.RI \": <\" %s \">\"";
       
-    config_man_add_param(section, &arguments->params[i], format);
+    config_man_add_param(section, &params[i], format);
   }
   
   return section;
 }
 
 config_man_page_section_t* config_man_add_options(config_man_page_t* page,
-    const char* title, const char* preface, const config_t* options, const
-    char* prefix) {
+    const char* title, const char* preface, const config_param_t* params,
+    size_t num_params, const char* prefix) {
   config_man_page_section_t* section = config_man_add_config(page, title,
-    preface, 0, 0);
+    preface, 0, 0, 0);
   
   int i;
-  for (i = 0; i < options->num_params; ++i) {
+  for (i = 0; i < num_params; ++i) {
     char* format = 0;
-    if (options->params[i].type == config_param_type_enum)
+    if (params[i].type == config_param_type_enum)
       string_printf(&format, ".BI \"--%s%%s\"\\c\n=<%%s>",
         prefix ? prefix : "");
-    else if (options->params[i].type == config_param_type_bool)
+    else if (params[i].type == config_param_type_bool)
       string_printf(&format, ".BI \"--%s%%s\"%%.0s", prefix ? prefix : "");
     else
       string_printf(&format, ".BI \"--%s%%s\"\\c\n.RI \"=<\" %%s \">\"",
         prefix ? prefix : "");
     
-    config_man_add_param(section, &options->params[i], format);
+    config_man_add_param(section, &params[i], format);
     string_destroy(&format);
   }
   

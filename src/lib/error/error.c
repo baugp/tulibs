@@ -43,22 +43,27 @@ void error_init(error_t* error, const char** descriptions) {
 }
 
 void error_init_copy(error_t* error, const error_t* src_error) {
-  error->code = src_error->code;
-  error->descriptions = src_error->descriptions;
-  
-  string_init_copy(&error->where, src_error->where);
-  string_init_copy(&error->what, src_error->what);
-  
-  if (src_error->blame) {
-    error->blame = malloc(sizeof(error_t));
-    error_init_copy(error->blame, src_error->blame);
-  }
-  else
-    error->blame = 0;
+  error_init(error, 0);
+  error_copy(error, src_error);
 }
 
 void error_destroy(error_t* error) {
   error_clear(error);
+}
+
+void error_copy(error_t* dst, const error_t* src) {
+  error_clear(dst);
+
+  dst->code = src->code;
+  dst->descriptions = src->descriptions;
+  
+  string_init_copy(&dst->where, src->where);
+  string_init_copy(&dst->what, src->what);
+  
+  if (src->blame) {
+    dst->blame = malloc(sizeof(error_t));
+    error_init_copy(dst->blame, src->blame);
+  }
 }
 
 void error_set(error_t* error, int code) {

@@ -30,12 +30,12 @@ const char* config_help_errors[] = {
 };
 
 int config_help_print_arguments(FILE* stream, const char* section_title,
-    const config_t* arguments, size_t max_width, size_t key_indent, size_t
-    par_indent) {
+    const config_param_t* params, size_t num_params, size_t max_width,
+    size_t key_indent, size_t par_indent) {
   int result = CONFIG_HELP_ERROR_NONE;
   int i;
   
-  if (arguments->num_params && !string_empty(section_title)) {
+  if (params && num_params && !string_empty(section_title)) {
     char* title = 0;
     string_printf(&title, "%s:", section_title);
     result |= config_help_print(stream, title, max_width, 0, 0, 0);
@@ -43,9 +43,9 @@ int config_help_print_arguments(FILE* stream, const char* section_title,
     string_destroy(&title);
   }
   
-  for (i = 0; i < arguments->num_params; ++i) {
-    result |= config_help_print_argument(stream, &arguments->params[i],
-      max_width, key_indent, par_indent);
+  for (i = 0; i < num_params; ++i) {
+    result |= config_help_print_argument(stream, &params[i], max_width,
+      key_indent, par_indent);
     fprintf(stream, "\n");
   }
   
@@ -90,12 +90,12 @@ int config_help_print_argument(FILE* stream, const config_param_t* param,
 }
 
 int config_help_print_options(FILE* stream, const char* section_title,
-    const config_t* options, const char* prefix, size_t max_width, size_t
-    key_indent, size_t par_indent) {
+    const config_param_t* params, size_t num_params, const char* prefix,
+    size_t max_width, size_t key_indent, size_t par_indent) {
   int result = CONFIG_HELP_ERROR_NONE;
   int i;
   
-  if (options->num_params && section_title && section_title[0]) {
+  if (params && num_params && section_title && section_title[0]) {
     char* title = 0;
     string_printf(&title, "%s:", section_title);
     result |= config_help_print(stream, title, max_width, 0, 0, 0);
@@ -103,9 +103,9 @@ int config_help_print_options(FILE* stream, const char* section_title,
     string_destroy(&title);
   }
   
-  for (i = 0; i < options->num_params; ++i) {
-    result |= config_help_print_option(stream, &options->params[i],
-      prefix, max_width, key_indent, par_indent);
+  for (i = 0; i < num_params; ++i) {
+    result |= config_help_print_option(stream, &params[i], prefix,
+      max_width, key_indent, par_indent);
     fprintf(stream, "\n");
   }
   

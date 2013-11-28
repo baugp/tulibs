@@ -82,7 +82,7 @@ extern const char* config_man_errors[];
 
 /** \brief Predefined manual page default options
   */
-extern const config_t config_man_default_options;
+extern const config_default_t config_man_default_options;
 
 /** \brief Manual page header structure
   */
@@ -225,8 +225,10 @@ config_man_page_section_t* config_man_add_description(
   *   configuration parameters to.
   * \param[in] title The title of the manual page section.
   * \param[in] preface An optional preface of the manual page section.
-  * \param[in] config The configuration parameters described by the manual
+  * \param[in] params The configuration parameters described by the manual
   *   page section.
+  * \param[in] num_params The number of configuration parameters described
+  *   by the manual page section.
   * \param[in] format The format for printing each parameter's key and
   *   value. See config_man_add_param() for details.
   * \return The added manual page section describing the configuration
@@ -239,7 +241,8 @@ config_man_page_section_t* config_man_add_config(
   config_man_page_t* page,
   const char* title,
   const char* preface,
-  const config_t* config,
+  const config_param_t* params,
+  size_t num_params,
   const char* format);
 
 /** \brief Add manual page paragraph describing a configuration parameter
@@ -270,8 +273,10 @@ const char* config_man_add_param(
   *   arguments to.
   * \param[in] title The title of the manual page section.
   * \param[in] preface An optional preface of the manual page section.
-  * \param[in] arguments The positional arguments described by the manual
-  *   page section.
+  * \param[in] params The positional argument parameters described by
+  *   the manual page section.
+  * \param[in] num_params The number of positional argument parameters
+  *   described by the manual page section.
   * \return The added manual page section describing the positional
   *   arguments.
   * 
@@ -282,7 +287,8 @@ config_man_page_section_t* config_man_add_arguments(
   config_man_page_t* page,
   const char* title,
   const char* preface,
-  const config_t* arguments);
+  const config_param_t* params,
+  size_t num_params);
 
 /** \brief Add manual page section describing non-positional arguments
   * \note Calling this function may invalidate previously acquired section
@@ -291,8 +297,10 @@ config_man_page_section_t* config_man_add_arguments(
   *   non-positional arguments to.
   * \param[in] title The title of the manual page section.
   * \param[in] preface An optional preface of the manual page section.
-  * \param[in] options The non-positional arguments described by the manual
-  *   page section.
+  * \param[in] params The non-positional argument parameters described by
+  *   the manual page section.
+  * \param[in] num_params The number of non-positional argument parameters
+  *   described by the manual page section.
   * \param[in] prefix An optional key prefix of the non-positional
   *   arguments.
   * \return The added manual page section describing the non-positional
@@ -305,7 +313,8 @@ config_man_page_section_t* config_man_add_options(
   config_man_page_t* page,
   const char* title,
   const char* preface,
-  const config_t* options,
+  const config_param_t* params,
+  size_t num_params,
   const char* prefix);
 
 /** \brief Add manual page section crediting the authors

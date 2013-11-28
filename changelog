@@ -1,3 +1,13 @@
+tulibs (0.5-75) lucid; urgency=low
+
+  * Added config_default_t for static default configurations
+  * Added error to config_t
+  * Adapted config library interfaces to work on configuration parameters
+    rather than configurations
+  * Added error_copy() function
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 28 Nov 2013 12:12:00 +0100
+  
 tulibs (0.5-74) lucid; urgency=low
 
   * Small documentation fix

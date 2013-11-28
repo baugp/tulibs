@@ -25,6 +25,8 @@
 
 #include "config/param.h"
 
+#include "error/error.h"
+
 /** \defgroup config Configuration Module
   * \brief Library functions for managing configuration parameters
   * 
@@ -57,9 +59,11 @@
 #define CONFIG_ERROR_NONE                       0
 //!< Success
 #define CONFIG_ERROR_PARAM_KEY                  1
-//!< Parameter key error
-#define CONFIG_ERROR_PARAM_VALUE                2
-//!< Parameter value error
+//!< Invalid parameter key
+#define CONFIG_ERROR_PARAM_VALUE_TYPE           2
+//!< Parameter value type mismatch
+#define CONFIG_ERROR_PARAM_VALUE_RANGE          3
+//!< Parameter value out of range
 //@}
 
 /** \brief Predefined configuration error descriptions
@@ -69,15 +73,48 @@ extern const char* config_errors[];
 /** \brief Configuration structure
   */
 typedef struct config_t {
-  config_param_t* params;   //!< The configuration parameters.
-  size_t num_params;        //!< The number of configuration parameters.
+  config_param_t* params; //!< The configuration parameters.
+  size_t num_params;      //!< The number of configuration parameters.
+  
+  error_t error;          //!< The most recent configuration error.
 } config_t;
+
+/** \brief Default configuration structure
+  *
+  * The default configuration is immutable, but allows for static
+  * initialization. 
+  */
+typedef struct config_default_t {
+  const config_param_t
+    const* params;        //!< The default configuration parameters.
+  size_t num_params;      //!< The number of default configuration parameters.
+} config_default_t;
 
 /** \brief Initialize an empty configuration
   * \param[in] config The configuration to be initialized.
   */
 void config_init(
   config_t* config);
+
+/** \brief Initialize a configuration from defaults
+  * \param[in] config The configuration to be initialized from defaults.
+  * \param[in] defaults The default configuration used to initialize
+  *   the configuration.
+  */
+void config_init_default(
+  config_t* config,
+  const config_default_t* defaults);
+
+/** \brief Initialize a configuration from parameters
+  * \param[in] config The configuration to be initialized.
+  * \param[in] params The parameters used to initialize the configuration.
+  * \param[in] num_params The number of parameters used to initialize the
+  *   configuration.
+  */
+void config_init_params(
+  config_t* config,
+  const config_param_t* params,
+  size_t num_params);
 
 /** \brief Initialize a configuration by copying
   * \param[in] config The configuration to be initialized.

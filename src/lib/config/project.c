@@ -55,7 +55,7 @@ config_param_t config_project_default_params[] = {
     "The project licensing information"},
 };
 
-const config_t config_project_default_options = {
+const config_default_t config_project_default_options = {
   config_project_default_params,
   sizeof(config_project_default_params)/sizeof(config_param_t),
 };

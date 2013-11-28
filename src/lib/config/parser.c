@@ -36,8 +36,15 @@ const char* config_parser_errors[] = {
   "Unexpected argument",
   "Missing argument",
   "Invalid argument format",
-  "Invalid argument key",
-  "Invalid argument value",
+  "Invalid parameter key",
+  "Parameter value type mismatch",
+  "Parameter value out of range",
+};
+
+int config_parser_error_from_param[] = {
+  CONFIG_ERROR_NONE,
+  CONFIG_PARSER_ERROR_PARAM_VALUE_TYPE,
+  CONFIG_PARSER_ERROR_PARAM_VALUE_RANGE,
 };
 
 config_param_t config_parser_default_params[] = {
@@ -71,7 +78,7 @@ config_param_t config_parser_default_params[] = {
     "Enable debugging output for runtime errors"},
 };
 
-const config_t config_parser_default_options = {
+const config_default_t config_parser_default_options = {
   config_parser_default_params,
   sizeof(config_parser_default_params)/sizeof(config_param_t),
 };
@@ -195,11 +202,12 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
   error_clear(&parser->error);
   
   config_t parser_options, file_options, man_options, project_options;
-  config_init_copy(&parser_options, &config_parser_default_options);
-  config_init_copy(&file_options, &config_file_default_options);
-  config_init_copy(&man_options, &config_man_default_options);
-  config_init_copy(&project_options, &config_project_default_options);
+  config_init_default(&parser_options, &config_parser_default_options);
+  config_init_default(&file_options, &config_file_default_options);
+  config_init_default(&man_options, &config_man_default_options);
+  config_init_default(&project_options, &config_project_default_options);
   
+  config_parser_option_group_t* option_groups[argc-1];
   config_param_t* options[argc-1];
   const char* option_argv[argc-1];
   char* key = 0;
@@ -217,7 +225,7 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
       }
       
       if (value && !value[0]) {
-        error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_FORMAT,
+        error_setf(&parser->error, CONFIG_PARSER_ERROR_ARG_FORMAT,
           argv[i]);
         break;
       }
@@ -231,10 +239,10 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
         
         if (result) {
           if (value)
-            error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_VALUE,
-              value);
+            error_setf(&parser->error, config_parser_error_from_param[result],
+              "%s = %s", key, value);
           else
-            error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_FORMAT,
+            error_setf(&parser->error, CONFIG_PARSER_ERROR_ARG_FORMAT,
               argv[i]);
           break;
         }
@@ -266,10 +274,11 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
           
           if (result) {
             if (value)
-              error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_VALUE,
+              error_setf(&parser->error,
+                config_parser_error_from_param[result], "%s = %s", key,
                 value);
             else
-              error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_FORMAT,
+              error_setf(&parser->error, CONFIG_PARSER_ERROR_ARG_FORMAT,
                 argv[i]);
             break;
           }
@@ -290,6 +299,7 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
           }
 
           if (param) {
+            option_groups[num_options] = &parser->option_groups[j];
             options[num_options] = param;
             option_argv[num_options] = argv[i];
             ++num_options;
@@ -297,7 +307,7 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
         }
         
         if (!param) {
-          error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_KEY, key);        
+          error_setf(&parser->error, CONFIG_PARSER_ERROR_PARAM_KEY, key);        
           break;
         }
       }
@@ -331,19 +341,20 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
     int j;
     for (j = 0 ; j < num_options; ++j) {
       const char* value = string_find(option_argv[j], "=");
+      value = value ? value+1 : 0;
       int result;
       
-      if (!string_empty(value+1))
-        result = config_param_set_value(options[j], value+1);
+      if (!string_empty(value))
+        result = config_param_set_value(options[j], value);
       else
         result = config_param_set_bool(options[j], config_param_true);
       
       if (result) {
         if (!string_empty(value))
-          error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_VALUE,
-            value+1);
+          error_setf(&parser->error, config_parser_error_from_param[result],
+            "%s-%s = %s", option_groups[j]->name, options[j]->key, value);
         else
-          error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_FORMAT,
+          error_setf(&parser->error, CONFIG_PARSER_ERROR_ARG_FORMAT,
             option_argv[j]);
         break;
       }
@@ -358,13 +369,14 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
         int result = config_param_set_value(param, argv[i]);
         
         if (result) {
-          error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_VALUE,
-            argv[i]);
+          error_setf(&parser->error, config_parser_error_from_param[result],
+            "%s = %s", param->key, argv[i]);
           break;
         }
       }
       else {
-        error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT, argv[i]);
+        error_setf(&parser->error, CONFIG_PARSER_ERROR_ARG_UNEXPECTED,
+          argv[i]);
         break;
       }
     }
@@ -378,7 +390,7 @@ int config_parser_parse(config_parser_t* parser, int argc, char** argv,
     
   if (!parser->error.code && (j < parser->arguments.num_params) && 
       !parser->arguments.params[j].value)
-    error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_MISSING,
+    error_setf(&parser->error, CONFIG_PARSER_ERROR_ARG_MISSING,
       parser->arguments.params[j].key);
     
   if (parser->error.code && (parser_exit & config_parser_exit_error)) {
@@ -430,13 +442,15 @@ int config_parser_read_file(const char* filename, config_parser_t* parser,
       config_param_t* param = config_get_param(options, var->name);
       
       if (!param) {
-        error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_KEY,
+        error_setf(&parser->error, CONFIG_PARSER_ERROR_PARAM_KEY,
           var->name);
         return error_get(&parser->error);
       }
-      if (config_param_set_value(param, var->value)) {
-        error_setf(&parser->error, CONFIG_PARSER_ERROR_ARGUMENT_VALUE,
-          var->value);
+      
+      int result;
+      if ((result = config_param_set_value(param, var->value))) {
+        error_setf(&parser->error, config_parser_error_from_param[result],
+          "%s-%s = %s", section->name, param->key, var->value);
         return error_get(&parser->error);
       }
     }
@@ -513,14 +527,16 @@ void config_parser_print_help(FILE* stream, const config_parser_t* parser) {
   if (parser->arguments.num_params) {
     fprintf(stream, "\n");
     config_help_print_arguments(stream, "Positional arguments",
-      &parser->arguments, CONFIG_PARSER_HELP_WIDTH,
-      CONFIG_PARSER_HELP_KEY_INDENT, CONFIG_PARSER_HELP_PAR_INDENT);
+      parser->arguments.params, parser->arguments.num_params,
+      CONFIG_PARSER_HELP_WIDTH, CONFIG_PARSER_HELP_KEY_INDENT,
+      CONFIG_PARSER_HELP_PAR_INDENT);
   }
   
   if (parser->options.num_params) {
     fprintf(stream, "\n");
-    config_help_print_options(stream, "General options", &parser->options,
-      0, CONFIG_PARSER_HELP_WIDTH, CONFIG_PARSER_HELP_KEY_INDENT,
+    config_help_print_options(stream, "General options",
+      parser->options.params, parser->options.num_params, 0,
+      CONFIG_PARSER_HELP_WIDTH, CONFIG_PARSER_HELP_KEY_INDENT,
       CONFIG_PARSER_HELP_PAR_INDENT);
   }
   
@@ -531,14 +547,16 @@ void config_parser_print_help(FILE* stream, const config_parser_t* parser) {
     fprintf(stream, "\n");
     string_printf(&prefix, "%s-", option_group->name);
     config_help_print_options(stream, option_group->summary,
-      &option_group->options, prefix, CONFIG_PARSER_HELP_WIDTH,
-      CONFIG_PARSER_HELP_KEY_INDENT, CONFIG_PARSER_HELP_PAR_INDENT);
+      option_group->options.params, option_group->options.num_params,
+      prefix, CONFIG_PARSER_HELP_WIDTH, CONFIG_PARSER_HELP_KEY_INDENT,
+      CONFIG_PARSER_HELP_PAR_INDENT);
     string_destroy(&prefix);
   }
 
   fprintf(stream, "\n");
   config_help_print_options(stream, "Parser options",
-    &config_parser_default_options, 0, CONFIG_PARSER_HELP_WIDTH,
+    config_parser_default_options.params,
+    config_parser_default_options.num_params, 0, CONFIG_PARSER_HELP_WIDTH,
     CONFIG_PARSER_HELP_KEY_INDENT, CONFIG_PARSER_HELP_PAR_INDENT);
 }
 
@@ -560,11 +578,11 @@ int config_parser_write_man(const char* filename, config_parser_t* parser,
 
   if (parser->arguments.num_params)
     config_man_add_arguments(&man_page, "Positional arguments", 0,
-      &parser->arguments);
+      parser->arguments.params, parser->arguments.num_params);
     
   if (parser->options.num_params)
     config_man_add_options(&man_page, "General options", 0,
-      &parser->options, 0);
+      parser->options.params, parser->options.num_params, 0);
     
   int i;
   for (i = 0; i < parser->num_option_groups; ++i) {
@@ -573,12 +591,14 @@ int config_parser_write_man(const char* filename, config_parser_t* parser,
     
     string_printf(&prefix, "%s-", option_group->name);    
     config_man_add_options(&man_page, option_group->summary,
-      option_group->description, &option_group->options, prefix);
+      option_group->description, option_group->options.params,
+      option_group->options.num_params, prefix);
     string_destroy(&prefix);
   }
 
   config_man_add_options(&man_page, "Parser options", 0,
-    &config_parser_default_options, 0);
+    config_parser_default_options.params,
+    config_parser_default_options.num_params, 0);
   
   config_project_t project;
   config_project_init_config(&project, project_options);

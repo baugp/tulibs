@@ -53,7 +53,7 @@
 
 /** \brief Predefined project default options
   */
-extern const config_t config_project_default_options;
+extern const config_default_t config_project_default_options;
 
 /** \brief Project configuration structure
   */

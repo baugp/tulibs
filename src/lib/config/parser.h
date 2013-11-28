@@ -74,16 +74,18 @@
 //!< Invalid configuration file format
 #define CONFIG_PARSER_ERROR_FILE_SECTION          4
 //!< Invalid configuration file section
-#define CONFIG_PARSER_ERROR_ARGUMENT              5
+#define CONFIG_PARSER_ERROR_ARG_UNEXPECTED        5
 //!< Unexpected argument
-#define CONFIG_PARSER_ERROR_ARGUMENT_MISSING      6
+#define CONFIG_PARSER_ERROR_ARG_MISSING           6
 //!< Missing argument
-#define CONFIG_PARSER_ERROR_ARGUMENT_FORMAT       7
+#define CONFIG_PARSER_ERROR_ARG_FORMAT            7
 //!< Invalid argument format
-#define CONFIG_PARSER_ERROR_ARGUMENT_KEY          8
-//!< Invalid argument key
-#define CONFIG_PARSER_ERROR_ARGUMENT_VALUE        9
-//!< Invalid argument value
+#define CONFIG_PARSER_ERROR_PARAM_KEY             8
+//!< Invalid parameter key
+#define CONFIG_PARSER_ERROR_PARAM_VALUE_TYPE      9
+//!< Parameter value type mismatch
+#define CONFIG_PARSER_ERROR_PARAM_VALUE_RANGE     10
+//!< Parameter value out of range
 //@}
 
 /** \brief Predefined configuration parser error descriptions
@@ -92,7 +94,7 @@ extern const char* config_parser_errors[];
 
 /** \brief Predefined configuration parser default options
   */
-extern const config_t config_parser_default_options;
+extern const config_default_t config_parser_default_options;
 
 /** \brief Predefined configuration parser description
   */

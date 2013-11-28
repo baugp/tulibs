@@ -27,13 +27,35 @@
 
 const char* config_errors[] = {
   "Success",
-  "Parameter key error",
-  "Parameter value error",
+  "Invalid parameter key",
+  "Parameter value type mismatch",
+  "Parameter value out of range",
+};
+
+int config_error_from_param[] = {
+  CONFIG_ERROR_NONE,
+  CONFIG_ERROR_PARAM_VALUE_TYPE,
+  CONFIG_ERROR_PARAM_VALUE_RANGE,
 };
 
 void config_init(config_t* config) {
   config->params = 0;
   config->num_params = 0;
+  
+  error_init(&config->error, config_errors);
+}
+
+void config_init_default(config_t* config, const config_default_t* defaults) {
+  config_init_params(config, defaults->params, defaults->num_params);
+}
+
+void config_init_params(config_t* config, const config_param_t* params,
+    size_t num_params) {
+  config_init(config);
+  
+  size_t i;
+  for (i = 0; i < num_params; ++i)
+    config_set_param(config, &params[i]);
 }
 
 void config_init_copy(config_t* config, const config_t* src_config) {
@@ -43,6 +65,7 @@ void config_init_copy(config_t* config, const config_t* src_config) {
 
 void config_destroy(config_t* config) {
   config_clear(config);
+  error_destroy(&config->error);
 }
 
 void config_copy(config_t* dst, const config_t* src) {
@@ -64,6 +87,8 @@ void config_copy(config_t* dst, const config_t* src) {
   }
   else if (dst->num_params)
     config_clear(dst);
+
+  error_copy(&dst->error, &src->error);  
 }
 
 void config_clear(config_t* config) {
@@ -77,10 +102,14 @@ void config_clear(config_t* config) {
     config->params = 0;
     config->num_params = 0;
   }
+  
+  error_clear(&config->error);
 }
 
 void config_merge(config_t* dst, const config_t* src) {
   size_t i;
+
+  error_clear(&dst->error);
   
   for (i = 0; i < src->num_params; ++i)
     config_set_param(dst, &src->params[i]);
@@ -95,15 +124,16 @@ void config_print(FILE* stream, const config_t* config) {
 
 int config_set(config_t* dst, const config_t* src) {
   size_t i;
-  int result;
 
+  error_clear(&dst->error);
+  
   for (i = 0; i < src->num_params; ++i) {
     const config_param_t* src_param = &src->params[i];
-    if ((result = config_set_value(dst, src_param->key, src_param->value)))
-      return result;
+    if (config_set_value(dst, src_param->key, src_param->value))
+      break;
   }
   
-  return CONFIG_ERROR_NONE;
+  return dst->error.code;
 }
 
 config_param_t* config_set_param(config_t* config, const config_param_t*
@@ -128,7 +158,7 @@ config_param_t* config_set_param(config_t* config, const config_param_t*
 config_param_t* config_set_param_value_range(config_t* config, const char*
     key, config_param_type_t type, const char* value, const char* range,
     const char* description) {
-  config_param_t param;  
+  config_param_t param;
   config_param_init_value_range(&param, key, type, value, range,
     description);
 
@@ -141,7 +171,7 @@ config_param_t* config_get_param(const config_t* config, const char* key) {
   for (i = 0; i < config->num_params; ++i)
     if (string_equal(config->params[i].key, key))
       return &config->params[i];
-
+  
   return 0;
 }
 
@@ -149,26 +179,30 @@ int config_set_value(config_t* config, const char* key, const char* value) {
   config_param_t* param = config_get_param(config, key);
 
   if (param) {
-    if (config_param_set_value(param, value))
-      return CONFIG_ERROR_PARAM_VALUE;
+    int result;
+    if ((result = config_param_set_value(param, value)))
+      error_setf(&config->error, config_error_from_param[result],
+        "%s = %s", key, value);
   }
   else
-    return CONFIG_ERROR_PARAM_KEY;
+    error_setf(&config->error, CONFIG_ERROR_PARAM_KEY, key);
   
-  return CONFIG_ERROR_NONE;
+  return config->error.code;
 }
 
 int config_set_string(config_t* config, const char* key, const char* value) {
   config_param_t* param = config_get_param(config, key);
 
   if (param) {
-    if (config_param_set_string(param, value))
-      return CONFIG_ERROR_PARAM_VALUE;
+    int result;
+    if ((result = config_param_set_string(param, value)))
+      error_setf(&config->error, config_error_from_param[result],
+        "%s = %s", key, value);
   }
   else
-    return CONFIG_ERROR_PARAM_KEY;
+    error_setf(&config->error, CONFIG_ERROR_PARAM_KEY, key);
   
-  return CONFIG_ERROR_NONE;
+  return config->error.code;
 }
 
 const char* config_get_string(const config_t* config, const char* key) {
@@ -184,13 +218,15 @@ int config_set_int(config_t* config, const char* key, int value) {
   config_param_t* param = config_get_param(config, key);
 
   if (param) {
-    if (config_param_set_int(param, value))
-      return CONFIG_ERROR_PARAM_VALUE;
+    int result;
+    if ((result = config_param_set_int(param, value)))
+      error_setf(&config->error, config_error_from_param[result],
+        "%s = %d", key, value);
   }
   else
-    return CONFIG_ERROR_PARAM_KEY;
+    error_setf(&config->error, CONFIG_ERROR_PARAM_KEY, key);
   
-  return CONFIG_ERROR_NONE;
+  return config->error.code;
 }
 
 int config_get_int(const config_t* config, const char* key) {
@@ -206,13 +242,15 @@ int config_set_float(config_t* config, const char* key, double value) {
   config_param_t* param = config_get_param(config, key);
 
   if (param) {
-    if (config_param_set_float(param, value))
-      return CONFIG_ERROR_PARAM_VALUE;
+    int result;
+    if ((result = config_param_set_float(param, value)))
+      error_setf(&config->error, config_error_from_param[result],
+        "%s = %lf", key, value);
   }
   else
-    return CONFIG_ERROR_PARAM_KEY;
+    error_setf(&config->error, CONFIG_ERROR_PARAM_KEY, key);
   
-  return CONFIG_ERROR_NONE;
+  return config->error.code;
 }
 
 double config_get_float(const config_t* config, const char* key) {
@@ -228,13 +266,15 @@ int config_set_enum(config_t* config, const char* key, int value) {
   config_param_t* param = config_get_param(config, key);
 
   if (param) {
-    if (config_param_set_enum(param, value))
-      return CONFIG_ERROR_PARAM_VALUE;
+    int result;
+    if ((result = config_param_set_enum(param, value)))
+      error_setf(&config->error, config_error_from_param[result],
+        "%s = %d", key, value);
   }
   else
-    return CONFIG_ERROR_PARAM_KEY;
+    error_setf(&config->error, CONFIG_ERROR_PARAM_KEY, key);
   
-  return CONFIG_ERROR_NONE;
+  return config->error.code;
 }
 
 int config_get_enum(const config_t* config, const char* key) {
@@ -251,13 +291,15 @@ int config_set_bool(config_t* config, const char* key, config_param_bool_t
   config_param_t* param = config_get_param(config, key);
 
   if (param) {
-    if (config_param_set_bool(param, value))
-      return CONFIG_ERROR_PARAM_VALUE;
+    int result;
+    if ((result = config_param_set_bool(param, value)))
+      error_setf(&config->error, config_error_from_param[result],
+        "%s = %d", key, value);
   }
   else
-    return CONFIG_ERROR_PARAM_KEY;
+    error_setf(&config->error, CONFIG_ERROR_PARAM_KEY, key);
   
-  return CONFIG_ERROR_NONE;
+  return config->error.code;
 }
 
 config_param_bool_t config_get_bool(const config_t* config, const char* key) {

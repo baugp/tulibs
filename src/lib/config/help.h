@@ -54,7 +54,10 @@ extern const char* config_help_errors[];
   * \param[in] stream The output stream that will be used for printing the
   *   generated help section.
   * \param[in] section_title An optional title of the section.
-  * \param[in] arguments The arguments for which to generate the help section.
+  * \param[in] params The argument parameters for which to generate the help
+  *   section.
+  * \param[in] num_params The number of argument parameters for which to
+  *   generate the help section.
   * \param[in] max_width The absolute, maximum character width of the
   *   help section, including indentation.
   * \param[in] key_indent The indentation width of the parameters' keys.
@@ -65,7 +68,8 @@ extern const char* config_help_errors[];
 int config_help_print_arguments(
   FILE* stream,
   const char* section_title,
-  const config_t* arguments,
+  const config_param_t* params,
+  size_t num_params,
   size_t max_width,
   size_t key_indent,
   size_t par_indent);
@@ -93,7 +97,10 @@ int config_help_print_argument(
   * \param[in] stream The output stream that will be used for printing the
   *   generated help section.
   * \param[in] section_title An optional title of the section.
-  * \param[in] options The options for which to generate the help section.
+  * \param[in] params The option parameters for which to generate the help
+  *   section.
+  * \param[in] num_params The number of option parameters for which to
+  *   generate the help section.
   * \param[in] prefix An optional argument prefix that will be appended to
   *   the parameters' keys.
   * \param[in] max_width The absolute, maximum character width of the
@@ -106,7 +113,8 @@ int config_help_print_argument(
 int config_help_print_options(
   FILE* stream,
   const char* section_title,
-  const config_t* options,
+  const config_param_t* params,
+  size_t num_params,
   const char* prefix,
   size_t max_width,
   size_t key_indent,
