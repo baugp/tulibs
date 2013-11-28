@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
   config_parser_t parser;
   int i;
 
-  config_parser_init_default(&parser, "List USB devices",
+  config_parser_init(&parser, "List USB devices",
     "The command displays lsusb-like information about USB buses in "
     "the system and the devices connected to them.");
   config_parser_parse(&parser, argc, argv, config_parser_exit_error);

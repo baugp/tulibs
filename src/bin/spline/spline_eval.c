@@ -47,7 +47,7 @@ config_param_t spline_eval_default_arguments_params[] = {
     "of the spline function"},
 };
 
-const config_t spline_eval_default_arguments = {
+const config_default_t spline_eval_default_arguments = {
   spline_eval_default_arguments_params,
   sizeof(spline_eval_default_arguments_params)/sizeof(config_param_t),
 };
@@ -67,7 +67,7 @@ config_param_t spline_eval_default_options_params[] = {
     "Write values to the specified output file or '-' for stdout"},
 };
 
-const config_t spline_eval_default_options = {
+const config_default_t spline_eval_default_options = {
   spline_eval_default_options_params,
   sizeof(spline_eval_default_options_params)/sizeof(config_param_t),
 };
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
   spline_t spline;
   file_t output_file;
 
-  config_parser_init(&parser, &spline_eval_default_arguments, 0,
+  config_parser_init_default(&parser, &spline_eval_default_arguments, 0,
     "Evaluate a cubic spline for equidistant arguments",
     "The command evaluates a cubic input spline for equidistant "
     "arguments and prints the corresponding function values to a file "

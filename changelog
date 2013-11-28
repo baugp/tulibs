@@ -1,3 +1,10 @@
+tulibs (0.5-76) lucid; urgency=low
+
+  * Adapted configuration parser interface to take default configurations
+    instead of configuration
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Thu, 28 Nov 2013 13:12:00 +0100
+  
 tulibs (0.5-75) lucid; urgency=low
 
   * Added config_default_t for static default configurations

@@ -51,7 +51,7 @@ config_param_t spline_int_default_arguments_params[] = {
     "for stdin"},
 };
 
-const config_t spline_int_default_arguments = {
+const config_default_t spline_int_default_arguments = {
   spline_int_default_arguments_params,
   sizeof(spline_int_default_arguments_params)/sizeof(config_param_t),
 };
@@ -97,7 +97,7 @@ config_param_t spline_int_default_options_params[] = {
     "stdout"},
 };
 
-const config_t spline_int_default_options = {
+const config_default_t spline_int_default_options = {
   spline_int_default_options_params,
   sizeof(spline_int_default_options_params)/sizeof(config_param_t),
 };
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
   spline_t spline;
   file_t input_file;
 
-  config_parser_init(&parser, &spline_int_default_arguments, 0,
+  config_parser_init_default(&parser, &spline_int_default_arguments, 0,
     "Cubic spline interpolation from data points",
     "The command performs cubic spline interpolation for a sequence of data "
     "points with different boundary conditions and prints the resulting "

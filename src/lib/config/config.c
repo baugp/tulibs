@@ -69,26 +69,34 @@ void config_destroy(config_t* config) {
 }
 
 void config_copy(config_t* dst, const config_t* src) {
-  if (src->num_params) {
+  config_copy_params(dst, src->params, src->num_params);
+  error_copy(&dst->error, &src->error);  
+}
+
+void config_copy_default(config_t* dst, const config_default_t* src) {
+  config_copy_params(dst, src->params, src->num_params);
+}
+
+void config_copy_params(config_t* dst, const config_param_t* params,
+    size_t num_params) {
+  if (num_params) {
     size_t i;
     
-    for (i = src->num_params; i < dst->num_params; ++i)
+    for (i = num_params; i < dst->num_params; ++i)
       config_param_destroy(&dst->params[i]);
     dst->params = realloc(dst->params,
-      src->num_params*sizeof(config_param_t));
-    for (i = 0; i < src->num_params; ++i) {
+      num_params*sizeof(config_param_t));
+    for (i = 0; i < num_params; ++i) {
       if (i < dst->num_params)
-        config_param_copy(&dst->params[i], &src->params[i]);
+        config_param_copy(&dst->params[i], &params[i]);
       else
-        config_param_init_copy(&dst->params[i], &src->params[i]);
+        config_param_init_copy(&dst->params[i], &params[i]);
     }
     
-    dst->num_params = src->num_params;
+    dst->num_params = num_params;
   }
   else if (dst->num_params)
     config_clear(dst);
-
-  error_copy(&dst->error, &src->error);  
 }
 
 void config_clear(config_t* config) {

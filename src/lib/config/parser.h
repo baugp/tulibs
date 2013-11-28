@@ -138,10 +138,6 @@ typedef struct config_parser_t {
 
 /** \brief Initialize configuration parser
   * \param[in] parser The configuration parser to be initialized.
-  * \param[in] arguments An optional configuration used to initialize the
-  *   positional parser arguments.
-  * \param[in] options An optional configuration used to initialize the
-  *   non-positional parser options.
   * \param[in] summary An optional, short summary describing the command
   *   which is running the parser.
   * \param[in] description An optional, long description of the command
@@ -149,13 +145,15 @@ typedef struct config_parser_t {
   */
 void config_parser_init(
   config_parser_t* parser,
-  const config_t* arguments,
-  const config_t* options,
   const char* summary,
   const char* description);
 
-/** \brief Initialize configuration parser from default options
+/** \brief Initialize configuration parser from defaults
   * \param[in] parser The configuration parser to be initialized.
+  * \param[in] default_arguments An optional default configuration used to
+  *   initialize the positional parser arguments.
+  * \param[in] default_options An optional default configuration used to
+  *   initialize the non-positional parser options.
   * \param[in] summary An optional, short summary describing the command
   *   which is running the parser.
   * \param[in] description An optional, long description of the command
@@ -163,6 +161,8 @@ void config_parser_init(
   */
 void config_parser_init_default(
   config_parser_t* parser,
+  const config_default_t* default_arguments,
+  const config_default_t* default_options,
   const char* summary,
   const char* description);
 
@@ -180,8 +180,9 @@ void config_parser_destroy(
   * \param[in] name The unique name of the parser option group. The name
   *   will for instance be used to generate a prefix for the command line
   *   options associated with the option group.
-  * \param[in] options The options to be assigned to the option group, may
-  *   be null in which case the added option group will be empty.
+  * \param[in] default_options The default options to initialize the option
+  *   group from, may be null in which case the added option group will
+  *   be empty.
   * \param[in] summary An optional, short summary of the parser option group.
   * \param[in] description An optional, long description of the parser option
   *   group.
@@ -194,7 +195,7 @@ void config_parser_destroy(
 config_parser_option_group_t* config_parser_add_option_group(
   config_parser_t* parser,
   const char* name,
-  const config_t* options,
+  const config_default_t* default_options,
   const char* summary,
   const char* description);
 

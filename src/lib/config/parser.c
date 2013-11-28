@@ -91,26 +91,16 @@ const char* config_parser_description =
   "positional arguments and are required to be of the format --KEYi[=VALUEi].";
 
 void config_parser_option_group_init(config_parser_option_group_t*
-  option_group, const char* name, const config_t* options, const char*
-  summary, const char* description);
+  option_group, const char* name, const char* summary, const char*
+  description);
+void config_parser_option_group_init_default(config_parser_option_group_t*
+  option_group, const char* name, const config_default_t* default_options,
+  const char* summary, const char* description);
 void config_parser_option_group_destroy(config_parser_option_group_t*
   option_group);
   
-void config_parser_init(config_parser_t* parser, const config_t* arguments,
-    const config_t* options, const char* summary, const char* description) {
-  config_parser_init_default(parser, summary, description);
-  
-  if (arguments)
-    config_init_copy(&parser->arguments, arguments);
-  else
-    config_init(&parser->arguments);
-
-  if (options)
-    config_merge(&parser->options, options);
-}
-
-void config_parser_init_default(config_parser_t* parser, const char* summary,
-    const char* description) {
+void config_parser_init(config_parser_t* parser, const char* summary, const
+    char* description) {
   config_init(&parser->arguments);
   config_init(&parser->options);
   
@@ -124,6 +114,17 @@ void config_parser_init_default(config_parser_t* parser, const char* summary,
   parser->usage = 0;
 
   error_init(&parser->error, config_parser_errors);
+}
+
+void config_parser_init_default(config_parser_t* parser, const
+    config_default_t* default_arguments, const config_default_t*
+    default_options, const char* summary, const char* description) {
+  config_parser_init(parser, summary, description);
+  
+  if (default_arguments)
+    config_copy_default(&parser->arguments, default_arguments);
+  if (default_options)
+    config_copy_default(&parser->options, default_options);
 }
 
 void config_parser_destroy(config_parser_t* parser) {
@@ -151,8 +152,8 @@ void config_parser_destroy(config_parser_t* parser) {
 }
 
 config_parser_option_group_t* config_parser_add_option_group(
-    config_parser_t* parser, const char* name, const config_t* options,
-    const char* summary, const char* description) {
+    config_parser_t* parser, const char* name, const config_default_t*
+    default_options, const char* summary, const char* description) {
   config_parser_option_group_t* option_group = 0;
   
   parser->option_groups = realloc(parser->option_groups,
@@ -160,8 +161,8 @@ config_parser_option_group_t* config_parser_add_option_group(
   option_group = &parser->option_groups[parser->num_option_groups];
   ++parser->num_option_groups;
 
-  config_parser_option_group_init(option_group, name, options, summary,
-    description);
+  config_parser_option_group_init_default(option_group, name,
+    default_options, summary, description);
   
   return option_group;
 }
@@ -614,16 +615,22 @@ int config_parser_write_man(const char* filename, config_parser_t* parser,
 }
 
 void config_parser_option_group_init(config_parser_option_group_t*
-    option_group, const char* name, const config_t* options, const char*
-    summary, const char* description) {
+    option_group, const char* name, const char* summary, const char*
+    description) {
   string_init_copy(&option_group->name, name);
-  if (options)
-    config_init_copy(&option_group->options, options);
-  else
-    config_init(&option_group->options);
+  config_init(&option_group->options);
   
   string_init_copy(&option_group->summary, summary);
   string_init_copy(&option_group->description, description);
+}
+
+void config_parser_option_group_init_default(config_parser_option_group_t*
+    option_group, const char* name, const config_default_t* default_options,
+    const char* summary, const char* description) {
+  config_parser_option_group_init(option_group, name, summary, description);
+
+  if (default_options)
+    config_copy_default(&option_group->options, default_options);
 }
 
 void config_parser_option_group_destroy(config_parser_option_group_t*

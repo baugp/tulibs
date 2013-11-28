@@ -142,6 +142,30 @@ void config_copy(
   config_t* dst,
   const config_t* src);
 
+/** \brief Copy a default configuration
+  * \param[in] dst The destination configuration.
+  * \param[in] src The default source configuration.
+  * 
+  * When copying a default source configuration to a destination configuration,
+  * all paramters in the destination configuration will be destroyed.
+  */
+void config_copy_default(
+  config_t* dst,
+  const config_default_t* src);
+
+/** \brief Copy configuration parameters
+  * \param[in] dst The destination configuration.
+  * \param[in] params The source configuration parameters.
+  * \param[in] num_params The number of source configuration parameters.
+  * 
+  * When copying configuration parameters to a destination configuration,
+  * all paramters in the destination configuration will be destroyed.
+  */
+void config_copy_params(
+  config_t* dst,
+  const config_param_t* params,
+  size_t num_params);
+
 /** \brief Clear a configuration
   * \param[in] config The configuration to be cleared.
   */
