@@ -25,15 +25,15 @@
 #include "string/string.h"
 #include "file/file.h"
 
-#define SPLINE_INT_PARAM_FILE                 "FILE"
+#define SPLINE_INT_PARAMETER_FILE             "FILE"
 
 #define SPLINE_INT_PARSER_OPTION_GROUP        "spline-int"
-#define SPLINE_INT_PARAM_TYPE                 "type"
-#define SPLINE_INT_PARAM_OUTPUT               "output"
-#define SPLINE_INT_PARAM_Y1_0                 "y1_0"
-#define SPLINE_INT_PARAM_Y1_N                 "y1_n"
-#define SPLINE_INT_PARAM_Y2_0                 "y2_0"
-#define SPLINE_INT_PARAM_Y2_N                 "y2_n"
+#define SPLINE_INT_PARAMETER_TYPE             "type"
+#define SPLINE_INT_PARAMETER_OUTPUT           "output"
+#define SPLINE_INT_PARAMETER_Y1_0             "y1_0"
+#define SPLINE_INT_PARAMETER_Y1_N             "y1_n"
+#define SPLINE_INT_PARAMETER_Y2_0             "y2_0"
+#define SPLINE_INT_PARAMETER_Y2_N             "y2_n"
 
 typedef enum {
   spline_type_y1,
@@ -43,7 +43,7 @@ typedef enum {
 } spline_type_t;
 
 config_param_t spline_int_default_arguments_params[] = {
-  {SPLINE_INT_PARAM_FILE,
+  {SPLINE_INT_PARAMETER_FILE,
     config_param_type_string,
     "",
     "",
@@ -57,7 +57,7 @@ const config_default_t spline_int_default_arguments = {
 };
 
 config_param_t spline_int_default_options_params[] = {
-  {SPLINE_INT_PARAM_TYPE,
+  {SPLINE_INT_PARAMETER_TYPE,
     config_param_type_enum,
     "natural",
     "y1|y2|clamped|natural",
@@ -65,31 +65,31 @@ config_param_t spline_int_default_options_params[] = {
     "be 'y1' for known first-order derivatives, 'y2' for known second-order "
     "derivatives, 'clamped' for zero first-order derivatives, or 'natural' "
     "for zero second-order derivatives"},
-  {SPLINE_INT_PARAM_Y1_0,
+  {SPLINE_INT_PARAMETER_Y1_0,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The first derivative at the first spline knot if the requested spline "
     "type is 'y1'"},
-  {SPLINE_INT_PARAM_Y1_N,
+  {SPLINE_INT_PARAMETER_Y1_N,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The first derivative at the last spline knot if the requested spline "
     "type is 'y1'"},
-  {SPLINE_INT_PARAM_Y2_0,
+  {SPLINE_INT_PARAMETER_Y2_0,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The second derivative at the first spline knot if the requested spline "
     "type is 'y2'"},
-  {SPLINE_INT_PARAM_Y2_N,
+  {SPLINE_INT_PARAMETER_Y2_N,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The second derivative at the last spline knot if the requested spline "
     "type is 'y2'"},
-  {SPLINE_INT_PARAM_OUTPUT,
+  {SPLINE_INT_PARAMETER_OUTPUT,
     config_param_type_string,
     "-",
     "",
@@ -119,22 +119,22 @@ int main(int argc, char **argv) {
   config_parser_parse(&parser, argc, argv, config_parser_exit_error);
   
   const char* file = config_get_string(&parser.arguments,
-    SPLINE_INT_PARAM_FILE);
+    SPLINE_INT_PARAMETER_FILE);
   
   config_parser_option_group_t* spline_int_option_group =
     config_parser_get_option_group(&parser, SPLINE_INT_PARSER_OPTION_GROUP);
   spline_type_t type = config_get_enum(&spline_int_option_group->options,
-    SPLINE_INT_PARAM_TYPE);
+    SPLINE_INT_PARAMETER_TYPE);
   double y1_0 = config_get_float(&spline_int_option_group->options,
-    SPLINE_INT_PARAM_Y1_0);
+    SPLINE_INT_PARAMETER_Y1_0);
   double y1_n = config_get_float(&spline_int_option_group->options,
-    SPLINE_INT_PARAM_Y1_N);
+    SPLINE_INT_PARAMETER_Y1_N);
   double y2_0 = config_get_float(&spline_int_option_group->options,
-    SPLINE_INT_PARAM_Y2_0);
+    SPLINE_INT_PARAMETER_Y2_0);
   double y2_n = config_get_float(&spline_int_option_group->options,
-    SPLINE_INT_PARAM_Y2_N);
+    SPLINE_INT_PARAMETER_Y2_N);
   const char* output = config_get_string(&spline_int_option_group->options,
-    SPLINE_INT_PARAM_OUTPUT);
+    SPLINE_INT_PARAMETER_OUTPUT);
   
   file_init_name(&input_file, file);
   if (string_equal(file, "-"))

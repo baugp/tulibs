@@ -26,20 +26,20 @@
 #include "string/string.h"
 #include "file/file.h"
 
-#define SPLINE_EVAL_PARAM_FILE              "FILE"
-#define SPLINE_EVAL_PARAM_STEP_SIZE         "STEP_SIZE"
+#define SPLINE_EVAL_PARAMETER_FILE              "FILE"
+#define SPLINE_EVAL_PARAMETER_STEP_SIZE         "STEP_SIZE"
 
-#define SPLINE_EVAL_PARSER_OPTION_GROUP     "spline-eval"
-#define SPLINE_EVAL_PARAM_TYPE              "type"
-#define SPLINE_EVAL_PARAM_OUTPUT            "output"
+#define SPLINE_EVAL_PARSER_OPTION_GROUP         "spline-eval"
+#define SPLINE_EVAL_PARAMETER_TYPE              "type"
+#define SPLINE_EVAL_PARAMETER_OUTPUT            "output"
 
 config_param_t spline_eval_default_arguments_params[] = {
-  {SPLINE_EVAL_PARAM_FILE,
+  {SPLINE_EVAL_PARAMETER_FILE,
     config_param_type_string,
     "",
     "",
     "Read spline from the specified input file or '-' for stdin"},
-  {SPLINE_EVAL_PARAM_STEP_SIZE,
+  {SPLINE_EVAL_PARAMETER_STEP_SIZE,
     config_param_type_float,
     "",
     "(0.0, inf)",
@@ -53,14 +53,14 @@ const config_default_t spline_eval_default_arguments = {
 };
 
 config_param_t spline_eval_default_options_params[] = {
-  {SPLINE_EVAL_PARAM_TYPE,
+  {SPLINE_EVAL_PARAMETER_TYPE,
     config_param_type_enum,
     "base",
     "base|first|second",
     "The type of spline evaluation requested, where 'base' refers to "
     "the base function, and 'first' or 'second' indicates the first or "
     "second derivative, respectively"},
-  {SPLINE_EVAL_PARAM_OUTPUT,
+  {SPLINE_EVAL_PARAMETER_OUTPUT,
     config_param_type_string,
     "-",
     "",
@@ -89,16 +89,16 @@ int main(int argc, char **argv) {
   config_parser_parse(&parser, argc, argv, config_parser_exit_error);
   
   const char* file = config_get_string(&parser.arguments,
-    SPLINE_EVAL_PARAM_FILE);
+    SPLINE_EVAL_PARAMETER_FILE);
   double step_size = config_get_float(&parser.arguments,
-    SPLINE_EVAL_PARAM_STEP_SIZE);
+    SPLINE_EVAL_PARAMETER_STEP_SIZE);
   
   config_parser_option_group_t* spline_eval_option_group =
     config_parser_get_option_group(&parser, SPLINE_EVAL_PARSER_OPTION_GROUP);
   spline_eval_type_t eval_type = config_get_enum(
-    &spline_eval_option_group->options, SPLINE_EVAL_PARAM_TYPE);
+    &spline_eval_option_group->options, SPLINE_EVAL_PARAMETER_TYPE);
   const char* output = config_get_string(
-    &spline_eval_option_group->options, SPLINE_EVAL_PARAM_OUTPUT);
+    &spline_eval_option_group->options, SPLINE_EVAL_PARAMETER_OUTPUT);
 
   spline_init(&spline);
   

@@ -1,3 +1,9 @@
+tulibs (0.5-78) lucid; urgency=low
+
+  * Minor cleanups in utilities
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 29 Nov 2013 19:21:00 +0100
+  
 tulibs (0.5-77) lucid; urgency=low
 
   * Added error_return() macro
