@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
     &spline_eval_option_group->options, SPLINE_EVAL_PARAM_TYPE);
   const char* output = config_get_string(
     &spline_eval_option_group->options, SPLINE_EVAL_PARAM_OUTPUT);
-  
+
   spline_init(&spline);
   
   spline_read(file, &spline);
@@ -126,6 +126,7 @@ int main(int argc, char **argv) {
 
   spline_destroy(&spline);
   file_destroy(&output_file);
+  config_parser_destroy(&parser);
     
   return 0;
 }

@@ -197,4 +197,11 @@ void error_print(
 void error_exit(
   const error_t* error);
 
+/** \brief Return on error
+  * \param[in] error The error to return on.
+  * 
+  * In case of an error, this pre-processor macro returns with the error code.
+  */
+#define error_return(error) if ((error)->code) return (error)->code;
+
 #endif

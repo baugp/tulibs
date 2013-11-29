@@ -1,3 +1,9 @@
+tulibs (0.5-77) lucid; urgency=low
+
+  * Added error_return() macro
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Fri, 29 Nov 2013 19:01:00 +0100
+  
 tulibs (0.5-76) lucid; urgency=low
 
   * Adapted configuration parser interface to take default configurations

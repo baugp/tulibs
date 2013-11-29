@@ -189,6 +189,7 @@ int main(int argc, char **argv) {
   error_exit(&spline.error);
   
   spline_destroy(&spline);
+  config_parser_destroy(&parser);
     
   return 0;
 }
