@@ -96,7 +96,7 @@ int spline_get_segment(spline_t* spline, size_t index, spline_segment_t*
 
 ssize_t spline_find_segment(spline_t* spline, double x) {
   return spline_find_segment_bisect(spline, x, 0,
-    spline->num_knots > 1 ? spline->num_knots-2 : 0);
+    spline->num_knots > 1 ? spline->num_knots-1 : 0);
 }
 
 ssize_t spline_find_segment_bisect(spline_t* spline, double x, size_t
@@ -106,8 +106,8 @@ ssize_t spline_find_segment_bisect(spline_t* spline, double x, size_t
   if (spline->num_knots > 1) {
     size_t i = (index_min < spline->num_knots-1) ? index_min : 
       spline->num_knots-2;
-    size_t j = (index_max < spline->num_knots-1) ? index_max : 
-      spline->num_knots-2;
+    size_t j = (index_max < spline->num_knots) ? index_max : 
+      spline->num_knots-1;
       
     if ((j > i) && (x >= spline->knots[i].x) && (x <= spline->knots[j].x)) {    
       while (j-i > 1) {
@@ -132,8 +132,8 @@ ssize_t spline_find_segment_linear(spline_t* spline, double x, size_t
   
   if ((spline->num_knots > 1) && (x >= spline->knots[0].x) &&
       (x <= spline->knots[spline->num_knots-1].x)) {
-    size_t i = (index_start < spline->num_knots-1) ? index_start : 
-      spline->num_knots-2;
+    size_t i = (index_start < spline->num_knots) ? index_start : 
+      spline->num_knots-1;
       
     while (1) {
       if (x >= spline->knots[i].x) {
@@ -154,8 +154,11 @@ ssize_t spline_find_segment_linear(spline_t* spline, double x, size_t
 void spline_print(FILE* stream, const spline_t* spline) {
   size_t i;
   
-  for (i = 0; i < spline->num_knots; i++)
+  for (i = 0; i < spline->num_knots; i++) {
+    if (i)
+      fprintf(stream, "\n");
     spline_knot_print(stream, &spline->knots[i]);
+  }
 }
 
 int spline_read(const char* filename, spline_t* spline) {
@@ -355,7 +358,7 @@ ssize_t spline_int_clamped(spline_t* spline, const spline_point_t* points,
 
 double spline_eval(spline_t* spline, spline_eval_type_t eval_type, double x) {
   return spline_eval_bisect(spline, eval_type, x, 0,
-    spline->num_knots > 1 ? spline->num_knots-2 : 0);
+    spline->num_knots > 1 ? spline->num_knots-1 : 0);
 }
 
 double spline_eval_bisect(spline_t* spline, spline_eval_type_t eval_type,

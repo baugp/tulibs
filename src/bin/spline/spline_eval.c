@@ -43,8 +43,8 @@ config_param_t spline_eval_default_arguments_params[] = {
     config_param_type_float,
     "",
     "(0.0, inf)",
-    "The step size used to generate equidistant arguments "
-    "of the spline function"},
+    "The step size used to generate equidistant locations of the "
+    "spline function"},
 };
 
 const config_default_t spline_eval_default_arguments = {
@@ -78,9 +78,9 @@ int main(int argc, char **argv) {
   file_t output_file;
 
   config_parser_init_default(&parser, &spline_eval_default_arguments, 0,
-    "Evaluate a cubic spline for equidistant arguments",
-    "The command evaluates a cubic input spline for equidistant "
-    "arguments and prints the corresponding function values to a file "
+    "Evaluate a cubic spline at equidistant locations",
+    "The command evaluates a cubic input spline at equidistant "
+    "locations and prints the corresponding function values to a file "
     "or stdout. Depending on the options provided, these values may be "
     "generated from the base function or its derivatives.");
   config_parser_add_option_group(&parser, SPLINE_EVAL_PARSER_OPTION_GROUP,

@@ -1,3 +1,10 @@
+tulibs (0.5-79) lucid; urgency=low
+
+  * Fixed bug in spline_find_segment_bisect() which would cause the last
+    spline segment to be ignored
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Sun, 01 Dec 2013 17:11:00 +0100
+  
 tulibs (0.5-78) lucid; urgency=low
 
   * Minor cleanups in utilities
