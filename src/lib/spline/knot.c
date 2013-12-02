@@ -49,8 +49,8 @@ double spline_knot_eval(const spline_knot_t* knot_min, const spline_knot_t*
   double b = (x-knot_min->x)/h_i;
 
   if (eval_type == spline_eval_type_first_derivative)
-    return (knot_max->y-knot_min->y)/h_i-0.5*sqr(a)*knot_min->y2+
-      0.5*sqr(b)*knot_max->y2-(knot_max->y2-knot_min->y2)*h_i/6.0;
+    return (knot_max->y-knot_min->y)/h_i-0.5*sqr(a)*h_i*knot_min->y2+
+      0.5*sqr(b)*h_i*knot_max->y2-(knot_max->y2-knot_min->y2)*h_i/6.0;
   else if (eval_type == spline_eval_type_second_derivative)
     return a*knot_min->y2+b*knot_max->y2;
   else

@@ -1,3 +1,10 @@
+tulibs (0.5-80) lucid; urgency=low
+
+  * Fixed bug in spline_knot_eval() which would cause wrong evaluation of
+    first spline derivatives
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Mon, 02 Dec 2013 07:04:00 +0100
+  
 tulibs (0.5-79) lucid; urgency=low
 
   * Fixed bug in spline_find_segment_bisect() which would cause the last
