@@ -60,11 +60,11 @@ config_param_t spline_int_default_options_params[] = {
   {SPLINE_INT_PARAMETER_TYPE,
     config_param_type_enum,
     "natural",
-    "y1|y2|clamped|natural",
+    "y1|y2|natural|clamped",
     "The type of boundary conditions for the interpolating spline, which may "
-    "be 'y1' for known first-order derivatives, 'y2' for known second-order "
-    "derivatives, 'clamped' for zero first-order derivatives, or 'natural' "
-    "for zero second-order derivatives"},
+    "be 'y1' for known first derivatives, 'y2' for known second derivatives, "
+    "'clamped' for zero first derivatives, or 'natural' for zero second "
+    "derivatives"},
   {SPLINE_INT_PARAMETER_Y1_0,
     config_param_type_float,
     "0.0",

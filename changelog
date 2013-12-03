@@ -1,3 +1,9 @@
+tulibs (0.5-81) lucid; urgency=low
+
+  * Minor performance fixes in spline_int()
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 03 Dec 2013 11:31:00 +0100
+  
 tulibs (0.5-80) lucid; urgency=low
 
   * Fixed bug in spline_knot_eval() which would cause wrong evaluation of

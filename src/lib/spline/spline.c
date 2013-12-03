@@ -44,9 +44,6 @@ const char* spline_errors[] = {
   "Spline interpolation failed",
 };
 
-ssize_t spline_int(spline_t* spline, const spline_point_t* points,
-  size_t num_points, double e_0, double c_n, double b_0, double b_n);
-
 void spline_init(spline_t* spline) {
   spline->knots = 0;
   spline->num_knots = 0;
@@ -275,26 +272,30 @@ ssize_t spline_int(spline_t* spline, const spline_point_t* points, size_t
     gsl_vector* x = gsl_vector_alloc(num_points);
     gsl_vector* b = gsl_vector_alloc(num_points);
     
-    gsl_vector_set_all(d, 2.0);
+    gsl_vector_set(d, 0, 1.0);
     gsl_vector_set(e, 0, e_0);
     gsl_vector_set(b, 0, b_0);
     
     size_t i;
+    double h_i, h_j;
     for (i = 1; i < num_points-1; ++i) {
-      double h_i = points[i].x-points[i-1].x;
-      double h_j = points[i+1].x-points[i].x;
+      h_i = (i > 1) ? h_j : points[i].x-points[i-1].x;
+      h_j = points[i+1].x-points[i].x;
       
-      double c_i = h_i/(h_i+h_j);
-      double e_i = 1.0-c_i;
+      double d_i = 2.0*(h_i+h_j);
+      double c_i = h_i;
+      double e_i = h_j;
       double b_i = 6.0*((points[i+1].y-points[i].y)/h_j-
-        (points[i].y-points[i-1].y)/h_i)/(h_j+h_i);
+        (points[i].y-points[i-1].y)/h_i);
       
       gsl_vector_set(c, i-1, c_i);
+      gsl_vector_set(d, i, d_i);
       gsl_vector_set(e, i, e_i);
       gsl_vector_set(b, i, b_i);
     }
-
+    
     gsl_vector_set(c, num_points-2, c_n);
+    gsl_vector_set(d, num_points-1, 1.0);
     gsl_vector_set(b, num_points-1, b_n);
 
     if (!gsl_linalg_solve_tridiag(d, e, c, b, x)) {        
@@ -334,16 +335,16 @@ ssize_t spline_int_y1(spline_t* spline, const spline_point_t* points,
     double h_1 = points[1].x-points[0].x;
     double h_n = points[num_points-1].x-points[num_points-2].x;
     
-    b_0 = 6/h_1*((points[1].y-points[0].y)/h_1-y1_0);
-    b_n = 6/h_n*(y1_n-(points[num_points-1].y-points[num_points-2].y)/h_n);
+    b_0 = 3.0/h_1*((points[1].y-points[0].y)/h_1-y1_0);
+    b_n = 3.0/h_n*(y1_n-(points[num_points-1].y-points[num_points-2].y)/h_n);
   }
   
-  return spline_int(spline, points, num_points, 1.0, 1.0, b_0, b_n);
+  return spline_int(spline, points, num_points, 0.5, 0.5, b_0, b_n);
 }
 
 ssize_t spline_int_y2(spline_t* spline, const spline_point_t* points,
     size_t num_points, double y2_0, double y2_n) {
-  return spline_int(spline, points, num_points, 0.0, 0.0, 2.0*y2_0, 2.0*y2_n);
+  return spline_int(spline, points, num_points, 0.0, 0.0, y2_0, y2_n);
 }
 
 ssize_t spline_int_natural(spline_t* spline, const spline_point_t*  points,

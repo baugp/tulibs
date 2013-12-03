@@ -240,7 +240,7 @@ size_t spline_add_knot(
   spline_t* spline,
   const spline_knot_t* knot);
 
-/** \brief Cubic spline interpolation from data points
+/** \brief Cubic spline interpolation from data points on a tridiagonal system
   * \param[in,out] spline The cubic spline to be generated from the data.
   * \param[in] points An array of spline data points which will define the
   *   interpolation points of the resulting cubic spline.
@@ -258,10 +258,10 @@ size_t spline_add_knot(
   * points. For N data points, the resulting cubic spline will consist in N
   * knots (N-1 segments). The generalized spline interpolation problem is
   * represented as a tridiagonal system of equations A*x = b with boundary
-  * conditions as expressed by the provided boundary elements for A and b.
+  * conditions expressed by the provided boundary elements for A and b.
   * 
   * The main diagonal d of the tridiagonal N x N matrix A is a vector
-  * d = (2, ..., 2)^T of length N. The lower sub-diagonal
+  * d = (1, d_2, ..., d_N-1, 1)^T of length N. The lower sub-diagonal
   * c = (c_1, ..., c_N)^T and the upper sub-diagonal e = (e_0, ..., e_N-1)^T
   * both have length N-1. To solve the tridiagonal system, A and the
   * right-hand side vector b = (b_0, ..., b_N)^T are initialized from the
@@ -292,8 +292,8 @@ ssize_t spline_int(
   *   negative error code.
   * 
   * This is a convenience function which calls spline_int() with the boundary
-  * elements adapted such as to force the first derivatives at the outer spline
-  * knots to the values provided.
+  * elements adapted such as to force the first derivatives at the outer
+  * spline knots to the values provided.
   */
 ssize_t spline_int_y1(
   spline_t* spline,
