@@ -1,3 +1,11 @@
+tulibs (0.5-82) lucid; urgency=low
+
+  * Revised spline interpolation functions
+  * Added not-a-knot condition, periodic condition, and conditions on the
+    first and second derivatives to spline interpolation interface
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 10 Dec 2013 17:30:00 +0100
+  
 tulibs (0.5-81) lucid; urgency=low
 
   * Minor performance fixes in spline_int()

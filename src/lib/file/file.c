@@ -467,15 +467,17 @@ ssize_t file_read_line(file_t* file, char** line, size_t block_size) {
     ++line_length;
   }
   
-  if (result >= 0) {
-    if (line_length && (line_length % block_size == 0))
+  if (line_length && (result >= 0)) {
+    if (line_length % block_size == 0)
       *line = realloc(*line, line_length+block_size);
     (*line)[line_length] = 0;
       
     return line_length;
   }
-  else
+  else {
+    string_destroy(line);
     return result;
+  }
 }
 
 ssize_t file_printf(file_t* file, const char* format, ...) {

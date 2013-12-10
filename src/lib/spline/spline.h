@@ -240,44 +240,6 @@ size_t spline_add_knot(
   spline_t* spline,
   const spline_knot_t* knot);
 
-/** \brief Cubic spline interpolation from data points on a tridiagonal system
-  * \param[in,out] spline The cubic spline to be generated from the data.
-  * \param[in] points An array of spline data points which will define the
-  *   interpolation points of the resulting cubic spline.
-  * \param[in] num_points The number of spline data points.
-  * \param[in] e_0 The first boundary element of the tridiagonal system's
-  *   upper sub-diagonal.
-  * \param[in] c_n The last boundary element of the tridiagonal system's
-  *   lower sub-diagonal.
-  * \param[in] b_0 The first boundary element of the right-hand side vector.
-  * \param[in] b_n The last boundary element of the right-hand side vector.
-  * \return The number of segments in the resulting cubic spline or the
-  *   negative error code.
-  * 
-  * The spline knots will be re-allocated to accommodate the interpolation
-  * points. For N data points, the resulting cubic spline will consist in N
-  * knots (N-1 segments). The generalized spline interpolation problem is
-  * represented as a tridiagonal system of equations A*x = b with boundary
-  * conditions expressed by the provided boundary elements for A and b.
-  * 
-  * The main diagonal d of the tridiagonal N x N matrix A is a vector
-  * d = (1, d_2, ..., d_N-1, 1)^T of length N. The lower sub-diagonal
-  * c = (c_1, ..., c_N)^T and the upper sub-diagonal e = (e_0, ..., e_N-1)^T
-  * both have length N-1. To solve the tridiagonal system, A and the
-  * right-hand side vector b = (b_0, ..., b_N)^T are initialized from the
-  * data and the provided boundary elements. The solution vector
-  * x = (y2_0, ..., y2_N-1)^T directly yields the second order derivatives
-  * at the N spline knots in O(N) computational time.
-  */
-ssize_t spline_int(
-  spline_t* spline,
-  const spline_point_t* points,
-  size_t num_points,
-  double e_0,
-  double c_n,
-  double b_0,
-  double b_n);
-
 /** \brief Cubic spline interpolation from data points with known first
   *   derivatives at the outer knots
   * \param[in,out] spline The cubic spline to be generated from the data.
@@ -291,9 +253,9 @@ ssize_t spline_int(
   * \return The number of segments in the resulting cubic spline or the
   *   negative error code.
   * 
-  * This is a convenience function which calls spline_int() with the boundary
-  * elements adapted such as to force the first derivatives at the outer
-  * spline knots to the values provided.
+  * This is a convenience function which calls spline_int_solve_tridiag_y2()
+  * with the boundary elements adapted such as to force the first derivatives
+  * at the outer spline knots to the values provided.
   */
 ssize_t spline_int_y1(
   spline_t* spline,
@@ -315,9 +277,9 @@ ssize_t spline_int_y1(
   * \return The number of segments in the resulting cubic spline or the
   *   negative error code.
   * 
-  * This is a convenience function which calls spline_int() with the boundary
-  * elements adapted such as to force the second derivatives at the outer
-  * spline knots to the values provided.
+  * This is a convenience function which calls spline_int_solve_tridiag_y2()
+  * with the boundary elements adapted such as to force the second derivatives
+  * at the outer spline knots to the values provided.
   */
 ssize_t spline_int_y2(
   spline_t* spline,
@@ -325,6 +287,50 @@ ssize_t spline_int_y2(
   size_t num_points,
   double y2_0,
   double y2_n);
+
+/** \brief Cubic spline interpolation from data points with known first and
+  *   second derivatives at the outer knots
+  * \param[in,out] spline The cubic spline to be generated from the data.
+  * \param[in] points An array of spline data points which will define the
+  *   interpolation points of the resulting cubic spline.
+  * \param[in] num_points The number of spline data points.
+  * \param[in] y1_0 The first derivative at the first knot of the resulting
+  *   cubic spline.
+  * \param[in] y1_n The first derivative at the last knot of the resulting
+  *   cubic spline.
+  * \param[in] y2_0 The second derivative at the first knot of the resulting
+  *   cubic spline.
+  * \param[in] y2_n The second derivative at the last knot of the resulting
+  *   cubic spline.
+  * \param[in] r_0 The ratio in (0, 1) defining the relative location of the
+  *   first intermediate knot in the original first spline segment with respect
+  *   to the first knot.
+  * \param[in] r_n The ratio in (0, 1) defining the relative location of the
+  *   last intermediate knot in the original last spline segment with respect
+  *   to the last knot.
+  * \return The number of segments in the resulting cubic spline or the
+  *   negative error code.
+  * 
+  * This is a convenience function which calls spline_int_solve_tridiag_y1()
+  * with the boundary elements adapted such as to force the first and second
+  * derivatives at the outer spline knots to the values provided. If both
+  * the first and second derivatives at the outer knots are enforced, the
+  * outer spline segments are subdivided by an additional knot each, yielding
+  * N+2 spline knots for a total of N data points provided. For these
+  * intermediate knots, only continuity conditions are imposed, leaving
+  * two additional free parameters to satisfy the boundary conditions. The
+  * resulting spline changes with the location of these intermediate knots.
+  */
+ssize_t spline_int_y1_y2(
+  spline_t* spline,
+  const spline_point_t* points,
+  size_t num_points,
+  double y1_0,
+  double y1_n,
+  double y2_0,
+  double y2_n,
+  double r_0,
+  double r_n);
 
 /** \brief Natural cubic spline interpolation from data points
   * \param[in,out] spline The cubic spline to be generated from the data.
@@ -361,6 +367,176 @@ ssize_t spline_int_clamped(
   spline_t* spline,
   const spline_point_t* points,
   size_t num_points);
+
+/** \brief Periodic cubic spline interpolation from data points
+  * \param[in,out] spline The cubic spline to be generated from the data.
+  * \param[in] points An array of spline data points which will define the
+  *   interpolation points of the resulting cubic spline.
+  * \param[in] num_points The number of spline data points.
+  * \return The number of segments in the resulting cubic spline or the
+  *   negative error code.
+  * 
+  * This is a convenience function which calls
+  * spline_int_solve_symm_cyc_tridiag_y2() with the boundary elements adapted
+  * to periodic cubic spline interpolation. In the periodic case, the first
+  * and second derivatives at the outer spline knots are forced to equality.
+  */
+ssize_t spline_int_periodic(
+  spline_t* spline,
+  const spline_point_t* points,
+  size_t num_points);
+
+/** \brief Not-a-knot cubic spline interpolation from data points
+  * \param[in,out] spline The cubic spline to be generated from the data.
+  * \param[in] points An array of spline data points which will define the
+  *   interpolation points of the resulting cubic spline.
+  * \param[in] num_points The number of spline data points.
+  * \return The number of segments in the resulting cubic spline or the
+  *   negative error code.
+  * 
+  * This is a convenience function which calls spline_int_solve_tridiag_y1()
+  * with the boundary elements adapted to not-a-knot cubic spline
+  * interpolation. In the not-a-knot case, the outer spline segments are
+  * determined by three data points, leaving N-2 spline knots for a total of
+  * N data points provided. At the intermediate points of these outer segments,
+  * the third derivatives are forced to equality.
+  */
+ssize_t spline_int_not_a_knot(
+  spline_t* spline,
+  const spline_point_t* points,
+  size_t num_points);
+
+/** \brief Cubic spline interpolation solving a tridiagonal system for the
+  *   knots' first derivatives
+  * \param[in] points An array of spline data points which will define the
+  *   interpolation points of the resulting cubic spline.
+  * \param[in] num_points The number of spline data points.
+  * \param[in] d_1 The first boundary element of the tridiagonal system's
+  *   main diagonal.
+  * \param[in] d_n The last boundary element of the tridiagonal system's
+  *   main diagonal.
+  * \param[in] e_1 The first boundary element of the tridiagonal system's
+  *   upper sub-diagonal.
+  * \param[in] c_m The last boundary element of the tridiagonal system's
+  *   lower sub-diagonal.
+  * \param[in] b_1 The first boundary element of the right-hand side vector.
+  * \param[in] b_n The last boundary element of the right-hand side vector.
+  * \param[in,out] y1 The resulting first derivatives at the spline knots.
+  *   The array will be re-allocated to accommodate the values and must be
+  *   freed by the caller.
+  * \return The number of segments in the resulting cubic spline or the
+  *   negative error code.
+  * 
+  * For N data points, the resulting array of first derivatives will consist
+  * in N values. The generalized spline interpolation problem is represented
+  * as a tridiagonal system of equations A*y1 = b with boundary conditions
+  * expressed by the provided boundary elements for A and b.
+  * 
+  * The main diagonal d of the tridiagonal N x N matrix A is a vector
+  * d = (d_1, ..., d_N)^T of length N. The lower sub-diagonal
+  * c = (c_1, ..., c_M)^T and the upper sub-diagonal e = (e_1, ..., e_M)^T
+  * both have length M = N-1. To solve the tridiagonal system, A and the
+  * right-hand side vector b = (b_1, ..., b_N)^T are initialized from the
+  * data and the provided boundary elements. The solution vector
+  * y1 = (y1_1, ..., y1_N)^T directly yields the first-order derivatives
+  * at the N spline knots in O(N) computational time.
+  */
+ssize_t spline_int_solve_tridiag_y1(
+  const spline_point_t* points,
+  size_t num_points,
+  double d_1,
+  double d_n,
+  double e_1,
+  double c_m,
+  double b_1,
+  double b_n,
+  double** y1);
+
+/** \brief Cubic spline interpolation solving a tridiagonal system for the
+  *   knots' second derivatives
+  * \param[in] points An array of spline data points which will define the
+  *   interpolation points of the resulting cubic spline.
+  * \param[in] num_points The number of spline data points.
+  * \param[in] d_1 The first boundary element of the tridiagonal system's
+  *   main diagonal.
+  * \param[in] d_n The last boundary element of the tridiagonal system's
+  *   main diagonal.
+  * \param[in] e_1 The first boundary element of the tridiagonal system's
+  *   upper sub-diagonal.
+  * \param[in] c_m The last boundary element of the tridiagonal system's
+  *   lower sub-diagonal.
+  * \param[in] b_1 The first boundary element of the right-hand side vector.
+  * \param[in] b_n The last boundary element of the right-hand side vector.
+  * \param[in,out] y2 The resulting second derivatives at the spline knots.
+  *   The array will be re-allocated to accommodate the values and must be
+  *   freed by the caller.
+  * \return The number of segments in the resulting cubic spline or the
+  *   negative error code.
+  * 
+  * For N data points, the resulting array of second derivatives will consist
+  * in N values. The generalized spline interpolation problem is represented
+  * as a tridiagonal system of equations A*y2 = b with boundary conditions
+  * expressed by the provided boundary elements for A and b.
+  * 
+  * The main diagonal d of the tridiagonal N x N matrix A is a vector
+  * d = (d_1, ..., d_N)^T of length N. The lower sub-diagonal
+  * c = (c_1, ..., c_M)^T and the upper sub-diagonal e = (e_1, ..., e_M)^T
+  * both have length M = N-1. To solve the tridiagonal system, A and the
+  * right-hand side vector b = (b_1, ..., b_N)^T are initialized from the
+  * data and the provided boundary elements. The solution vector
+  * y2 = (y2_1, ..., y2_N)^T directly yields the second-order derivatives
+  * at the N spline knots in O(N) computational time.
+  */
+ssize_t spline_int_solve_tridiag_y2(
+  const spline_point_t* points,
+  size_t num_points,
+  double d_1,
+  double d_n,
+  double e_1,
+  double c_m,
+  double b_1,
+  double b_n,
+  double** y2);
+
+/** \brief Cubic spline interpolation solving a symmetric cyclic tridiagonal
+  *   system for the knots' second derivatives
+  * \param[in] points An array of spline data points which will define the
+  *   interpolation points of the resulting cubic spline.
+  * \param[in] num_points The number of spline data points.
+  * \param[in] d_1 The first boundary element of the symmetric cyclic
+  *   tridiagonal system's main diagonal.
+  * \param[in] e_m The last boundary element of the symmetric cyclic
+  *   tridiagonal system's upper and lower cyclic sub-diagonals.
+  * \param[in] b_1 The first boundary element of the right-hand side vector.
+  * \param[in,out] y2 The resulting second derivatives at the spline knots.
+  *   The array will be re-allocated to accommodate the values and must be
+  *   freed by the caller.
+  * \return The number of values in the resulting array of second derivatives
+  *   or the negative error code.
+  * 
+  * For N data points, the resulting array of second derivatives will consist
+  * in M = N-1 values. The generalized spline interpolation problem is
+  * represented as a symmetric cyclic tridiagonal system of equations A*y2 = b
+  * with boundary conditions expressed by the provided boundary elements for
+  * A and b.
+  * 
+  * The main diagonal d of the symmetric cyclic tridiagonal M x M matrix
+  * A is a vector d = (d_1, ..., d_M)^T of length M. The lower and upper
+  * cyclic sub-diagonals e = (e_1, ..., e_M)^T both have length M, with e_M
+  * representing the corner elements of A. To solve the symmetric cyclic
+  * tridiagonal system, A and the right-hand side vector b = (b_1, ..., b_M)^T
+  * are initialized from the data and the provided boundary elements. The
+  * solution vector y2 = (y2_1, ..., y2_M)^T directly yields the second-order
+  * derivatives at the N spline knots in O(N) computational time, exploiting
+  * that y2_N = y2_1.
+  */
+ssize_t spline_int_solve_symm_cyc_tridiag_y2(
+  const spline_point_t* points,
+  size_t num_points,
+  double d_1,
+  double e_m,
+  double b_1,
+  double** y2);
 
 /** \brief Evaluate the spline at a given location
   * \param[in] spline The cubic spline to be evaluated.

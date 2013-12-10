@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     error_exit(&output_file.error);
     
     ++j;
-    x = step_size*j;
+    x = spline.knots[0].x+step_size*j;
   }
 
   spline_destroy(&spline);

@@ -34,12 +34,17 @@
 #define SPLINE_INT_PARAMETER_Y1_N             "y1_n"
 #define SPLINE_INT_PARAMETER_Y2_0             "y2_0"
 #define SPLINE_INT_PARAMETER_Y2_N             "y2_n"
+#define SPLINE_INT_PARAMETER_R_0              "r_0"
+#define SPLINE_INT_PARAMETER_R_N              "r_n"
 
 typedef enum {
   spline_type_y1,
   spline_type_y2,
+  spline_type_y1_y2,
   spline_type_natural,
   spline_type_clamped,
+  spline_type_periodic,
+  spline_type_not_a_knot,
 } spline_type_t;
 
 config_param_t spline_int_default_arguments_params[] = {
@@ -60,35 +65,51 @@ config_param_t spline_int_default_options_params[] = {
   {SPLINE_INT_PARAMETER_TYPE,
     config_param_type_enum,
     "natural",
-    "y1|y2|natural|clamped",
+    "y1|y2|y1-y2|natural|clamped|periodic|not-a-knot",
     "The type of boundary conditions for the interpolating spline, which may "
     "be 'y1' for known first derivatives, 'y2' for known second derivatives, "
-    "'clamped' for zero first derivatives, or 'natural' for zero second "
-    "derivatives"},
+    "'y1-y2' for known both first and second derivatives, 'clamped' for zero "
+    "first derivatives, 'natural' for zero second derivatives, 'periodic' for "
+    "equal first and second derivatives, or 'not-a-knot' for no additional "
+    "boundary conditions"},
   {SPLINE_INT_PARAMETER_Y1_0,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The first derivative at the first spline knot if the requested spline "
-    "type is 'y1'"},
+    "type is 'y1' or 'y1-y2'"},
   {SPLINE_INT_PARAMETER_Y1_N,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The first derivative at the last spline knot if the requested spline "
-    "type is 'y1'"},
+    "type is 'y1' or 'y1-y2'"},
   {SPLINE_INT_PARAMETER_Y2_0,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The second derivative at the first spline knot if the requested spline "
-    "type is 'y2'"},
+    "type is 'y2' or 'y1-y2'"},
   {SPLINE_INT_PARAMETER_Y2_N,
     config_param_type_float,
     "0.0",
     "(-inf, inf)",
     "The second derivative at the last spline knot if the requested spline "
-    "type is 'y2'"},
+    "type is 'y2' or 'y1-y2'"},
+  {SPLINE_INT_PARAMETER_R_0,
+    config_param_type_float,
+    "0.5",
+    "(0.0, 1.0)",
+    "The ratio defining the relative location of the first intermediate knot "
+    "in the original first spline segment with respect to the first knot if "
+    "the requested spline type is 'y1-y2'"},
+  {SPLINE_INT_PARAMETER_R_N,
+    config_param_type_float,
+    "0.5",
+    "(0.0, 1.0)",
+    "The ratio defining the relative location of the last intermediate knot "
+    "in the original last spline segment with respect to the last knot if "
+    "the requested spline type is 'y1-y2'"},
   {SPLINE_INT_PARAMETER_OUTPUT,
     config_param_type_string,
     "-",
@@ -133,6 +154,10 @@ int main(int argc, char **argv) {
     SPLINE_INT_PARAMETER_Y2_0);
   double y2_n = config_get_float(&spline_int_option_group->options,
     SPLINE_INT_PARAMETER_Y2_N);
+  double r_0 = config_get_float(&spline_int_option_group->options,
+    SPLINE_INT_PARAMETER_R_0);
+  double r_n = config_get_float(&spline_int_option_group->options,
+    SPLINE_INT_PARAMETER_R_N);
   const char* output = config_get_string(&spline_int_option_group->options,
     SPLINE_INT_PARAMETER_OUTPUT);
   
@@ -174,11 +199,22 @@ int main(int argc, char **argv) {
     case spline_type_y2:
       spline_int_y2(&spline, points, num_points, y2_0, y2_n);
       break;
-    case spline_type_clamped:
-      spline_int_clamped(&spline, points, num_points);
+    case spline_type_y1_y2:
+      spline_int_y1_y2(&spline, points, num_points, y1_0, y1_n,
+        y2_0, y2_n, r_0, r_n);
       break;
     case spline_type_natural:
       spline_int_natural(&spline, points, num_points);
+      break;
+    case spline_type_clamped:
+      spline_int_clamped(&spline, points, num_points);
+      break;
+    case spline_type_periodic:
+      spline_int_periodic(&spline, points, num_points);
+      break;
+    case spline_type_not_a_knot:
+      spline_int_not_a_knot(&spline, points, num_points);
+      break;
   }
 
   error_exit(&spline.error);
