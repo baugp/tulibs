@@ -55,3 +55,11 @@ remake_distribute_deb(
     zlib1g-dev libbz2-dev remake pkg-config doxygen
   PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
 )
+remake_distribute_deb(
+  DISTRIBUTION trusty
+  SECTION libs
+  UPLOAD ppa:kralf/asl
+  DEPENDS libudev-dev libusb-1.0-0-dev libftdi-dev libgsl0-dev
+    zlib1g-dev libbz2-dev remake pkg-config doxygen
+  PASS CMAKE_BUILD_TYPE TULIBS_GIT_REVISION
+)
