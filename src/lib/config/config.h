@@ -85,8 +85,8 @@ typedef struct config_t {
   * initialization. 
   */
 typedef struct config_default_t {
-  const config_param_t
-    const* params;        //!< The default configuration parameters.
+  const config_param_t*
+    const params;         //!< The default configuration parameters.
   size_t num_params;      //!< The number of default configuration parameters.
 } config_default_t;
 
