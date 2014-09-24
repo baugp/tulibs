@@ -20,7 +20,7 @@ remake_doc(
 )
 
 remake_pack_deb(
-  DEPENDS libudev0[:a-z]* libusb-1.0-0[:a-z]* libftdi1 libgsl0ldbl
+  DEPENDS libudev[0-1][:a-z]* libusb-1.0-0[:a-z]* libftdi1 libgsl0ldbl
     zlib1g libbz2-1.0
 )
 remake_pack_deb(

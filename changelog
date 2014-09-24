@@ -1,3 +1,10 @@
+tulibs (0.5-84) lucid; urgency=low
+
+  * Fixed class codes (missing enumerable definitions) for lucid version
+  * Fixed package dependency for trusty version
+  
+ -- Ralf Kaestner <ralf.kaestner@gmail.com>  Tue, 29 Jul 2014 08:46:00 +0100
+ 
 tulibs (0.5-83) lucid; urgency=low
 
   * Release distribution for Ubuntu Trusty Tahr

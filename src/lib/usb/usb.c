@@ -258,10 +258,10 @@ void usb_device_init(usb_device_t* dev, libusb_device* libus_device) {
       case LIBUSB_CLASS_HID:
         dev->class = usb_class_hid;
         break;
-      case LIBUSB_CLASS_PHYSICAL:
+      case 0x05:
         dev->class = usb_class_physical;
         break;
-      case LIBUSB_CLASS_IMAGE:
+      case 0x06:
         dev->class = usb_class_image;
         break;
       case LIBUSB_CLASS_PRINTER:
@@ -276,25 +276,25 @@ void usb_device_init(usb_device_t* dev, libusb_device* libus_device) {
       case LIBUSB_CLASS_DATA:
         dev->class = usb_class_data;
         break;
-      case LIBUSB_CLASS_SMART_CARD:
+      case 0x0b:
         dev->class = usb_class_smart_card;
         break;
-      case LIBUSB_CLASS_CONTENT_SECURITY:
+      case 0x0d:
         dev->class = usb_class_content_security;
         break;
-      case LIBUSB_CLASS_VIDEO:
+      case 0x0e:
         dev->class = usb_class_video;
         break;
-      case LIBUSB_CLASS_PERSONAL_HEALTHCARE:
+      case 0x0f:
         dev->class = usb_class_healthcare;
         break;
-      case LIBUSB_CLASS_DIAGNOSTIC_DEVICE:
+      case 0xdc:
         dev->class = usb_class_diagnostic;
         break;
-      case LIBUSB_CLASS_WIRELESS:
+      case 0xe0:
         dev->class = usb_class_wireless;
         break;
-      case LIBUSB_CLASS_APPLICATION:
+      case 0xfe:
         dev->class = usb_class_application;
         break;
       case LIBUSB_CLASS_VENDOR_SPEC:
