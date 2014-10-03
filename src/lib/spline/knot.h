@@ -26,7 +26,7 @@
   * \brief Knot definition for the cubic spline
   * \author Ralf Kaestner
   * 
-  * A spline knot defines the end-point of a cubic spline segments and
+  * A spline knot defines the end-point of a cubic spline segment and
   * consists in three components describing location and curvature.
   */
 
