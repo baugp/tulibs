@@ -294,7 +294,7 @@ int ftdi_device_open(ftdi_device_t* dev, ftdi_interface_t interface) {
   if (ftdi_set_interface(dev->libftdi_context, interface))
     error_set(&dev->error, FTDI_ERROR_INVALID_INTERFACE);
   else if (ftdi_usb_open_dev(dev->libftdi_context, dev->libusb_device))
-    error_setf(&dev->error, FTDI_ERROR_OPEN, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_OPEN, "Bus %03d Device %03d", dev->bus,
       dev->address);
     
   return error_get(&dev->error);
@@ -304,10 +304,10 @@ int ftdi_device_close(ftdi_device_t* dev) {
   error_clear(&dev->error);
   
   if (ftdi_usb_purge_buffers(dev->libftdi_context))
-    error_setf(&dev->error, FTDI_ERROR_PURGE, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_PURGE, "Bus %03d Device %03d", dev->bus,
       dev->address);
   else if (ftdi_usb_close(dev->libftdi_context))
-    error_setf(&dev->error, FTDI_ERROR_CLOSE, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_CLOSE, "Bus %03d Device %03d", dev->bus,
       dev->address);
   
   return error_get(&dev->error);
@@ -411,13 +411,13 @@ int ftdi_device_setup(ftdi_device_t* dev, int baud_rate, int data_bits, int
 
   if (ftdi_set_line_property2(libftdi_context, libftdi_data_bits,
       libftdi_stop_bits, libftdi_parity, libftdi_break)) {
-    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "Bus %03d Device %03d", dev->bus,
       dev->address);
     return error_get(&dev->error);
   }
   
   if (ftdi_setflowctrl(libftdi_context, libftdi_flow_ctrl)) {
-    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "Bus %03d Device %03d", dev->bus,
       dev->address);
     return error_get(&dev->error);
   }
@@ -429,7 +429,7 @@ int ftdi_device_setup(ftdi_device_t* dev, int baud_rate, int data_bits, int
   }
   dev->baud_rate = baud_rate;
   if (error) {
-    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "Bus %03d Device %03d", dev->bus,
       dev->address);
     return error_get(&dev->error);
   }
@@ -445,7 +445,7 @@ int ftdi_device_setup(ftdi_device_t* dev, int baud_rate, int data_bits, int
   }
   dev->latency = latency;
   if (error) {
-    error_setf(&dev->error, FTDI_ERROR_SETUP, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_SETUP, "Bus %03d Device %03d", dev->bus,
       dev->address);
     return error_get(&dev->error);
   }
@@ -471,12 +471,12 @@ int ftdi_device_read(ftdi_device_t* dev, unsigned char* data, size_t num) {
   dev->num_read += num_read;
     
   if (result < 0) {
-    error_setf(&dev->error, FTDI_ERROR_READ, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_READ, "Bus %03d Device %03d", dev->bus,
       dev->address);
     return -error_get(&dev->error);
   }
   else if (!num_read && (period > dev->timeout)) {
-    error_setf(&dev->error, FTDI_ERROR_TIMEOUT, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_TIMEOUT, "Bus %03d Device %03d", dev->bus,
       dev->address);
     return -error_get(&dev->error);
   }
@@ -493,7 +493,7 @@ int ftdi_device_write(ftdi_device_t* dev, unsigned char* data, size_t num) {
   if (result >= 0)
     dev->num_written += result;
   else {
-    error_setf(&dev->error, FTDI_ERROR_WRITE, "%03:%03", dev->bus,
+    error_setf(&dev->error, FTDI_ERROR_WRITE, "Bus %03d Device %03d", dev->bus,
       dev->address);
     return -error_get(&dev->error);
   }
