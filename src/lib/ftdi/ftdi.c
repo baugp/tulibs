@@ -21,7 +21,10 @@
 #include <stdio.h>
 
 #include <ftdi.h>
+
+#ifdef __linux__
 #include <libudev.h>
+#endif
 
 #include "ftdi.h"
 
@@ -171,13 +174,16 @@ int ftdi_context_refresh(ftdi_context_t* context) {
 
 ftdi_device_t* ftdi_context_match_name(const ftdi_context_t* context,
     const char* name) {
+#ifdef __linux__
   struct stat stat_buffer;
   struct udev* udev = 0;
   struct udev_device* dev = 0;
+#endif
   int bus = 0;
   int address = 0;
   int i;
-  
+
+#ifdef __linux__
   if (!stat(name, &stat_buffer) && S_ISCHR(stat_buffer.st_mode)) {
     udev = udev_new();
     dev = udev_device_new_from_devnum(udev, 'c', stat_buffer.st_rdev);
@@ -191,6 +197,17 @@ ftdi_device_t* ftdi_context_match_name(const ftdi_context_t* context,
 
     udev_unref(udev);
   }
+#elif defined(__APPLE__)
+  //dummy Linux-compatible name
+  if (string_scanf(name, "/dev/bus/usb/%3u/%3u", &bus, &address) == 2 &&
+      context->num_devices > address-1)
+      return &context->devices[address-1];
+#endif
+
+  //ftdi device alternative name format: ddd:ddd or device index
+  else if (string_scanf(name, "%3u%*[:/,- ]%3u", &bus, &address)==1 &&
+      context->num_devices > bus)
+      return &context->devices[bus];
 
   for (i = 0; i < context->num_devices; ++i) {
     if ((context->devices[i].bus == bus) &&
