@@ -58,7 +58,7 @@ void string_list_destroy(char*** list) {
     size_t i = 0;
     
     while ((*list)[i])
-      string_destroy(list[i]);
+      string_destroy(&(*list)[i++]);
     
     free(*list);
     *list = 0;
